@@ -1,0 +1,296 @@
+{
+  "name": "Notion to Slack (Project Summary)",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Extract and combine content from blocks, grouped by project\nconst projectGroups = {};\n\n// Process each item from the input\nfor (const item of $input.all()) {\n  // Check if item has content property directly (from your block data)\n  if (item.json.content && typeof item.json.content === 'string' && item.json.content.trim()) {\n    const rootId = item.json.root_id || 'ungrouped';\n    if (!projectGroups[rootId]) {\n      projectGroups[rootId] = {\n        projectId: rootId,\n        content: []\n      };\n    }\n    projectGroups[rootId].content.push(item.json.content.trim());\n  }\n  // Check if item has results array (from HTTP response)\n  else if (item.json.results && Array.isArray(item.json.results)) {\n    for (const block of item.json.results) {\n      if (block.content && typeof block.content === 'string' && block.content.trim()) {\n        const rootId = block.root_id || 'ungrouped';\n        if (!projectGroups[rootId]) {\n          projectGroups[rootId] = {\n            projectId: rootId,\n            content: []\n          };\n        }\n        projectGroups[rootId].content.push(block.content.trim());\n      }\n    }\n  }\n}\n\n// Convert to array format with combined content per project\nconst projects = Object.values(projectGroups).map(project => ({\n  projectId: project.projectId,\n  content: project.content.join('\\n\\n'),\n  blockCount: project.content.length\n}));\n\n// Create one combined text for all projects\nconst allProjectsText = projects.map(p => p.content).join('\\n\\n---\\n\\n');\n\n// Return simplified format\nreturn [{\n  json: {\n    projects: projects,\n    totalProjects: projects.length,\n    totalBlocks: projects.reduce((sum, p) => sum + p.blockCount, 0),\n    allContent: allProjectsText\n  }\n}];"
+      },
+      "id": "784f0f26-4bf1-4f56-9de4-a6b46423d0a0",
+      "name": "Extract Block Content",
+      "type": "n8n-nodes-base.code",
+      "position": [256, 464],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 0-4"
+            }
+          ]
+        }
+      },
+      "id": "8e1a023b-6ef6-4683-b21c-17579d76d56c",
+      "name": "Daily Schedule Trigger1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-464, 464],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.url }}",
+          "mode": "url"
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [48, 256],
+      "id": "1386c3e1-6631-4bba-b4f2-1767e72e9d77",
+      "name": "Get many child blocks1",
+      "credentials": {
+        "notionApi": {
+          "id": "Cxe4jdBPmmmzxPRZ",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/23f6ab60b47980c18179e18a888e6c30",
+          "mode": "url"
+        },
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Status|status",
+              "condition": "does_not_equal",
+              "statusValue": "Done"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-224, 464],
+      "id": "5c1fac6a-85d3-4f61-a92e-3e90927d7d4f",
+      "name": "Get many database pages1",
+      "credentials": {
+        "notionApi": {
+          "id": "Cxe4jdBPmmmzxPRZ",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following project data:\n\n{{ JSON.stringify($json, null, 2) }}\n\nPlease provide:\nOverall project status summary\n\nGroup by Project Owner, List the project names under the owner and under that, group by date, the updates based on the date. Output in slack format.\n\n*Tips for formatting Slack messages*Updated February 28, 2025 11:18 AM\n\nYou can format Slack messages in Zaps to add [styling](https://slack.com/help/articles/202288908-Format-your-messages), [user mentions](https://slack.com/help/articles/205240127-Use-mentions-in-Slack), and [channel and workspace notifications](https://slack.com/help/articles/202009646-Notify-a-channel-or-workspace).\n\n# *Text*\n\n- Bold text: wrap your text with asterisks (*).bold*\n- Italic text: wrap your text with underscores (_)._italic_\n- Strikethrough text: wrap your text with tildes (~).~strikethrough~\n\n# *Inline code and blockquotes*\n\n- Inline code blocks that are a single word or line: wrap your text with a single backtick ().inline code block`\n- For inline code blocks that are a block of text: wrap your text with three backticks.`inline code block text block`\n- For blockquotes: start the blockquote with a closing angle bracket (>).>blockquote\n\n# *Lists*\n\n- Ordered lists: type the *number, a **period (.), and a **space* before your text. 1. ordered list\n- Bulleted lists: it's not possible to format bulleted lists in the same way it's done directly on Slack (using asterisks). However, you can mimic the formatting using the bullet point symbol () and a *space* before your text. bulleted list\n\n# *Links*\n\nURL links are automatically hyperlinked in Slack without additional formatting.\n\nTo display link text instead of the URL:\n\n- Type an *open angle bracket (<), your **URL link, a **pipe character (|), your **link text, and a **closing angle bracket*.<https://zapier.com|Link text>\n\n*Tip*\n\n![ratingStar icon](https://cdn.zapier.com/storage/photos/8843673cace5f7b922c65168a85d657e.png)\n\nLink text will include spaces between words.\n\n# *New lines*\n\nNo special formatting is required. To add a new line, use the *return (enter) key* on your keyboard.\n\n*Note*\n\n![miscEye icon](https://cdn.zapier.com/storage/photos/335619ab6472fe1fefab18d493cb39bf.png)\n\nYou can enter only enter a single new line between lines of text. Two or more consecutive new lines are not supported.\n\n# *Emoji*\n\n- Wrap the name of the emoji in colons (:).:heart_eyes:\n\n# *Mentions and notifications*\n\n- User mentions: type an *open angle bracket, the **at symbol (@), the user’s **Slack member ID* (see below how to find the member ID), and a *closing angle bracket*.<@UG1234567>\n- “Everyone” notification (notifies everyone in your workspace in the #general channel): type an *open angle bracket, an **exclamation point (!), “everyone”, and a **closing angle bracket*.<!everyone>\n- “Here” notification (notifies active members in a specific channel): type an *open angle bracket, an **exclamation point (!), “here”, and a **closing angle bracket*.<!here>\n- “User group” notification (notifies all members of a user group): type an *open angle bracket, an **exclamation point (!), type in “subteam” , a **caret symbol (^), the **user group ID* (see below how to find the group ID), and a *closing angle bracket*.<!subteam^abcde123456>\n\n---\n\nRemember for each project only pull in the latest 2 days of updates. If there is no dated updates, do not add that project as a part of your response.\n\nBased on slack formatting, make the project name big text (headers).\n\nMake sure there is ample spacing so it looks nice.\n\nMake sure to link the project name to the notion url.\n\nAlso under each project, add the link to the projectDocs (Google Doc).\n\nFor slack formatting, always use quote block to group items. So basically group everything but the title/owner. But use multiple quote blocks per project to make it cleaner.",
+        "batching": {
+          "batchSize": 50
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [704, 272],
+      "id": "e5b313ec-e2b0-4f49-ab66-4a64f13c9a02",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [880, 464],
+      "id": "17c114db-f768-42dc-bcf9-89bc2f93bed7",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "4rX6mtKMEwCnv5eh",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [320, 720],
+      "id": "318a5689-6703-4859-ad6c-a314da3a63db",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract project names and IDs from Notion database pages\nconst projects = [];\n// Process each database page\nfor (const item of $input.all()) {\n  // Extract project ID and remove dashes to match content data format\n  const projectIdWithDashes = item.json.id || 'unknown';\n  const projectId = projectIdWithDashes.replace(/-/g, ''); // Remove all dashes\n  \n  // Extract project name from Notion properties\n  // Try different possible property names that might contain the project title\n  const projectName = \n    item.json.properties?.Name?.title?.[0]?.text?.content ||\n    item.json.properties?.Title?.title?.[0]?.text?.content ||\n    item.json.properties?.Project?.title?.[0]?.text?.content ||\n    item.json.properties?.name?.title?.[0]?.text?.content ||\n    item.json.properties?.title?.title?.[0]?.text?.content ||\n    item.json.property_project_name || // Based on your data structure\n    item.json.title || // Sometimes title might be at root level\n    item.json.name ||  // Or name at root level\n    `Untitled Project (${projectId.slice(0, 8)})`;\n  \n  // Extract owner(s) - property_owner appears to be an array\n  const owners = item.json.property_owner || \n    item.json.properties?.owner?.people?.map(p => p.name || p.email || p.id) ||\n    [];\n  \n  // Extract client\n  const client = item.json.property_client ||\n    item.json.properties?.client?.rich_text?.[0]?.text?.content ||\n    item.json.properties?.Client?.rich_text?.[0]?.text?.content ||\n    '';\n  \n  // Extract status\n  const status = item.json.property_status || \n    item.json.properties?.status?.status?.name ||\n    item.json.properties?.Status?.status?.name ||\n    'Unknown';\n  \n  // Extract project documents - property_project_doc appears to be an array of URLs\n  const projectDocs = item.json.property_project_doc ||\n    item.json.properties?.project_doc?.url ||\n    item.json.properties?.Project_Doc?.url ||\n    [];\n  \n  // Add to projects array with dashless ID\n  projects.push({\n    projectId: projectId, // Now without dashes\n    projectName: projectName,\n    url: item.json.url || '',\n    owners: owners, // Array of owner names\n    ownersList: owners.join(', '), // Comma-separated string for easy display\n    client: client,\n    status: status,\n    projectDocs: projectDocs, // Array of document URLs\n    hasDocuments: projectDocs.length > 0,\n    // Include any other metadata you might need\n    createdTime: item.json.created_time || '',\n    lastEditedTime: item.json.last_edited_time || ''\n  });\n}\n// Return the extracted project information\nreturn [{\n  json: {\n    projects: projects,\n    totalProjects: projects.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [48, 592],
+      "id": "5242e566-0c1c-42c6-9260-95e1b90fa772",
+      "name": "Extract Project Details"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code processes the merged data from the Merge node\n// The Merge node combines content data and project names data\n\n// Get the input data - it's an array with two objects\nconst inputArray = $input.all();\nconst contentData = inputArray[0].json; // First object has content data\nconst projectData = inputArray[1].json; // Second object has project metadata\n\n// Create a map for quick lookup of project metadata by ID\nconst projectMetaMap = {};\nprojectData.projects.forEach(project => {\n  projectMetaMap[project.projectId] = project;\n});\n\n// Merge content with metadata\nconst mergedProjects = contentData.projects.map(contentProject => {\n  const metadata = projectMetaMap[contentProject.projectId] || {};\n  return {\n    ...contentProject,\n    ...metadata,\n    // Ensure we keep the content and blockCount from contentData\n    content: contentProject.content,\n    blockCount: contentProject.blockCount\n  };\n});\n\n// Create combined text for all projects, now using project names and additional metadata\nconst allContentWithNames = mergedProjects\n  .filter(p => p.content && p.blockCount > 0)\n  .map(p => {\n    let projectInfo = `**${p.projectName || 'Untitled Project'}**\\n`;\n    \n    // Add metadata\n    if (p.ownersList) projectInfo += `Owner: ${p.ownersList}\\n`;\n    if (p.client) projectInfo += `Client: ${p.client}\\n`;\n    if (p.status) projectInfo += `Status: ${p.status}\\n`;\n    if (p.projectDocs && p.projectDocs.length > 0) {\n      projectInfo += `Documents: ${p.projectDocs.length} linked\\n`;\n    }\n    \n    projectInfo += `\\n${p.content}`;\n    return projectInfo;\n  })\n  .join('\\n\\n---\\n\\n');\n\n// Calculate statistics\nconst projectsWithContent = mergedProjects.filter(p => p.content && p.blockCount > 0).length;\n\n// Group projects by owner\nconst projectsByOwner = {};\nmergedProjects.forEach(project => {\n  const ownerKey = project.ownersList || 'Unassigned';\n  if (!projectsByOwner[ownerKey]) {\n    projectsByOwner[ownerKey] = [];\n  }\n  projectsByOwner[ownerKey].push(project);\n});\n\n// Group projects by status\nconst projectsByStatus = {};\nmergedProjects.forEach(project => {\n  const status = project.status || 'Unknown';\n  if (!projectsByStatus[status]) {\n    projectsByStatus[status] = [];\n  }\n  projectsByStatus[status].push(project);\n});\n\n// Group projects by client\nconst projectsByClient = {};\nmergedProjects.forEach(project => {\n  const client = project.client || 'No Client';\n  if (!projectsByClient[client]) {\n    projectsByClient[client] = [];\n  }\n  projectsByClient[client].push(project);\n});\n\n// Sort projects by name if needed\nconst sortedProjects = [...mergedProjects].sort((a, b) => {\n  const nameA = a.projectName || 'Untitled';\n  const nameB = b.projectName || 'Untitled';\n  return nameA.localeCompare(nameB);\n});\n\n// Calculate additional statistics\nconst totalOwners = Object.keys(projectsByOwner).length;\nconst totalClients = Object.keys(projectsByClient).filter(c => c !== 'No Client').length;\nconst projectsWithDocs = mergedProjects.filter(p => p.hasDocuments).length;\nconst totalDocs = mergedProjects.reduce((sum, p) => sum + (p.projectDocs?.length || 0), 0);\n\n// Create owner summary with action items extracted\nconst ownerSummary = Object.entries(projectsByOwner).map(([owner, projects]) => {\n  // Extract action items for this owner's projects\n  const ownerActionItems = projects\n    .filter(p => p.content && p.content.includes('Action items'))\n    .map(p => {\n      const actionItemsMatch = p.content.match(/Action items[^]*?(?=Documents|$)/g);\n      if (actionItemsMatch) {\n        const items = actionItemsMatch[0]\n          .split('\\n')\n          .filter(line => line.trim() && !line.includes('Action items') && line.length > 5)\n          .map(line => line.trim());\n        return {\n          project: p.projectName,\n          items: items\n        };\n      }\n      return null;\n    })\n    .filter(Boolean);\n  \n  return {\n    owner: owner,\n    projectCount: projects.length,\n    projectNames: projects.map(p => p.projectName || 'Untitled'),\n    projectsWithContent: projects.filter(p => p.content && p.blockCount > 0).length,\n    actionItemCount: ownerActionItems.reduce((sum, p) => sum + p.items.length, 0),\n    actionItems: ownerActionItems\n  };\n});\n\n// Create status summary\nconst statusSummary = Object.entries(projectsByStatus).map(([status, projects]) => ({\n  status: status,\n  count: projects.length,\n  projectNames: projects.map(p => p.projectName || 'Untitled')\n}));\n\n// Extract all action items for easy reference\nconst allActionItems = mergedProjects\n  .filter(p => p.content && p.content.includes('Action items'))\n  .map(p => {\n    const actionItemsMatch = p.content.match(/Action items[^]*?(?=Documents|$)/g);\n    if (actionItemsMatch) {\n      const items = actionItemsMatch[0]\n        .split('\\n')\n        .filter(line => line.trim() && !line.includes('Action items') && line.length > 5)\n        .map(line => line.trim());\n      return {\n        project: p.projectName || 'Untitled',\n        owner: p.ownersList || 'Unassigned',\n        client: p.client || 'No Client',\n        status: p.status || 'Unknown',\n        items: items\n      };\n    }\n    return null;\n  })\n  .filter(Boolean);\n\n// Return the enhanced data\nreturn {\n  json: {\n    projects: sortedProjects,\n    totalProjects: projectData.totalProjects || mergedProjects.length,\n    projectsWithContent: projectsWithContent,\n    totalBlocks: contentData.totalBlocks || 0,\n    allContent: allContentWithNames,\n    summary: {\n      totalProjects: projectData.totalProjects || mergedProjects.length,\n      projectsWithContent: projectsWithContent,\n      projectsWithoutContent: (projectData.totalProjects || mergedProjects.length) - projectsWithContent,\n      totalBlocks: contentData.totalBlocks || 0,\n      totalOwners: totalOwners,\n      totalClients: totalClients,\n      projectsWithDocs: projectsWithDocs,\n      totalDocs: totalDocs,\n      totalActionItems: allActionItems.reduce((sum, p) => sum + p.items.length, 0)\n    },\n    groupedData: {\n      byOwner: projectsByOwner,\n      byStatus: projectsByStatus,\n      byClient: projectsByClient\n    },\n    ownerSummary: ownerSummary,\n    statusSummary: statusSummary,\n    allActionItems: allActionItems\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [512, 608],
+      "id": "c81e2a71-d1e0-484b-9bac-79e25da67981",
+      "name": "Combine Project Details with Blocks"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09815GFKML",
+          "mode": "list",
+          "cachedResultName": "dev-team-project-updates"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [1056, 272],
+      "id": "9bbe5aef-b914-4830-83e3-bcabd3f0064b",
+      "name": "Send a message",
+      "webhookId": "b2103adc-fc79-43ac-aca9-b0d58c059564",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "Ki3A8P0GNosXGc1Y",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract Block Content": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many child blocks1": {
+      "main": [
+        [
+          {
+            "node": "Extract Block Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages1": {
+      "main": [
+        [
+          {
+            "node": "Get many child blocks1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Project Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Combine Project Details with Blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Project Details": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Combine Project Details with Blocks": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d58bdca8-636c-4ca9-ad8f-ff60d30db374",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2efa5938083771b4d785493a72a1260e2d219f189831803c18b6cc9cfe083380"
+  },
+  "id": "PuhpmcdgpMmdSn69",
+  "tags": []
+}

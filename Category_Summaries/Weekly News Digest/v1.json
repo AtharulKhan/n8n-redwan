@@ -1,0 +1,1283 @@
+{
+  "name": "Weekly Email Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "return[\n  // Artificial Intelligence feeds\n  { \"json\": { \"feed\": \"https://www.technologyreview.com/topic/artificial-intelligence/feed\", \"category\": \"Artificial Intelligence\"  } },\n  { \"json\": { \"feed\": \"https://venturebeat.com/category/ai/feed/\", \"category\": \"Artificial Intelligence\" } },\n  { \"json\": { \"feed\": \"https://techcrunch.com/category/artificial-intelligence/feed/\", \"category\": \"Artificial Intelligence\" } },\n  { \"json\": { \"feed\": \"https://www.wired.com/feed/category/artificial-intelligence/latest/rss\", \"category\": \"Artificial Intelligence\" } },\n  { \"json\": { \"feed\": \"https://www.unite.ai/feed/\", \"category\": \"Artificial Intelligence\" } },\n  // Performance Marketing feeds\n  { \"json\": { \"feed\": \"https://searchengineland.com/feed/\", \"category\": \"Performance Marketing\" } },\n  { \"json\": { \"feed\": \"https://martech.org/feed/\", \"category\": \"Performance Marketing\" } },\n  { \"json\": { \"feed\": \"https://www.toprankmarketing.com/feed/\", \"category\": \"Performance Marketing\" } },\n  { \"json\": { \"feed\": \"https://neilpatel.com/feed/\", \"category\": \"Performance Marketing\" } },\n  { \"json\": { \"feed\": \"https://growthhackers.com/feed/\", \"category\": \"Performance Marketing\" } },\n  // Search Engine Optimization feeds\n  { \"json\": { \"feed\": \"https://rss.searchenginejournal.com/\", \"category\": \"Search Engine Optimization\" } },\n  { \"json\": { \"feed\": \"https://ahrefs.com/blog/feed/\", \"category\": \"Search Engine Optimization\" } },\n  { \"json\": { \"feed\": \"https://backlinko.com/blog/feed/\", \"category\": \"Search Engine Optimization\" } },\n  { \"json\": { \"feed\": \"https://www.semrush.com/blog/feed/\", \"category\": \"Search Engine Optimization\" } },\n  { \"json\": { \"feed\": \"https://www.brightedge.com/blog/feed/\", \"category\": \"Search Engine Optimization\" } },\n  { \"json\": { \"feed\": \"https://www.screamingfrog.co.uk/feed/\", \"category\": \"Search Engine Optimization\" } },\n  // Pay Per Click feeds\n  { \"json\": { \"feed\": \"https://www.ppchero.com/feed/\", \"category\": \"Pay Per Click\" } },\n  { \"json\": { \"feed\": \"https://www.wordstream.com/blog/ws/feed\", \"category\": \"Pay Per Click\" } },\n  { \"json\": { \"feed\": \"https://feeds.feedburner.com/GoogleAdsDeveloperBlog\", \"category\": \"Pay Per Click\" } },\n  { \"json\": { \"feed\": \"https://adespresso.com/blog/feed/\", \"category\": \"Pay Per Click\" } },\n  { \"json\": { \"feed\": \"https://www.spyfu.com/blog/rss/\", \"category\": \"Pay Per Click\" } },\n  { \"json\": { \"feed\": \"https://wordlift.io/blog/en/blog/feed/\", \"category\": \"Pay Per Click\" } },\n  { \"json\": { \"feed\": \"https://keywordtool.io/blog/feed/\", \"category\": \"Pay Per Click\" } }\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1888, 144],
+      "id": "5f3fbef1-bc82-45f0-8695-5e2534ff73b1",
+      "name": "All RSS Feeds List"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.feed }}",
+        "options": {
+          "ignoreSSL": false
+        }
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [-1696, 144],
+      "id": "63a19ef4-8d64-4c39-ad4e-ba3a7c20f382",
+      "name": "Gather Feeds",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "aabfdeff-d854-4ea8-9446-a77fae3c589e",
+              "leftValue": "={{ $json.isoDate.split('T')[0] }}",
+              "rightValue": "={{ DateTime.now().minus({ days: 3 }).toISO().split('T')[0] }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "afterOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1504, 144],
+      "id": "3413ae0a-4f8f-47aa-959b-aab356fd48ef",
+      "name": "Check if Today's Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process all input data\nconst inputData = $input.all();\nconst transformedData = inputData.map(item => {\n  const data = item.json;\n  \n  return {\n    creator: data.creator || \"Admin\",\n    title: data.title,\n    link: data.link,\n    content: data[\"content:encodedSnippet\"] || data.contentSnippet || data.content,\n    date: data.isoDate\n  };\n});\n\n// Return the transformed data\nreturn transformedData.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1264, 144],
+      "id": "3e3c1d94-8fc5-4bbe-935a-fc86a14a5608",
+      "name": "Transform Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('All RSS Feeds List').item.json.category }}",
+              "value2": "Performance Marketing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-944, 64],
+      "id": "c9a99d79-3128-4ae5-b6a6-a3d05dda2127",
+      "name": "Filter PM Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('All RSS Feeds List').item.json.category }}",
+              "value2": "Search Engine Optimization"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-944, 240],
+      "id": "4215a9f7-41ef-490b-81ea-0de13e4d0f61",
+      "name": "Filter SEO Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('All RSS Feeds List').item.json.category }}",
+              "value2": "Artificial Intelligence"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-944, -112],
+      "id": "4d163d83-e3bd-410e-97d3-8bb3a24d4c14",
+      "name": "Filter AI Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('All RSS Feeds List').item.json.category }}",
+              "value2": "Pay Per Click"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-944, 416],
+      "id": "56e897d0-7241-4bce-bcb5-39d74169bd99",
+      "name": "Filter PPC Data"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliTB894OB4kIaDE",
+          "mode": "list",
+          "cachedResultName": "AI feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tbliTB894OB4kIaDE"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true
+            },
+            {
+              "id": "creator",
+              "displayName": "creator",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [-720, -112],
+      "id": "2d251b2a-b467-48bb-aa4a-c0cb2d8c7590",
+      "name": "Save AI to Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl84nTgAwy80DUme",
+          "mode": "list",
+          "cachedResultName": "SEO feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tbl84nTgAwy80DUme"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true
+            },
+            {
+              "id": "creator",
+              "displayName": "creator",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [-720, 240],
+      "id": "afca31dd-4140-47f9-ba22-9c3bb557694c",
+      "name": "Save SEO to Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblGgCwU9eewCzlU0",
+          "mode": "list",
+          "cachedResultName": "PPC feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tblGgCwU9eewCzlU0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true
+            },
+            {
+              "id": "creator",
+              "displayName": "creator",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [-720, 416],
+      "id": "2cd25725-44ba-4b58-ba39-c35abbc7a21b",
+      "name": "Save PPC to Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblKDqOrs5t0ZObL2",
+          "mode": "list",
+          "cachedResultName": "PM feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tblKDqOrs5t0ZObL2"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true
+            },
+            {
+              "id": "creator",
+              "displayName": "creator",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [-720, 64],
+      "id": "d2f6a27c-763a-43d7-af38-234a2eb3bfb9",
+      "name": "Save PM to Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.output;\nif (!data) {\n  throw new Error(\"Input data 'output' not found\");\n}\n\n// Handle both old format (flat articles array) and new format (categorized)\nlet categories = [];\nif (Array.isArray(data.categories)) {\n  categories = data.categories;\n} else if (Array.isArray(data.articles)) {\n  // Fallback for old format - create a single \"General\" category\n  categories = [{ category: \"General\", articles: data.articles }];\n} else {\n  throw new Error(\"Neither categories nor articles array found in data\");\n}\n\nlet takeawayList = '';\nif (Array.isArray(data.takeaway)) {\n  takeawayList = '<ul>';\n  for (const point of data.takeaway) {\n    takeawayList += `<li>${point}</li>`;\n  }\n  takeawayList += '</ul>';\n} else {\n  takeawayList = `<p>${data.takeaway}</p>`;\n}\n\nlet html = `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { \n      font-family: Arial, sans-serif; \n      line-height: 1.6; \n      color: #333; \n      max-width: 800px; \n      margin: 0 auto; \n      padding: 20px; \n    }\n    h1 { \n      color: #007bff; \n      text-align: center; \n      margin-bottom: 30px; \n    }\n    h2 { \n      color: #28a745; \n      border-bottom: 2px solid #28a745; \n      padding-bottom: 5px; \n      margin-top: 30px;\n      margin-bottom: 20px;\n    }\n    h3 { \n      font-weight: bold; \n      margin-top: 15px; \n      color: #333;\n    }\n    ul { \n      list-style-type: disc; \n      margin-left: 20px; \n    }\n    li { \n      margin-bottom: 5px; \n    }\n    a { \n      color: #007bff; \n      text-decoration: none; \n    }\n    a:hover { \n      text-decoration: underline; \n    }\n    .takeaway { \n      background-color: #f8f9fa; \n      padding: 15px; \n      border-left: 4px solid #007bff; \n      margin: 20px 0; \n    }\n    .article {\n      background-color: #ffffff;\n      border: 1px solid #e9ecef;\n      border-radius: 8px;\n      padding: 20px;\n      margin-bottom: 20px;\n      box-shadow: 0 2px 4px rgba(0,0,0,0.1);\n    }\n    .article-title {\n      color: #007bff;\n      font-size: 18px;\n      font-weight: bold;\n      margin-bottom: 10px;\n      line-height: 1.4;\n    }\n    .article-source {\n      color: #6c757d;\n      font-size: 14px;\n      margin-bottom: 10px;\n    }\n    .article-summary {\n      color: #333;\n      margin-bottom: 15px;\n    }\n    .read-more {\n      display: inline-block;\n      background-color: #007bff;\n      color: white;\n      padding: 8px 16px;\n      border-radius: 4px;\n      text-decoration: none;\n      font-size: 14px;\n    }\n    .read-more:hover {\n      background-color: #0056b3;\n      color: white;\n      text-decoration: none;\n    }\n    .header {\n      text-align: center;\n      margin-bottom: 40px;\n    }\n    .date {\n      color: #6c757d;\n      font-size: 14px;\n    }\n    .category-section {\n      margin-bottom: 40px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"header\">\n    <h1>Weekly News Digest</h1>\n  </div>\n`;\n\nhtml += `\n  <div class=\"takeaway\">\n    <h3>📈 Key Takeaways</h3>\n    ${takeawayList}\n  </div>\n`;\n\n// Loop through categories and their articles\nfor (const category of categories) {\n  if (!Array.isArray(category.articles) || category.articles.length === 0) {\n    continue; // Skip empty categories\n  }\n  \n  html += `\n  <div class=\"category-section\">\n    <h2>${category.category}</h2>\n  `;\n  \n  for (const article of category.articles) {\n    html += `\n    <div class=\"article\">\n      <div class=\"article-title\">\n        <a href=\"${article.link}\" target=\"_blank\">${article.headline}</a>\n      </div>\n      <div class=\"article-source\">By ${article.source}</div>\n      <div class=\"article-summary\">\n        <ul>\n          ${article.summary.map(point => `<li>${point}</li>`).join('')}\n        </ul>\n      </div>\n      <a href=\"${article.link}\" target=\"_blank\" \n         style=\"display: inline-block; background-color: #007bff; color: #ffffff; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 14px;\">\n         Read Full Article →\n      </a>\n    </div>\n    `;\n  }\n  \n  html += `\n  </div>\n  `;\n}\n\nhtml += `\n</body>\n</html>`;\n\nreturn [{ json: { html } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-992, 752],
+      "id": "63b6bb1f-b4f0-4689-b9e8-838c7594f8cc",
+      "name": "Build HTML"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl3KTJq1bALQN6Ar",
+          "mode": "list",
+          "cachedResultName": "General",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tbl3KTJq1bALQN6Ar"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [-800, 752],
+      "id": "fc0d3463-043f-49a1-bfc1-e68062010e3d",
+      "name": "Search Contacts",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=Weekly WSI News Digest | {{ $now.toFormat(\"MMMM dd\") }} ",
+        "message": "={{ $('Build HTML').item.json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [-592, 752],
+      "id": "4bae92ab-926d-45ad-a718-6bcae3a3f42a",
+      "name": "Send a message",
+      "webhookId": "08d83bd4-35a4-4606-9fb4-a55a5d8edffb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xb196pNEANfhvZNu",
+          "name": "Mo WSI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Select the top 10 articles from each category:\n\nArtificial Intelliegence:\n{{JSON.stringify( $json.ai)}}\n\nPerformence Marketing:\n{{JSON.stringify( $json.pm)}}\n\nSearch Engine Optimization:\n{{JSON.stringify( $json.seo)}}\n\nPay Per Click:\n{{JSON.stringify( $json.ppc)}}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are creating content for a weekly HTML email newsletter.\n\nYour task:\nSelect the 10 most important and recent news articles from a curated list of sources.\n\nFor each article:\nWrite 3 short bullet-point summaries highlighting the key takeaways.\n\nFor Key Takeaways:\nWrite 4 short bullet-point AI-generated “Weekly Takeaway” of the biggest themes or trends in each category from that week concisely. Don't add \"-\" on the begining of each sentence. \n\nEnsure all content is:\n- Concise and clear for a general audience\n- Fact-based, using only the article content (no made-up info)\n- Suitable for responsive HTML email formatting\n\nAdditional Guidelines:\n- Articles must be from the past 7 days\n- Avoid duplicate stories (select the best version)\n- The total number of articles must not exceed 10\n- Keep language professional but engaging"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [-1360, 752],
+      "id": "f05f13d6-a31e-49c5-a7ad-0c203dcc4833",
+      "name": "News Summarizer",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"takeaway\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"categories\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"category\": {\n            \"type\": \"string\"\n          },\n          \"articles\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"headline\": {\n                  \"type\": \"string\"\n                },\n                \"source\": {\n                  \"type\": \"string\"\n                },\n                \"summary\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"string\"\n                  }\n                },\n                \"link\": {\n                  \"type\": \"string\",\n                  \"format\": \"uri\"\n                }\n              },\n              \"required\": [\n                \"headline\",\n                \"source\",\n                \"summary\",\n                \"link\"\n              ]\n            }\n          }\n        },\n        \"required\": [\"category\", \"articles\"]\n      }\n    }\n  },\n  \"required\": [\"takeaway\", \"categories\"]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [-1168, 912],
+      "id": "5ecc8043-c343-4eb4-9bd1-d2d744294881",
+      "name": "Parser"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-1360, 912],
+      "id": "ab246ed8-9a82-4ef3-a840-2a6c4a95f01d",
+      "name": "Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "4rX6mtKMEwCnv5eh",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl3KTJq1bALQN6Ar",
+          "mode": "list",
+          "cachedResultName": "General",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tbl3KTJq1bALQN6Ar"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Mail ID": "={{ $json.id }}",
+            "Email": "={{ $('Search Contacts').item.json.Email }}"
+          },
+          "matchingColumns": ["Email"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mail ID",
+              "displayName": "Mail ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last sent",
+              "displayName": "Last sent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [-384, 752],
+      "id": "e67b09b4-4e5c-4204-b8a9-fe015b4c6608",
+      "name": "Log Succession Time",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliTB894OB4kIaDE",
+          "mode": "list",
+          "cachedResultName": "AI feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tbliTB894OB4kIaDE"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [-1984, 544],
+      "id": "4a4a08b2-4726-4628-ac5a-bc1ad81531df",
+      "name": "Get AI",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblKDqOrs5t0ZObL2",
+          "mode": "list",
+          "cachedResultName": "PM feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tblKDqOrs5t0ZObL2"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [-1984, 704],
+      "id": "4285c283-a302-4dbd-98fd-98149cb340b8",
+      "name": "Get PM",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl84nTgAwy80DUme",
+          "mode": "list",
+          "cachedResultName": "SEO feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tbl84nTgAwy80DUme"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [-1984, 880],
+      "id": "00dca826-0351-4404-ab3d-a5149d281a10",
+      "name": "Get SEO",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appQImpPiI7rS8m96",
+          "mode": "list",
+          "cachedResultName": "Weekly WSI Email Automation",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblGgCwU9eewCzlU0",
+          "mode": "list",
+          "cachedResultName": "PPC feed",
+          "cachedResultUrl": "https://airtable.com/appQImpPiI7rS8m96/tblGgCwU9eewCzlU0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [-1984, 1056],
+      "id": "d3e4ad53-ef88-482d-aa68-26537adfe21d",
+      "name": "Get PPC",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "D6KLnDE4nGAv0UgM",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine and categorize data from all 4 sources\nconst ai = $items(\"Get AI\").map(item => item.json);\nconst pm = $items(\"Get PM\").map(item => item.json);\nconst seo = $items(\"Get SEO\").map(item => item.json);\nconst ppc = $items(\"Get PPC\").map(item => item.json);\n\n// Output structured by category\nreturn [\n  {\n    json: {\n      ai,\n      pm,\n      seo,\n      ppc,\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1536, 752],
+      "id": "ed384926-022f-40e0-b3ba-5cdf0815a2e1",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-1712, 720],
+      "id": "8bb071f5-404c-4d61-8b7c-5e058e33844e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-2112, 144],
+      "id": "7078c87b-83a1-4f09-b9af-5a97ff464eba",
+      "name": "Daily Trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [1],
+              "triggerAtHour": 10,
+              "triggerAtMinute": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-2288, 752],
+      "id": "30ca14c7-d508-4a74-bca0-288a06e0429a",
+      "name": "Weekly Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "All RSS Feeds List": {
+      "main": [
+        [
+          {
+            "node": "Gather Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gather Feeds": {
+      "main": [
+        [
+          {
+            "node": "Check if Today's Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Today's Data": {
+      "main": [
+        [
+          {
+            "node": "Transform Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Data": {
+      "main": [
+        [
+          {
+            "node": "Filter AI Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter PM Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter SEO Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter PPC Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter SEO Data": {
+      "main": [
+        [
+          {
+            "node": "Save SEO to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter AI Data": {
+      "main": [
+        [
+          {
+            "node": "Save AI to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter PPC Data": {
+      "main": [
+        [
+          {
+            "node": "Save PPC to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter PM Data": {
+      "main": [
+        [
+          {
+            "node": "Save PM to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build HTML": {
+      "main": [
+        [
+          {
+            "node": "Search Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Contacts": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Log Succession Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Summarizer": {
+      "main": [
+        [
+          {
+            "node": "Build HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "News Summarizer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "News Summarizer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get AI": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PM": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get SEO": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get PPC": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "News Summarizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "All RSS Feeds List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get PPC",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get SEO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get PM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "68eb858c-c48d-44a9-8540-8c81a278ceb3",
+  "meta": {
+    "instanceId": "2efa5938083771b4d785493a72a1260e2d219f189831803c18b6cc9cfe083380"
+  },
+  "id": "Oqw8INGO66jSz2jy",
+  "tags": [
+    {
+      "createdAt": "2025-07-29T16:10:15.395Z",
+      "updatedAt": "2025-07-29T16:10:15.395Z",
+      "id": "Ox0AnmK0YSap1j4E",
+      "name": "AI"
+    },
+    {
+      "createdAt": "2025-07-29T16:10:13.128Z",
+      "updatedAt": "2025-07-29T16:10:13.128Z",
+      "id": "xuJuSx4traQM3uVi",
+      "name": "Email Automations"
+    }
+  ]
+}
