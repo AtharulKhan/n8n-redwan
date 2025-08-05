@@ -1,0 +1,181 @@
+{
+  "name": "Postiz",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "postiz-webhook",
+        "options": {}
+      },
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-560, -80],
+      "id": "59d69012-66d8-42d5-b0d6-f8e4ef17f633",
+      "webhookId": "cebcf868-b54f-4a14-a99a-7939a7428a30"
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => {\n  const body = item.json;\n\n  return {\n    json: {\n      caption: body.caption,\n      hashtags: body.hashtags,\n      date: body.date,\n      platforms: body.platforms,\n      prompt: body.designContent || null,\n      imageUrl: body.designUrl || null\n    }\n  };\n});\n"
+      },
+      "name": "Parse Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-352, -80],
+      "id": "07b58de8-88d7-4459-a48d-007f0a438a53"
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "requestMethod": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"model\": \"dall-e-3\", \"prompt\": \"={{$json[\\\"prompt\\\"]}}\", \"n\": 1, \"size\": \"1024x1024\", \"quality\": \"standard\", \"response_format\": \"b64_json\"}"
+      },
+      "name": "Generate AI Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [-160, -80],
+      "id": "858a38db-2baf-4074-bfb7-83906f653957",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": null,
+          "name": "OpenAI Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "requestMethod": "POST",
+        "url": "https://postiz-bfd-u50728.vm.elestio.app/api/public/v1/upload",
+        "options": {}
+      },
+      "name": "Upload Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [48, -80],
+      "id": "8430f8ca-b56c-4bed-97f3-00c3f3cb3e6f",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": null,
+          "name": "Postiz Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => {\n  return {\n    json: {\n      type: \"schedule\",\n      date: $json.date,\n      shortLink: false,\n      tags: $json.hashtags.split(\"#\").filter(Boolean).map(tag => ({ name: tag.trim() })),\n      posts: [\n        {\n          integration: { id: \"cmcwdvjjt0001o59u3i78ngdx\" },\n          value: [{ content: $json.caption, image: [$json.image] }],\n          settings: {}\n        }\n      ]\n    }\n  };\n});"
+      },
+      "name": "Build Postiz Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [256, -80],
+      "id": "7b08169a-8380-4261-ab3e-b19ac7891e9d"
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "requestMethod": "POST",
+        "url": "https://postiz-bfd-u50728.vm.elestio.app/api/public/v1/posts",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{$json}}"
+      },
+      "name": "Post to Postiz",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [448, -80],
+      "id": "ec2a2f87-25d9-4b53-84bf-716728f02a35",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": null,
+          "name": "Postiz Auth"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook1": [
+      {
+        "json": {
+          "caption": "Sample AI Post!",
+          "hashtags": "#ai #automation",
+          "date": "2025-08-01T16:00:00+06:00",
+          "designContent": "[AI-GEN] a futuristic workspace with holograms",
+          "designUrl": "",
+          "platforms": ["Platform_x", "Platform_Meta"]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Parse Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Payload": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Image": {
+      "main": [
+        [
+          {
+            "node": "Upload Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image": {
+      "main": [
+        [
+          {
+            "node": "Build Postiz Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Postiz Payload": {
+      "main": [
+        [
+          {
+            "node": "Post to Postiz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "18346cc6-a3f6-419c-8e0e-846cc73c2c93",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2efa5938083771b4d785493a72a1260e2d219f189831803c18b6cc9cfe083380"
+  },
+  "id": "NGHJUKn8fMa115jG",
+  "tags": []
+}
