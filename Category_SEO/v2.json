@@ -1,0 +1,1019 @@
+{
+  "name": "SEO Proposal Generator v2",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "seo-proposal-form",
+        "formTitle": "SEO Proposal Generator",
+        "formDescription": "Generate a comprehensive SEO strategy proposal in minutes",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Company Name",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "Enter company name"
+            },
+            {
+              "fieldLabel": "Website URL",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "https://example.com"
+            },
+            {
+              "fieldLabel": "Industry",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "e.g., Software Development, Healthcare"
+            },
+            {
+              "fieldLabel": "Target Locations",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "e.g., San Francisco Bay Area"
+            },
+            {
+              "fieldLabel": "Competitors (comma-separated)",
+              "fieldType": "textarea",
+              "requiredField": false,
+              "placeholder": "competitor1.com, competitor2.com, competitor3.com"
+            },
+            {
+              "fieldLabel": "Business Goals",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "e.g., Increase qualified B2B leads by 50%"
+            },
+            {
+              "fieldLabel": "Target Audience",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "Describe your ideal customers"
+            },
+            {
+              "fieldLabel": "Contact Email",
+              "fieldType": "email",
+              "requiredField": true,
+              "placeholder": "your@email.com"
+            },
+            {
+              "fieldLabel": "Package Preference",
+              "fieldType": "dropdown",
+              "requiredField": false,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Starter ($200/month)"
+                  },
+                  {
+                    "option": "Growth ($350/month) - Recommended"
+                  },
+                  {
+                    "option": "Advanced ($500/month)"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Timeline Urgency",
+              "fieldType": "dropdown",
+              "requiredField": false,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Standard (1-2 weeks)"
+                  },
+                  {
+                    "option": "Rush (ASAP)"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Additional Notes",
+              "fieldType": "textarea",
+              "requiredField": false,
+              "placeholder": "Any special requirements or focus areas"
+            }
+          ]
+        },
+        "responseMode": "responseNode",
+        "options": {
+          "submitButtonLabel": "Generate SEO Proposal"
+        }
+      },
+      "id": "form-trigger",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [-1000, 300],
+      "webhookId": "seo-proposal-form"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "seo-proposal-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1000, 500],
+      "webhookId": "seo-proposal-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize input from either form or webhook\nconst inputData = items[0].json;\nlet normalizedData = {};\n\n// Map form fields to standard names\nif (inputData['Company Name']) {\n  // Form input\n  normalizedData = {\n    company_name: inputData['Company Name'],\n    website_url: inputData['Website URL'],\n    industry: inputData['Industry'],\n    target_locations: inputData['Target Locations'],\n    competitors: inputData['Competitors (comma-separated)'] || '',\n    business_goals: inputData['Business Goals'],\n    target_audience: inputData['Target Audience'],\n    contact_email: inputData['Contact Email'],\n    package_preference: inputData['Package Preference'] ? inputData['Package Preference'].toLowerCase().split(' ')[0] : 'growth',\n    urgency: inputData['Timeline Urgency'] ? inputData['Timeline Urgency'].toLowerCase().split(' ')[0] : 'standard',\n    additional_notes: inputData['Additional Notes'] || ''\n  };\n} else {\n  // Webhook input (already normalized)\n  normalizedData = inputData;\n}\n\nreturn [{ json: normalizedData }];"
+      },
+      "id": "normalize-input",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-800, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate required fields\nconst requiredFields = ['company_name', 'website_url', 'industry', 'target_locations', 'business_goals', 'target_audience', 'contact_email'];\nconst errors = [];\nconst inputData = items[0].json;\n\n// Check required fields\nrequiredFields.forEach(field => {\n  if (!inputData[field] || inputData[field].trim() === '') {\n    errors.push(`Missing required field: ${field}`);\n  }\n});\n\n// URL validation\nif (inputData.website_url) {\n  const urlPattern = /^https?:\\/\\/.+\\..+/;\n  if (!urlPattern.test(inputData.website_url)) {\n    errors.push('Invalid website URL format');\n  }\n}\n\n// Email validation\nif (inputData.contact_email) {\n  const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  if (!emailPattern.test(inputData.contact_email)) {\n    errors.push('Invalid email format');\n  }\n}\n\nif (errors.length > 0) {\n  throw new Error(`Validation failed: ${errors.join(', ')}`);\n}\n\n// Normalize data\nconst normalizedData = {\n  ...inputData,\n  competitors_array: inputData.competitors \n    ? inputData.competitors.split(',').map(c => c.trim()).filter(c => c)\n    : ['Competitor 1', 'Competitor 2', 'Competitor 3'],\n  formatted_date: new Date().toLocaleDateString('en-US', {\n    year: 'numeric',\n    month: 'long',\n    day: 'numeric'\n  }),\n  package_preference: inputData.package_preference || 'growth',\n  urgency: inputData.urgency || 'standard',\n  agency_name: 'Butterfly Digital'\n};\n\nreturn [{ json: normalizedData }];"
+      },
+      "id": "data-validation",
+      "name": "Data Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-600, 400],
+      "retryOnFail": false,
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "values": {
+          "values": [
+            {
+              "name": "company_name",
+              "value": "={{ $json.company_name }}"
+            },
+            {
+              "name": "website_url",
+              "value": "={{ $json.website_url }}"
+            },
+            {
+              "name": "industry",
+              "value": "={{ $json.industry }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.target_locations }}"
+            },
+            {
+              "name": "competitors_list",
+              "value": "={{ $json.competitors_array.join(', ') }}"
+            },
+            {
+              "name": "business_goals",
+              "value": "={{ $json.business_goals }}"
+            },
+            {
+              "name": "target_audience",
+              "value": "={{ $json.target_audience }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.formatted_date }}"
+            },
+            {
+              "name": "agency_name",
+              "value": "={{ $json.agency_name }}"
+            },
+            {
+              "name": "package_preference",
+              "value": "={{ $json.package_preference }}"
+            },
+            {
+              "name": "contact_email",
+              "value": "={{ $json.contact_email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-global-variables",
+      "name": "Set Global Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-400, 400]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a professional title slide for an SEO Strategy proposal with:\n- Title: \"{{ $json.company_name }} SEO Strategy\"\n- Subtitle: \"Optimizing Digital Visibility & Lead Generation for {{ $json.industry }}\"\n- Agency: {{ $json.agency_name }}\n- Date: {{ $json.date }}\n\nFormat as clean, professional text with clear labels for each element. Make it suitable for a presentation slide.",
+        "hasOutputParser": true
+      },
+      "id": "ai-title-slide",
+      "name": "AI: Title Slide",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [-200, 200],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=For {{ $json.company_name }} in the {{ $json.industry }} sector, write 3 compelling value propositions for SEO investment:\n\n1. How SEO drives sustainable organic visibility in {{ $json.industry }}\n2. How optimized content reduces dependency on paid advertising\n3. How local SEO and Google Business Profile enhance trust in {{ $json.location }}\n\nEach point should be 1-2 sentences, specific to B2B {{ $json.industry }} companies. Focus on ROI and business impact.",
+        "hasOutputParser": true
+      },
+      "id": "ai-value-seo",
+      "name": "AI: Value of SEO",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [0, 200],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the current SEO position for {{ $json.website_url }}:\n- Compare against competitors: {{ $json.competitors_list }}\n- Identify key areas of underperformance\n- Industry context: {{ $json.industry }} in {{ $json.location }}\n\nFormat: One bold headline statement + 2-3 supporting sentences explaining the competitive gap and opportunities.",
+        "hasOutputParser": true
+      },
+      "id": "ai-current-state",
+      "name": "AI: Current State",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [200, 200],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=List 6 major SEO issues for {{ $json.industry }} websites:\n\n1. Website Performance - Technical issues impacting speed and crawlability\n2. SEO & Content - Keyword gaps and content optimization opportunities\n3. Local Presence - Google Business Profile optimization gaps\n4. Domain Authority - Backlink profile weaknesses\n5. Mobile Optimization - Mobile performance and usability issues\n6. Social Media Presence - Brand visibility and engagement gaps\n\nFormat each as: Category name + 1-2 sentence description specific to {{ $json.industry }}",
+        "hasOutputParser": true
+      },
+      "id": "ai-key-issues",
+      "name": "AI: Key Issues",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [400, 200],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write 4 reasons why SEO is performance marketing for {{ $json.industry }}:\n\n1. Measurable Growth - specific metrics and tracking capabilities\n2. High-Intent Traffic - targeting active searchers in {{ $json.industry }}\n3. Continuous Optimization - data-driven improvements and testing\n4. Cost-Efficient Results - long-term ROI vs paid channels\n\nEach point: Bold title + 2-3 sentences explaining the benefit for B2B {{ $json.industry }} companies.",
+        "hasOutputParser": true
+      },
+      "id": "ai-performance-marketing",
+      "name": "AI: Performance Marketing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [600, 200],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create 6 prioritized SEO focus areas for {{ $json.company_name }}:\n\nHIGH PRIORITY (mark with 🟥):\n1. Website Optimization - Technical foundation\n2. Local SEO & GBP - Local visibility\n3. Content Strategy - Targeted content creation\n\nIMPORTANT (mark with 🟦):\n4. Backlink Strategy - Authority building\n5. Social Media SEO - Brand signals\n6. Technical SEO - Advanced optimization\n\nFormat: Priority icon + Area name + Brief description (1 line) specific to {{ $json.industry }}",
+        "hasOutputParser": true
+      },
+      "id": "ai-focus-areas",
+      "name": "AI: Focus Areas Overview",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [800, 200],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=For Website Optimization, create 5 specific action items for {{ $json.company_name }}:\n\n- Fix technical errors (broken links, missing meta descriptions)\n- Improve Core Web Vitals (target 90+ scores across all metrics)\n- Ensure mobile responsiveness across all pages\n- Eliminate mixed content and security issues\n- Enhance internal linking structure\n\nInclude specific numbers, timelines, and {{ $json.industry }}-specific recommendations for each action item.",
+        "hasOutputParser": true
+      },
+      "id": "ai-website-optimization",
+      "name": "AI: Website Optimization",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [-200, 400],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=For Local SEO & Google Business Profile, create 5 specific action items for {{ $json.company_name }} in {{ $json.location }}:\n\n- Complete GBP profile with all business information\n- Add high-quality photos and virtual tours\n- Implement review generation strategy\n- Create location-specific landing pages\n- Build local citations and directory listings\n\nFocus on {{ $json.industry }} businesses in {{ $json.location }} market.",
+        "hasOutputParser": true
+      },
+      "id": "ai-local-seo",
+      "name": "AI: Local SEO",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [0, 400],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=For Content Strategy, create 5 specific action items for {{ $json.company_name }}:\n\n- Develop topic clusters around {{ $json.industry }} keywords\n- Create buyer persona content for \"{{ $json.target_audience }}\"\n- Implement content calendar with consistent publishing\n- Optimize existing content for search intent\n- Create multimedia content (videos, infographics)\n\nAlign all recommendations with business goal: {{ $json.business_goals }}",
+        "hasOutputParser": true
+      },
+      "id": "ai-content-strategy",
+      "name": "AI: Content Strategy",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [200, 400],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=For Backlink Strategy, create 5 specific action items for {{ $json.company_name }}:\n\n- Analyze competitor backlink profiles ({{ $json.competitors_list }})\n- Create linkable assets for {{ $json.industry }}\n- Outreach to industry publications and blogs\n- Build partnerships with complementary businesses\n- Monitor and disavow toxic backlinks\n\nFocus on building authority in {{ $json.industry }} sector.",
+        "hasOutputParser": true
+      },
+      "id": "ai-backlink-strategy",
+      "name": "AI: Backlink Strategy",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [400, 400],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=For Social Media SEO, create 5 specific action items for {{ $json.company_name }}:\n\n- Optimize social profiles with keywords\n- Create shareable content for {{ $json.target_audience }}\n- Implement social listening for brand mentions\n- Engage with industry influencers\n- Cross-promote content across platforms\n\nAlign social strategy with SEO goals for {{ $json.industry }}.",
+        "hasOutputParser": true
+      },
+      "id": "ai-social-media",
+      "name": "AI: Social Media SEO",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [600, 400],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=For Technical SEO, create 5 specific action items for {{ $json.company_name }}:\n\n- Implement structured data markup\n- Optimize XML sitemap and robots.txt\n- Fix crawl errors and redirect chains\n- Implement international SEO if applicable\n- Set up advanced tracking and monitoring\n\nProvide technical specifications relevant to {{ $json.industry }} websites.",
+        "hasOutputParser": true
+      },
+      "id": "ai-technical-seo",
+      "name": "AI: Technical SEO",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [800, 400],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create 3-tier SEO packages for {{ $json.company_name }}. The user prefers: {{ $json.package_preference }} package.\n\nStarter SEO ($200/month):\n- 20-25 hours/month\n- 2 blog posts/month\n- Basic GBP setup\n- Monthly reporting\n\nGrowth SEO ($350/month) - RECOMMENDED:\n- 45-50 hours/month\n- 4 blog posts/month\n- Full GBP optimization\n- Backlink building\n- Bi-weekly reporting\n\nAdvanced SEO ($500/month):\n- 60-70 hours/month\n- 6+ blog posts/month\n- Comprehensive SEO management\n- Priority support\n- Weekly reporting\n\nDetail specific deliverables for {{ $json.industry }} businesses.",
+        "hasOutputParser": true
+      },
+      "id": "ai-packages",
+      "name": "AI: SEO Packages",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [-200, 600],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create realistic 6-12 month SEO projections for {{ $json.company_name }} based on {{ $json.package_preference }} package:\n\n1. Organic Traffic: Baseline → 200-300% increase\n2. Keyword Rankings: Current → 150-200 keywords ranked\n3. Domain Authority: Current → Increase by 10-15 points\n4. Local Visibility: Current → Complete GBP optimization\n5. Lead Generation: Current → Specific improvements\n\nMake projections realistic and specific for {{ $json.industry }} in {{ $json.location }}. Include monthly milestones.",
+        "hasOutputParser": true
+      },
+      "id": "ai-roi-projections",
+      "name": "AI: ROI Projections",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [0, 600],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a powerful closing for {{ $json.company_name }}'s SEO proposal:\n\n- Emphasize strategic value of SEO for {{ $json.industry }}\n- Highlight measurable growth and ROI\n- Reference competitive advantage over: {{ $json.competitors_list }}\n- Connect to their goal: {{ $json.business_goals }}\n- Create urgency without being pushy\n\nFormat: Bold headline + 2 paragraphs (3-4 sentences each). Make it compelling and action-oriented.",
+        "hasOutputParser": true
+      },
+      "id": "ai-conclusion",
+      "name": "AI: Conclusion",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [200, 600],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a call-to-action slide for {{ $json.company_name }}:\n\n- Headline: \"Your SEO Journey Starts Here\"\n- List 3 immediate next steps\n- Include contact: {{ $json.contact_email }}\n- Add motivating closing statement\n- Reference their {{ $json.urgency }} timeline\n\nKeep it simple, action-oriented, and professional. Format for easy reading.",
+        "hasOutputParser": true
+      },
+      "id": "ai-call-to-action",
+      "name": "AI: Call to Action",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [400, 600],
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compile all AI outputs into a formatted MARKDOWN document\nconst sections = [];\n\n// Get all node outputs\nconst nodes = [\n  { name: 'AI: Title Slide', title: 'Title', level: 1 },\n  { name: 'AI: Value of SEO', title: 'The Value of SEO', level: 2 },\n  { name: 'AI: Current State', title: 'Current State Analysis', level: 2 },\n  { name: 'AI: Key Issues', title: 'Key Issues to Address', level: 2 },\n  { name: 'AI: Performance Marketing', title: 'SEO as Performance Marketing', level: 2 },\n  { name: 'AI: Focus Areas Overview', title: 'Strategic Focus Areas', level: 2 },\n  { name: 'AI: Website Optimization', title: 'Website Optimization', level: 3 },\n  { name: 'AI: Local SEO', title: 'Local SEO & Google Business Profile', level: 3 },\n  { name: 'AI: Content Strategy', title: 'Content Strategy', level: 3 },\n  { name: 'AI: Backlink Strategy', title: 'Backlink Strategy', level: 3 },\n  { name: 'AI: Social Media SEO', title: 'Social Media SEO', level: 3 },\n  { name: 'AI: Technical SEO', title: 'Technical SEO', level: 3 },\n  { name: 'AI: SEO Packages', title: 'SEO Investment Options', level: 2 },\n  { name: 'AI: ROI Projections', title: 'Expected Results & ROI', level: 2 },\n  { name: 'AI: Conclusion', title: 'Strategic Conclusion', level: 2 },\n  { name: 'AI: Call to Action', title: 'Next Steps', level: 2 }\n];\n\n// Add header with metadata\nsections.push(`# SEO Strategy Proposal\\n`);\nsections.push(`**Client:** ${$('Set Global Variables').item.json.company_name}\\n`);\nsections.push(`**Prepared by:** ${$('Set Global Variables').item.json.agency_name}\\n`);\nsections.push(`**Date:** ${$('Set Global Variables').item.json.date}\\n`);\nsections.push(`\\n---\\n`);\n\n// Add table of contents\nsections.push(`## Table of Contents\\n`);\nconst tocEntries = nodes.filter(n => n.level <= 2).map((node, index) => {\n  const indent = '  '.repeat(node.level - 1);\n  return `${indent}${index + 1}. [${node.title}](#${node.title.toLowerCase().replace(/ /g, '-')})`;\n});\nsections.push(tocEntries.join('\\n'));\nsections.push(`\\n---\\n`);\n\n// Add each section with proper markdown formatting\nnodes.forEach(node => {\n  try {\n    const content = $(node.name).item.json.output || $(node.name).item.json.text || 'Content pending...';\n    const heading = '#'.repeat(node.level);\n    \n    sections.push(`\\n${heading} ${node.title}\\n`);\n    \n    // Format content for markdown\n    const formattedContent = content\n      .replace(/🟥/g, '**[HIGH PRIORITY]**')\n      .replace(/🟦/g, '**[IMPORTANT]**')\n      .trim();\n    \n    sections.push(formattedContent);\n    sections.push('\\n');\n  } catch (error) {\n    sections.push(`\\n${'#'.repeat(node.level)} ${node.title}\\n`);\n    sections.push('*[Section content generation in progress]*\\n');\n  }\n});\n\n// Add footer with metadata\nsections.push(`\\n---\\n`);\nsections.push(`### Proposal Metadata\\n`);\nsections.push(`- **Generated:** ${new Date().toISOString()}`);\nsections.push(`- **Client:** ${$('Set Global Variables').item.json.company_name}`);\nsections.push(`- **Industry:** ${$('Set Global Variables').item.json.industry}`);\nsections.push(`- **Location:** ${$('Set Global Variables').item.json.location}`);\nsections.push(`- **Package Preference:** ${$('Set Global Variables').item.json.package_preference}`);\nsections.push(`\\n---\\n`);\nsections.push(`\\n*This proposal was generated using AI-powered analysis tailored to your specific business needs.*`);\n\n// Combine into single markdown document\nconst markdownDocument = sections.join('\\n');\n\nreturn [{\n  json: {\n    markdown_proposal: markdownDocument,\n    client_email: $('Set Global Variables').item.json.contact_email,\n    company_name: $('Set Global Variables').item.json.company_name,\n    original_input: $('Data Validation').item.json,\n    generation_time: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "markdown-assembly",
+      "name": "Markdown Assembly",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 600],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Form Trigger').item ? 'form' : 'webhook' }}",
+              "rightValue": "form",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "trigger-router",
+      "name": "Trigger Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [800, 600]
+    },
+    {
+      "parameters": {
+        "html": "=<div style=\"max-width: 800px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;\">\n  <div style=\"background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px;\">\n    <h2 style=\"color: #28a745; margin-top: 0;\">✅ SEO Proposal Generated Successfully!</h2>\n    <p style=\"margin-bottom: 0;\">Your comprehensive SEO strategy proposal for <strong>{{ $json.company_name }}</strong> has been generated.</p>\n  </div>\n  \n  <div style=\"background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px;\">\n    <h3 style=\"margin-top: 0;\">📄 Your Proposal (Markdown Format)</h3>\n    <p style=\"color: #6c757d;\">Copy the content below and paste it into your preferred document editor:</p>\n    \n    <div style=\"background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin: 15px 0; max-height: 500px; overflow-y: auto;\">\n      <pre style=\"margin: 0; white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 14px;\">{{ $json.markdown_proposal }}</pre>\n    </div>\n    \n    <div style=\"background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; padding: 15px; margin-top: 20px;\">\n      <h4 style=\"margin-top: 0; color: #0056b3;\">💡 Next Steps:</h4>\n      <ol style=\"margin-bottom: 0;\">\n        <li>Copy the markdown content above</li>\n        <li>Paste into your document editor (Google Docs, Word, etc.)</li>\n        <li>Review and customize as needed</li>\n        <li>Convert to your preferred format (PDF, slides, etc.)</li>\n      </ol>\n    </div>\n  </div>\n  \n  <div style=\"text-align: center; margin-top: 20px; color: #6c757d; font-size: 14px;\">\n    <p>Generated on {{ $json.generation_time }} | Powered by {{ $('Set Global Variables').item.json.agency_name }}</p>\n  </div>\n</div>",
+        "respondWith": "html",
+        "options": {}
+      },
+      "id": "form-response",
+      "name": "Form Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1000, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare webhook response with markdown content\nconst response = {\n  success: true,\n  message: 'SEO proposal generated successfully',\n  company: items[0].json.company_name,\n  generatedAt: items[0].json.generation_time,\n  proposal: {\n    markdown: items[0].json.markdown_proposal,\n    metadata: {\n      client: items[0].json.company_name,\n      email: items[0].json.client_email,\n      industry: items[0].json.original_input.industry,\n      location: items[0].json.original_input.target_locations\n    }\n  }\n};\n\nreturn [{ json: response }];"
+      },
+      "id": "prepare-webhook-response",
+      "name": "Prepare Webhook Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 700]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 700]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 500
+        }
+      },
+      "id": "openrouter-model",
+      "name": "OpenRouter Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-600, 0],
+      "credentials": {
+        "openRouterApi": {
+          "id": "openrouter-api",
+          "name": "OpenRouter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"output\": {\n      \"type\": \"string\",\n      \"description\": \"The formatted output for the proposal section\"\n    }\n  },\n  \"required\": [\"output\"]\n}"
+      },
+      "id": "output-parser",
+      "name": "Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [-400, 0]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Data Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Validation": {
+      "main": [
+        [
+          {
+            "node": "Set Global Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Global Variables": {
+      "main": [
+        [
+          {
+            "node": "AI: Title Slide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Title Slide": {
+      "main": [
+        [
+          {
+            "node": "AI: Value of SEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Value of SEO": {
+      "main": [
+        [
+          {
+            "node": "AI: Current State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Current State": {
+      "main": [
+        [
+          {
+            "node": "AI: Key Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Key Issues": {
+      "main": [
+        [
+          {
+            "node": "AI: Performance Marketing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Performance Marketing": {
+      "main": [
+        [
+          {
+            "node": "AI: Focus Areas Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Focus Areas Overview": {
+      "main": [
+        [
+          {
+            "node": "AI: Website Optimization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Website Optimization": {
+      "main": [
+        [
+          {
+            "node": "AI: Local SEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Local SEO": {
+      "main": [
+        [
+          {
+            "node": "AI: Content Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Content Strategy": {
+      "main": [
+        [
+          {
+            "node": "AI: Backlink Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Backlink Strategy": {
+      "main": [
+        [
+          {
+            "node": "AI: Social Media SEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Social Media SEO": {
+      "main": [
+        [
+          {
+            "node": "AI: Technical SEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Technical SEO": {
+      "main": [
+        [
+          {
+            "node": "AI: SEO Packages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: SEO Packages": {
+      "main": [
+        [
+          {
+            "node": "AI: ROI Projections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: ROI Projections": {
+      "main": [
+        [
+          {
+            "node": "AI: Conclusion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Conclusion": {
+      "main": [
+        [
+          {
+            "node": "AI: Call to Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Call to Action": {
+      "main": [
+        [
+          {
+            "node": "Markdown Assembly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown Assembly": {
+      "main": [
+        [
+          {
+            "node": "Trigger Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Router": {
+      "main": [
+        [
+          {
+            "node": "Form Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Webhook Response": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: Title Slide",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Value of SEO",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Current State",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Key Issues",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Performance Marketing",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Focus Areas Overview",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Website Optimization",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Local SEO",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Content Strategy",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Backlink Strategy",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Social Media SEO",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Technical SEO",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: SEO Packages",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: ROI Projections",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Conclusion",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI: Call to Action",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI: Title Slide",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Value of SEO",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Current State",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Key Issues",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Performance Marketing",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Focus Areas Overview",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Website Optimization",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Local SEO",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Content Strategy",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Backlink Strategy",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Social Media SEO",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Technical SEO",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: SEO Packages",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: ROI Projections",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Conclusion",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "AI: Call to Action",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "executionTimeout": 1800,
+    "saveExecutionProgress": true
+  },
+  "versionId": "2.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "seo-proposal-generator-v2"
+  },
+  "id": "seo-proposal-workflow-v2",
+  "tags": [
+    {
+      "name": "SEO",
+      "id": "seo"
+    },
+    {
+      "name": "AI",
+      "id": "ai"
+    },
+    {
+      "name": "Automation",
+      "id": "automation"
+    },
+    {
+      "name": "Proposal Generator",
+      "id": "proposal"
+    }
+  ]
+}

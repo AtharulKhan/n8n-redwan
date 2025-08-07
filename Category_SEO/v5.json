@@ -1,0 +1,712 @@
+{
+  "name": "SEO Proposals Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "proposal-form",
+        "formTitle": "Business Proposal Generator",
+        "formDescription": "Fill out this form to generate a customized business proposal based on your needs and website analysis.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Contact Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "First Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Last Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Business Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Business Description",
+              "fieldType": "textarea",
+              "placeholder": "Describe your business, products/services, and unique value proposition",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Website URL",
+              "placeholder": "https://example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Top Competitors",
+              "fieldType": "textarea",
+              "placeholder": "List your main competitors' websites (one per line)"
+            },
+            {
+              "fieldLabel": "Business Growth Goals",
+              "fieldType": "textarea",
+              "placeholder": "What are your primary business objectives and growth targets?",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Service Type Needed",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "SEO & Content Marketing"
+                  },
+                  {
+                    "option": "PPC & Google Ads"
+                  },
+                  {
+                    "option": "Social Media Marketing"
+                  },
+                  {
+                    "option": "Web Development & Design"
+                  },
+                  {
+                    "option": "Comprehensive Digital Marketing"
+                  },
+                  {
+                    "option": "E-commerce Solutions"
+                  },
+                  {
+                    "option": "Brand Strategy"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Locations",
+              "placeholder": "e.g., United States, California, San Francisco Bay Area",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Audience/Personas",
+              "fieldType": "textarea",
+              "placeholder": "Describe your ideal customers, their demographics, needs, and pain points",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Monthly Budget",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Under $1,000"
+                  },
+                  {
+                    "option": "$1,000-$2,500"
+                  },
+                  {
+                    "option": "$2,500-$5,000"
+                  },
+                  {
+                    "option": "$5,000-$10,000"
+                  },
+                  {
+                    "option": "$10,000-$25,000"
+                  },
+                  {
+                    "option": "$25,000-$50,000"
+                  },
+                  {
+                    "option": "Over $50,000"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Campaign Types",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [{}]
+              }
+            },
+            {
+              "fieldLabel": "Current Marketing Challenges",
+              "fieldType": "textarea",
+              "placeholder": "What marketing challenges are you currently facing?"
+            },
+            {
+              "fieldLabel": "Timeline/Urgency",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "ASAP (Within 1 week)"
+                  },
+                  {
+                    "option": "Within 2 weeks"
+                  },
+                  {
+                    "option": "1-2 months"
+                  },
+                  {
+                    "option": "3-6 months"
+                  },
+                  {
+                    "option": "Planning for next year"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Additional Information",
+              "fieldType": "textarea",
+              "placeholder": "Any other details that would help us create a better proposal for you?"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8aff4ee5-bead-43f3-bebe-5d484938e94e",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [-384, -192],
+      "webhookId": "proposal-form",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-proposal-api",
+        "options": {}
+      },
+      "id": "143fca00-25dc-4710-83b3-b78919267c99",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-384, 16],
+      "webhookId": "proposal-generator-api"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge inputs from either form or webhook trigger\nconst input = $input.first().json;\n\n// Normalize field names (form uses underscores, webhook might use different naming)\nconst normalizedData = {\n  // Contact Information\n  email: input['Contact Email'] || input.email || input.contact_email || '',\n  firstName: input['First Name'] || input.firstName || input.first_name || '',\n  lastName: input['Last Name'] || input.lastName || input.last_name || '',\n  \n  // Business Information\n  businessName: input['Business Name'] || input.businessName || input.business_name || '',\n  businessDescription: input['Business Description'] || input.businessDescription || input.description || '',\n  websiteUrl: input['Website URL'] || input.websiteUrl || input.website_url || '',\n  \n  // Competition & Market\n  competitors: input['Top Competitors'] || input.competitors || input.top_competitors || '',\n  \n  // Goals & Strategy\n  businessGoals: input['Business Growth Goals'] || input.businessGoals || input.business_growth_goals || '',\n  serviceType: input['Service Type Needed'] || input.serviceType || input.service_type || 'Comprehensive Digital Marketing',\n  \n  // Targeting\n  targetLocations: input['Target Locations'] || input.targetLocations || input.target_locations || '',\n  targetAudience: input['Target Audience/Personas'] || input.targetAudience || input.target_personas || '',\n  \n  // Budget & Timeline\n  monthlyBudget: input['Monthly Budget'] || input.monthlyBudget || input.monthly_budget || input.monthly_ad_budget || '',\n  timeline: input['Timeline/Urgency'] || input.timeline || input.urgency || '1-2 months',\n  \n  // Campaign Details\n  campaignTypes: input['Campaign Types'] || input.campaignTypes || input.campaign_types || [],\n  \n  // Additional Information\n  currentChallenges: input['Current Marketing Challenges'] || input.currentChallenges || input.current_challenges || '',\n  additionalInfo: input['Additional Information'] || input.additionalInfo || input.additional_information || '',\n  \n  // Extended fields from webhook (optional)\n  googleAdsCID: input.google_ads_cid || input['Google Ads CID'] || '',\n  advertisingPurpose: input.advertising_purpose || input['Advertising Purpose'] || '',\n  targetKeywords: input.target_keywords || input['Target Keywords'] || '',\n  landingPages: input.landing_pages || input['Landing Pages'] || '',\n  currency: input.currency || input['Currency'] || 'USD',\n  paymentMethod: input.payment_method || input['Payment Method'] || '',\n  \n  // Tracking\n  formPurpose: input.form_purpose || input['Form Purpose'] || 'Proposal Request',\n  submissionDate: new Date().toISOString(),\n  \n  // Scraping configuration\n  maxPages: input.maxPages || 15,\n  useApify: input.useApify || false\n};\n\n// Process competitors into array if string\nif (typeof normalizedData.competitors === 'string') {\n  normalizedData.competitorsList = normalizedData.competitors\n    .split(/[\\n,;]/)\n    .map(c => c.trim())\n    .filter(c => c.length > 0);\n} else {\n  normalizedData.competitorsList = [];\n}\n\n// Ensure website URL has protocol\nif (normalizedData.websiteUrl && !normalizedData.websiteUrl.startsWith('http')) {\n  normalizedData.websiteUrl = 'https://' + normalizedData.websiteUrl;\n}\n\n// Validate required fields\nconst requiredFields = ['email', 'businessName', 'websiteUrl', 'businessGoals'];\nconst missingFields = requiredFields.filter(field => !normalizedData[field]);\n\nif (missingFields.length > 0) {\n  throw new Error(`Missing required fields: ${missingFields.join(', ')}`);\n}\n\nreturn {\n  json: normalizedData\n};"
+      },
+      "id": "3701bfee-827c-4615-865e-021254f5ab88",
+      "name": "Merge & Normalize Inputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-192, -96]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced configuration for web scraping with client data\nconst clientData = $input.first().json;\nconst websiteUrl = clientData.websiteUrl;\nconst competitors = clientData.competitorsList || [];\nconst maxPages = Math.min(clientData.maxPages || 15, 15);\nconst useApify = clientData.useApify || false;\n\n// Build list of URLs to analyze (client site + competitors)\nconst urlsToAnalyze = [websiteUrl];\nif (competitors.length > 0) {\n  // Add up to 3 competitor sites\n  competitors.slice(0, 3).forEach(comp => {\n    if (comp && comp.includes('.')) {\n      if (!comp.startsWith('http')) {\n        comp = 'https://' + comp;\n      }\n      urlsToAnalyze.push(comp);\n    }\n  });\n}\n\n// Initialize scraping configuration\nconst scrapingConfig = {\n  clientData: clientData,\n  urlsToAnalyze: urlsToAnalyze,\n  baseUrl: websiteUrl,\n  maxPages: maxPages,\n  useApify: useApify,\n  visitedUrls: new Set(),\n  pagesToScrape: urlsToAnalyze,\n  scrapedContent: []\n};\n\n// If using Apify, prepare the configuration\nif (useApify) {\n  return {\n    json: {\n      ...clientData,\n      useApify: true,\n      apifyConfig: {\n        startUrls: urlsToAnalyze.map(url => ({ url })),\n        maxRequestsPerCrawl: maxPages,\n        linkSelector: 'a[href]',\n        pseudoUrls: urlsToAnalyze.map(url => ({\n          purl: url.replace(/https?:\\/\\//, '') + '/**',\n          method: 'GET'\n        })),\n        keepUrlFragments: false,\n        proxyConfiguration: {\n          useApifyProxy: true\n        }\n      },\n      websiteUrl: websiteUrl,\n      urlsToAnalyze: urlsToAnalyze\n    }\n  };\n} else {\n  // For native scraping, return URLs to process\n  return {\n    json: {\n      ...clientData,\n      useApify: false,\n      baseUrl: websiteUrl,\n      maxPages: maxPages,\n      currentPage: 1,\n      urlsToScrape: urlsToAnalyze,\n      urlsToAnalyze: urlsToAnalyze\n    }\n  };\n}"
+      },
+      "id": "d3b91da2-d642-4539-8381-cbf97a02951e",
+      "name": "Configure Enhanced Scraper",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [16, -96]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.useApify }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "ac5cce45-23dc-4143-a222-be90334c9710",
+      "name": "Check Apify",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [224, -96]
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/apify~website-content-crawler/runs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "value": "={{ JSON.stringify($json.apifyConfig) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5377270f-69c4-4034-a25a-1f177984ad90",
+      "name": "Apify Web Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [416, -192]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.urlsToScrape[$json.currentPage - 1] }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "5846d7b2-f681-47d7-bf3d-1a904394e06e",
+      "name": "HTTP Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [416, 16]
+    },
+    {
+      "parameters": {
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "title"
+            },
+            {
+              "key": "headings",
+              "cssSelector": "h1, h2, h3"
+            },
+            {
+              "key": "paragraphs",
+              "cssSelector": "p"
+            },
+            {
+              "key": "links",
+              "cssSelector": "a[href]",
+              "returnValue": "attribute",
+              "attribute": "href"
+            },
+            {
+              "key": "metaDescription",
+              "cssSelector": "meta[name='description']",
+              "returnValue": "attribute",
+              "attribute": "content"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "85ecbc5b-03fd-471c-9a08-9341b4025304",
+      "name": "Extract HTML Content",
+      "type": "n8n-nodes-base.htmlExtract",
+      "typeVersion": 1,
+      "position": [624, 16]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process scraped content and prepare for next iteration\nconst items = $input.all();\nconst allContent = [];\nconst allLinks = new Set();\nconst clientData = items[0].json;\nconst baseUrl = clientData.baseUrl || '';\nconst maxPages = clientData.maxPages || 15;\nlet currentPage = clientData.currentPage || 1;\n\n// Collect content from all items\nitems.forEach(item => {\n  const content = {\n    url: item.json.url || baseUrl,\n    title: item.json.title || '',\n    headings: item.json.headings || [],\n    paragraphs: item.json.paragraphs || [],\n    metaDescription: item.json.metaDescription || ''\n  };\n  \n  allContent.push(content);\n  \n  // Collect links for crawling\n  if (item.json.links && Array.isArray(item.json.links)) {\n    item.json.links.forEach(link => {\n      // Filter and normalize links\n      if (link && link.startsWith('/')) {\n        link = new URL(link, baseUrl).href;\n      }\n      if (link && link.startsWith(baseUrl)) {\n        allLinks.add(link);\n      }\n    });\n  }\n});\n\n// Prepare next batch of URLs to scrape\nconst urlsToScrape = Array.from(allLinks).slice(0, maxPages - currentPage);\n\nreturn {\n  json: {\n    ...clientData,\n    scrapedContent: allContent,\n    totalPagesScraped: currentPage,\n    remainingPages: maxPages - currentPage,\n    nextUrlsToScrape: urlsToScrape,\n    allContentCollected: allContent\n  }\n};"
+      },
+      "id": "99eece19-1b87-40c5-87b2-a29285f44ca0",
+      "name": "Process Scraped Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [816, 16]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all scraped content with client data for AI processing\nconst data = $input.first().json;\nconst allContent = data.allContentCollected || [];\nconst clientData = data;\n\n// Create a comprehensive content summary with client context\nlet contentSummary = {\n  // Client Information\n  clientName: `${clientData.firstName} ${clientData.lastName}`,\n  clientEmail: clientData.email,\n  businessName: clientData.businessName,\n  businessDescription: clientData.businessDescription,\n  \n  // Business Context\n  websiteUrl: clientData.websiteUrl,\n  competitors: clientData.competitorsList || [],\n  businessGoals: clientData.businessGoals,\n  serviceType: clientData.serviceType,\n  \n  // Targeting\n  targetLocations: clientData.targetLocations,\n  targetAudience: clientData.targetAudience,\n  \n  // Budget & Timeline\n  monthlyBudget: clientData.monthlyBudget,\n  timeline: clientData.timeline,\n  \n  // Campaign Details\n  campaignTypes: clientData.campaignTypes || [],\n  currentChallenges: clientData.currentChallenges,\n  additionalInfo: clientData.additionalInfo,\n  \n  // Scraped Content\n  totalPagesAnalyzed: allContent.length,\n  compiledContent: ''\n};\n\n// Add client-provided context to the compiled content\ncontentSummary.compiledContent = `\n=== CLIENT INFORMATION ===\nBusiness: ${clientData.businessName}\nDescription: ${clientData.businessDescription}\nGoals: ${clientData.businessGoals}\nTarget Locations: ${clientData.targetLocations}\nTarget Audience: ${clientData.targetAudience}\nBudget Range: ${clientData.monthlyBudget}\nTimeline: ${clientData.timeline}\nCurrent Challenges: ${clientData.currentChallenges || 'Not specified'}\n\n=== WEBSITE ANALYSIS ===\n`;\n\n// Compile scraped content into a structured format\nallContent.forEach((page, index) => {\n  const isCompetitor = page.url !== clientData.websiteUrl;\n  const siteLabel = isCompetitor ? '[COMPETITOR] ' : '[CLIENT SITE] ';\n  \n  contentSummary.compiledContent += `\\n\\n--- ${siteLabel}Page ${index + 1}: ${page.url} ---\\n`;\n  contentSummary.compiledContent += `Title: ${page.title}\\n`;\n  \n  if (page.metaDescription) {\n    contentSummary.compiledContent += `Description: ${page.metaDescription}\\n`;\n  }\n  \n  if (page.headings && page.headings.length > 0) {\n    contentSummary.compiledContent += `\\nKey Topics:\\n`;\n    page.headings.slice(0, 10).forEach(heading => {\n      contentSummary.compiledContent += `- ${heading}\\n`;\n    });\n  }\n  \n  if (page.paragraphs && page.paragraphs.length > 0) {\n    contentSummary.compiledContent += `\\nContent Summary:\\n`;\n    const relevantParagraphs = page.paragraphs\n      .filter(p => p && p.length > 50)\n      .slice(0, 5);\n    relevantParagraphs.forEach(para => {\n      contentSummary.compiledContent += `${para.substring(0, 200)}...\\n`;\n    });\n  }\n});\n\nreturn {\n  json: contentSummary\n};"
+      },
+      "id": "bb3f764f-dcd9-45dd-a2b5-ccd9ec2c5ff1",
+      "name": "Prepare Enhanced AI Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1024, -96]
+    },
+    {
+      "parameters": {
+        "modelId": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "content": "You are a professional business consultant and proposal writer specializing in executive summaries and business analysis. Your task is to analyze website content and client requirements to create the first part of a comprehensive, personalized business proposal.",
+              "role": "system"
+            },
+            {
+              "content": "Based on the following client information and website analysis, create PART 1 of a customized business proposal (sections 1-5 only):\n\n{{ $json.compiledContent }}\n\nClient Details:\n- Business: {{ $json.businessName }}\n- Service Needed: {{ $json.serviceType }}\n- Budget: {{ $json.monthlyBudget }}\n- Timeline: {{ $json.timeline }}\n\nGenerate the following sections in professional markdown:\n\n## 1. Executive Summary\n- Personalized greeting to {{ $json.clientName }}\n- Brief overview of {{ $json.businessName }}'s business model and current position\n- Key opportunities identified based on their goals: {{ $json.businessGoals }}\n- Proposed value proposition tailored to their service needs: {{ $json.serviceType }}\n- Expected impact and ROI based on their budget of {{ $json.monthlyBudget }}\n\n## 2. Understanding of Your Business\n- Analysis of {{ $json.businessDescription }}\n- Current services/products offered (based on website analysis)\n- Target audience analysis: {{ $json.targetAudience }}\n- Market positioning in {{ $json.targetLocations }}\n- Identified strengths and unique advantages\n- Current digital presence assessment\n\n## 3. Industry & Competitive Analysis\n- Market trends affecting {{ $json.businessName }}\n- Competitor analysis (based on: {{ $json.competitors }})\n- Industry best practices for {{ $json.serviceType }}\n- Growth opportunities in {{ $json.targetLocations }}\n- Competitive advantages and gaps\n\n## 4. Opportunities & Challenges\n- Current challenges addressed: {{ $json.currentChallenges }}\n- Pain points discovered from website analysis\n- Areas for immediate improvement\n- Competitive advantages to leverage\n- Market opportunities specific to {{ $json.targetLocations }}\n- Risk factors and mitigation strategies\n\n## 5. Strategic Recommendations Overview\n- High-level strategic direction for {{ $json.serviceType }}\n- Priority areas based on {{ $json.timeline }} timeline\n- Quick wins achievable within budget of {{ $json.monthlyBudget }}\n- Long-term initiatives for sustained growth\n- Resource allocation suggestions\n\nBe specific, data-driven, and directly address the client's stated goals and challenges."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 2500,
+          "temperature": 0.7
+        }
+      },
+      "id": "213e583c-237a-4de5-8c0d-574b42f4aa42",
+      "name": "AI Part 1: Executive & Analysis",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1216, -192]
+    },
+    {
+      "parameters": {
+        "modelId": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "content": "You are a professional business consultant specializing in solution design and implementation planning. Your task is to create detailed, customized solutions and implementation strategies based on client requirements.",
+              "role": "system"
+            },
+            {
+              "content": "Based on the following client information and website analysis, create PART 2 of a customized business proposal (sections 6-10 only):\n\n{{ $json.compiledContent }}\n\nClient Requirements:\n- Service Type: {{ $json.serviceType }}\n- Campaign Types: {{ $json.campaignTypes }}\n- Budget: {{ $json.monthlyBudget }}\n- Timeline: {{ $json.timeline }}\n- Target Locations: {{ $json.targetLocations }}\n\nGenerate the following sections in professional markdown:\n\n## 6. Proposed Solutions for {{ $json.businessName }}\n\nCreate 3 specific solutions tailored to {{ $json.serviceType }}:\n\n- **Solution 1: [Name based on primary need]**\n  - Description addressing {{ $json.businessGoals }}\n  - Implementation approach for {{ $json.targetLocations }}\n  - Expected outcomes within {{ $json.timeline }}\n  - Success metrics\n  \n- **Solution 2: [Name based on service type]**\n  - Description specific to {{ $json.serviceType }}\n  - Campaign strategies for: {{ $json.campaignTypes }}\n  - Expected outcomes\n  - Success metrics\n  \n- **Solution 3: [Name based on challenges]**\n  - Description addressing: {{ $json.currentChallenges }}\n  - Implementation approach\n  - Expected outcomes\n  - Success metrics\n\n## 7. Implementation Timeline for {{ $json.timeline }}\n\nCreate a timeline that fits their {{ $json.timeline }} requirement:\n\n- **Phase 1: Foundation (Adjust weeks based on timeline)**\n  - Discovery and planning\n  - Stakeholder alignment with {{ $json.businessName }} team\n  - Initial setup tasks\n  - Deliverables\n  \n- **Phase 2: Core Development**\n  - Main implementation for {{ $json.serviceType }}\n  - Campaign setup for: {{ $json.campaignTypes }}\n  - Testing and iteration\n  - Deliverables\n  \n- **Phase 3: Optimization**\n  - Performance tuning\n  - Team training\n  - Documentation\n  - Deliverables\n  \n- **Phase 4: Launch & Scale**\n  - Go-live activities\n  - Monitoring setup\n  - Continuous improvement\n  - Success criteria\n\n## 8. Investment & Pricing Options\n\nCreate packages around their {{ $json.monthlyBudget }} budget:\n\n- **Starter Package**\n  - Services included (aligned with budget)\n  - Investment: [Price based on {{ $json.monthlyBudget }}]\n  - Best for: {{ $json.businessName }}'s immediate needs\n  - ROI timeline\n  \n- **Growth Package (Recommended)**\n  - Everything in Starter plus:\n  - Additional services for {{ $json.serviceType }}\n  - Investment: [Optimal price for {{ $json.monthlyBudget }}]\n  - Best for: Achieving {{ $json.businessGoals }}\n  - ROI timeline\n  \n- **Enterprise Package**\n  - Complete solution including:\n  - Premium services\n  - Investment: [Premium option]\n  - Best for: Long-term growth\n  - ROI timeline\n\n## 9. Expected Results & ROI\n\nBased on {{ $json.monthlyBudget }} investment:\n\n- **Month 1-3: Foundation**\n  - Expected improvements in {{ $json.targetLocations }}\n  - Initial KPI improvements\n  - Early wins\n  \n- **Month 4-6: Growth**\n  - Performance targets for {{ $json.serviceType }}\n  - Revenue impact projections\n  - Market penetration in {{ $json.targetLocations }}\n  \n- **Month 7-12: Scale**\n  - Long-term benefits\n  - Total ROI projection\n  - Sustained growth metrics\n\n## 10. Success Metrics & KPIs\n\nSpecific to {{ $json.serviceType }} and {{ $json.businessGoals }}:\n\n- Traffic metrics for {{ $json.targetLocations }}\n- Conversion rate improvements\n- Revenue growth projections\n- Campaign performance ({{ $json.campaignTypes }})\n- Customer acquisition costs\n- ROI measurements\n\nBe specific with timelines, pricing that fits their budget, and measurable outcomes."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 2500,
+          "temperature": 0.7
+        }
+      },
+      "id": "a2e44c78-ec3c-404b-a312-22e906274b31",
+      "name": "AI Part 2: Solutions & Implementation",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1216, -96]
+    },
+    {
+      "parameters": {
+        "modelId": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "content": "You are a professional business consultant specializing in client relations and proposal closing. Your task is to create compelling, personalized closing sections that drive action and build trust.",
+              "role": "system"
+            },
+            {
+              "content": "Based on the following client information and website analysis, create PART 3 of a customized business proposal (sections 11-16 only):\n\n{{ $json.compiledContent }}\n\nClient Context:\n- Contact: {{ $json.clientName }} at {{ $json.businessName }}\n- Email: {{ $json.clientEmail }}\n- Service: {{ $json.serviceType }}\n- Timeline: {{ $json.timeline }}\n- Additional Notes: {{ $json.additionalInfo }}\n\nGenerate the following sections in professional markdown:\n\n## 11. Why Choose Us for {{ $json.businessName }}\n\n- **Proven Track Record in {{ $json.serviceType }}**\n  - Years of experience\n  - Success stories in {{ $json.targetLocations }}\n  - Industry recognition\n  \n- **Our Unique Approach**\n  - Methodology tailored for {{ $json.businessName }}\n  - What sets us apart for {{ $json.serviceType }}\n  - Innovation and technology\n  \n- **Expert Team**\n  - Specialists in {{ $json.serviceType }}\n  - Experience with businesses like {{ $json.businessName }}\n  - Dedicated support model\n  \n- **Client Success Stories**\n  - Similar businesses in your industry\n  - Results achieved with {{ $json.monthlyBudget }} budgets\n  - Testimonials from {{ $json.targetLocations }}\n\n## 12. Our Guarantees to {{ $json.businessName }}\n\n- **Performance Guarantee**\n  - Specific commitments for {{ $json.serviceType }}\n  - Success criteria based on {{ $json.businessGoals }}\n  - Timeline guarantees for {{ $json.timeline }}\n  \n- **Service Level Agreement**\n  - Response times\n  - Support availability\n  - Quality standards\n  \n- **Risk Mitigation**\n  - Flexible terms\n  - Performance bonds\n  - Satisfaction guarantee\n\n## 13. Client Testimonials\n\n[Create 2-3 relevant testimonials for businesses similar to {{ $json.businessName }}]\n\n- Success stories from {{ $json.targetLocations }}\n- Results with similar budgets ({{ $json.monthlyBudget }})\n- {{ $json.serviceType }} specific achievements\n\n## 14. Next Steps for {{ $json.clientName }}\n\n- **Immediate Actions**\n  1. Schedule discovery call with {{ $json.clientName }} (45 minutes)\n  2. Review this proposal together\n  3. Finalize scope for {{ $json.serviceType }}\n  4. Sign agreement and begin onboarding\n  \n- **Timeline to Start**\n  - Based on your {{ $json.timeline }} requirement:\n  - Week 1: Contract and planning\n  - Week 2: Kickoff with {{ $json.businessName }} team\n  - Week 3: Begin {{ $json.serviceType }} implementation\n  \n- **What We Need From {{ $json.businessName }}**\n  - Access requirements\n  - Team involvement\n  - Decision timeline\n\n## 15. Terms & Conditions\n\n- Contract duration options for {{ $json.serviceType }}\n- Payment terms within {{ $json.monthlyBudget }} budget\n- Cancellation policy\n- Intellectual property rights\n- Confidentiality agreement\n- Liability and indemnification\n\n## 16. Contact Information & Call to Action\n\n**Ready to grow {{ $json.businessName }}?**\n\n- **Your Dedicated Team**\n  - Project Manager: [Name] - [Direct Line]\n  - {{ $json.serviceType }} Specialist: [Name] - [Direct Line]\n  - Account Manager: [Name] - [Direct Line]\n  \n- **How to Proceed, {{ $json.clientName }}**\n  - ✅ Accept proposal: [CTA button]\n  - 📅 Schedule consultation: [Calendar link]\n  - 📧 Reply directly to: {{ $json.clientEmail }}\n  - 📞 Call us: [Phone]\n  \n- **Special Offer for {{ $json.businessName }}**\n  - Based on your {{ $json.timeline }} timeline\n  - Special pricing for {{ $json.monthlyBudget }} commitment\n  - Bonus services included\n  - Valid for 30 days\n\n**Proposal prepared specifically for:** {{ $json.clientName }}\n**Company:** {{ $json.businessName }}\n**Date:** [Current Date]\n**Proposal Valid Until:** [30 days from today]\n\nInclude strong, personalized calls to action and create urgency while maintaining professionalism."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 2500,
+          "temperature": 0.7
+        }
+      },
+      "id": "efc592fa-ba00-4d10-affd-f58647d5c057",
+      "name": "AI Part 3: Closing & CTA",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1216, 16]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all three AI responses into one comprehensive proposal\nconst part1 = $('AI Part 1: Executive & Analysis').first().json.message || $('AI Part 1: Executive & Analysis').first().json.content || '';\nconst part2 = $('AI Part 2: Solutions & Implementation').first().json.message || $('AI Part 2: Solutions & Implementation').first().json.content || '';\nconst part3 = $('AI Part 3: Closing & CTA').first().json.message || $('AI Part 3: Closing & CTA').first().json.content || '';\n\n// Get client data\nconst clientData = $('Prepare Enhanced AI Input').first().json;\n\n// Combine all parts with proper formatting\nlet fullProposal = `# Customized Business Proposal for ${clientData.businessName}\\n\\n`;\nfullProposal += `**Prepared for:** ${clientData.clientName}\\n`;\nfullProposal += `**Email:** ${clientData.clientEmail}\\n`;\nfullProposal += `**Date:** ${new Date().toLocaleDateString()}\\n\\n`;\nfullProposal += `---\\n\\n`;\nfullProposal += `## Table of Contents\\n\\n`;\nfullProposal += `1. [Executive Summary](#1-executive-summary)\\n`;\nfullProposal += `2. [Understanding of Your Business](#2-understanding-of-your-business)\\n`;\nfullProposal += `3. [Industry & Competitive Analysis](#3-industry--competitive-analysis)\\n`;\nfullProposal += `4. [Opportunities & Challenges](#4-opportunities--challenges)\\n`;\nfullProposal += `5. [Strategic Recommendations Overview](#5-strategic-recommendations-overview)\\n`;\nfullProposal += `6. [Proposed Solutions](#6-proposed-solutions-for-${clientData.businessName.toLowerCase().replace(/\\s+/g, '-')})\\n`;\nfullProposal += `7. [Implementation Timeline](#7-implementation-timeline)\\n`;\nfullProposal += `8. [Investment & Pricing Options](#8-investment--pricing-options)\\n`;\nfullProposal += `9. [Expected Results & ROI](#9-expected-results--roi)\\n`;\nfullProposal += `10. [Success Metrics & KPIs](#10-success-metrics--kpis)\\n`;\nfullProposal += `11. [Why Choose Us](#11-why-choose-us)\\n`;\nfullProposal += `12. [Our Guarantees](#12-our-guarantees)\\n`;\nfullProposal += `13. [Client Testimonials](#13-client-testimonials)\\n`;\nfullProposal += `14. [Next Steps](#14-next-steps)\\n`;\nfullProposal += `15. [Terms & Conditions](#15-terms--conditions)\\n`;\nfullProposal += `16. [Contact Information & Call to Action](#16-contact-information--call-to-action)\\n\\n`;\nfullProposal += `---\\n\\n`;\n\n// Add Part 1 content\nfullProposal += `# Part I: Executive Summary & Business Analysis\\n\\n`;\nfullProposal += part1;\nfullProposal += `\\n\\n---\\n\\n`;\n\n// Add Part 2 content\nfullProposal += `# Part II: Solutions & Implementation Strategy\\n\\n`;\nfullProposal += part2;\nfullProposal += `\\n\\n---\\n\\n`;\n\n// Add Part 3 content\nfullProposal += `# Part III: Partnership & Next Steps\\n\\n`;\nfullProposal += part3;\n\nreturn {\n  json: {\n    proposal: fullProposal,\n    businessName: clientData.businessName,\n    clientName: clientData.clientName,\n    clientEmail: clientData.clientEmail,\n    websiteUrl: clientData.websiteUrl,\n    serviceType: clientData.serviceType,\n    totalPagesAnalyzed: clientData.totalPagesAnalyzed || 0\n  }\n};"
+      },
+      "id": "6262ff5c-8cb7-4bd9-9dcb-4dd8f6d221f4",
+      "name": "Combine AI Responses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, -96]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format the final proposal and add metadata\nconst data = $input.first().json;\nconst proposal = data.proposal || '';\nconst businessName = data.businessName || '';\nconst clientName = data.clientName || '';\nconst clientEmail = data.clientEmail || '';\nconst websiteUrl = data.websiteUrl || '';\nconst serviceType = data.serviceType || '';\nconst timestamp = new Date().toISOString();\n\n// Add header and footer to the proposal\nlet finalProposal = `# Business Proposal\\n\\n`;\nfinalProposal += `**Generated for:** ${businessName}\\n`;\nfinalProposal += `**Contact:** ${clientName} (${clientEmail})\\n`;\nfinalProposal += `**Website:** ${websiteUrl}\\n`;\nfinalProposal += `**Service Type:** ${serviceType}\\n`;\nfinalProposal += `**Date:** ${new Date().toLocaleDateString()}\\n`;\nfinalProposal += `**Proposal ID:** ${Math.random().toString(36).substring(7).toUpperCase()}\\n\\n`;\nfinalProposal += `---\\n\\n`;\nfinalProposal += proposal;\nfinalProposal += `\\n\\n---\\n\\n`;\nfinalProposal += `## Proposal Summary\\n\\n`;\nfinalProposal += `This customized proposal has been generated specifically for **${businessName}** based on:\\n`;\nfinalProposal += `- Comprehensive analysis of your website and digital presence\\n`;\nfinalProposal += `- Your stated business goals and growth objectives\\n`;\nfinalProposal += `- Market analysis of your industry and competitors\\n`;\nfinalProposal += `- Your budget and timeline requirements\\n\\n`;\nfinalProposal += `*This proposal was generated using AI-powered analysis of your website content and business requirements. `;\nfinalProposal += `All recommendations are tailored specifically to ${businessName}'s needs.*\\n\\n`;\nfinalProposal += `**Validity:** This proposal is valid for 30 days from the date of generation.\\n\\n`;\nfinalProposal += `**Confidentiality:** This proposal contains confidential information and is intended solely for ${clientName} at ${businessName}.\\n\\n`;\nfinalProposal += `**Next Step:** Please contact us to schedule a discovery call to discuss this proposal in detail.\\n`;\n\nreturn {\n  json: {\n    proposal: finalProposal,\n    filename: `proposal_${businessName.replace(/[^a-z0-9]/gi, '_')}_${serviceType.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.md`,\n    businessName: businessName,\n    clientEmail: clientEmail,\n    websiteUrl: websiteUrl,\n    timestamp: timestamp\n  }\n};"
+      },
+      "id": "cfa82517-b2f4-4108-a4b7-2b15b5ca832f",
+      "name": "Format Final Proposal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1952, -96]
+    },
+    {
+      "parameters": {
+        "operation": "text"
+      },
+      "id": "301c956f-ac02-4157-b405-8aefd04e2e4b",
+      "name": "Convert to Downloadable File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1,
+      "position": [2192, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Disposition",
+                "value": "=attachment; filename=\"{{ $json.filename }}\""
+              }
+            ]
+          }
+        }
+      },
+      "id": "fb915a79-e7df-4e3f-8fb8-757a3d39feef",
+      "name": "Return Proposal File",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2400, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "options": {}
+      },
+      "id": "722be6b8-e907-47d5-980a-ae3cb734de0e",
+      "name": "Form Response HTML",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2400, -192]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Merge & Normalize Inputs').first().json.formPurpose }}",
+              "operation": "contains",
+              "value2": "Proposal"
+            }
+          ]
+        }
+      },
+      "id": "7d3ef970-e048-4931-ae42-813d94ffffc4",
+      "name": "Check Response Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2192, -176]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Merge & Normalize Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Merge & Normalize Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge & Normalize Inputs": {
+      "main": [
+        [
+          {
+            "node": "Configure Enhanced Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure Enhanced Scraper": {
+      "main": [
+        [
+          {
+            "node": "Check Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Apify": {
+      "main": [
+        [
+          {
+            "node": "Apify Web Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify Web Scraper": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced AI Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Scraper": {
+      "main": [
+        [
+          {
+            "node": "Extract HTML Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract HTML Content": {
+      "main": [
+        [
+          {
+            "node": "Process Scraped Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Scraped Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced AI Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Enhanced AI Input": {
+      "main": [
+        [
+          {
+            "node": "AI Part 1: Executive & Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Part 2: Solutions & Implementation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Part 3: Closing & CTA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Part 1: Executive & Analysis": {
+      "main": [
+        [
+          {
+            "node": "Combine AI Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Part 2: Solutions & Implementation": {
+      "main": [
+        [
+          {
+            "node": "Combine AI Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Part 3: Closing & CTA": {
+      "main": [
+        [
+          {
+            "node": "Combine AI Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine AI Responses": {
+      "main": [
+        [
+          {
+            "node": "Format Final Proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Final Proposal": {
+      "main": [
+        [
+          {
+            "node": "Check Response Type",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to Downloadable File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Response Type": {
+      "main": [
+        [
+          {
+            "node": "Form Response HTML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Proposal File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Downloadable File": {
+      "main": [
+        [
+          {
+            "node": "Return Proposal File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e0b04faf-eea5-4358-b00d-ce673bd2f266",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2efa5938083771b4d785493a72a1260e2d219f189831803c18b6cc9cfe083380"
+  },
+  "id": "XTdzzXQdNbcF2nWA",
+  "tags": []
+}
