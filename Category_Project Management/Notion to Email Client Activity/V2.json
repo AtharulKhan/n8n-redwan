@@ -1,0 +1,345 @@
+{
+  "name": "Notion | SimplifAI/BFD | Client Activity",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 5"
+            }
+          ]
+        }
+      },
+      "id": "341b21bd-b582-4a12-9c5e-7f1d2efb5ae3",
+      "name": "Weekly Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -928,
+        -64
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
+          "mode": "url"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        -64
+      ],
+      "id": "7738cd5c-03b8-44a3-921c-27db7a788a64",
+      "name": "Get Notion Database Pages",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "limit": 100,
+        "fetchNestedBlocks": true
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        -160
+      ],
+      "id": "2179d887-d7bf-4f97-ab6a-dab42bec63c0",
+      "name": "Get Child Blocks",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and combine content from blocks, grouped by client\nconst clientGroups = {};\n\n// Process each item from the input\nfor (const item of $input.all()) {\n  // Check if item has content property directly (from your block data)\n  if (item.json.content && typeof item.json.content === 'string' && item.json.content.trim()) {\n    const rootId = item.json.root_id || 'ungrouped';\n    if (!clientGroups[rootId]) {\n      clientGroups[rootId] = {\n        pageId: rootId,\n        content: []\n      };\n    }\n    clientGroups[rootId].content.push(item.json.content.trim());\n  }\n  // Check if item has results array (from HTTP response)\n  else if (item.json.results && Array.isArray(item.json.results)) {\n    for (const block of item.json.results) {\n      // Extract text content from different block types\n      let content = '';\n      \n      // Handle paragraph blocks\n      if (block.paragraph?.rich_text) {\n        content = block.paragraph.rich_text.map(t => t.plain_text).join('');\n      }\n      // Handle heading blocks\n      else if (block.heading_1?.rich_text) {\n        content = block.heading_1.rich_text.map(t => t.plain_text).join('');\n      }\n      else if (block.heading_2?.rich_text) {\n        content = block.heading_2.rich_text.map(t => t.plain_text).join('');\n      }\n      else if (block.heading_3?.rich_text) {\n        content = block.heading_3.rich_text.map(t => t.plain_text).join('');\n      }\n      // Handle bulleted list items\n      else if (block.bulleted_list_item?.rich_text) {\n        content = '• ' + block.bulleted_list_item.rich_text.map(t => t.plain_text).join('');\n      }\n      // Handle numbered list items\n      else if (block.numbered_list_item?.rich_text) {\n        content = block.numbered_list_item.rich_text.map(t => t.plain_text).join('');\n      }\n      // Handle toggle blocks\n      else if (block.toggle?.rich_text) {\n        content = block.toggle.rich_text.map(t => t.plain_text).join('');\n      }\n      // Handle quote blocks\n      else if (block.quote?.rich_text) {\n        content = '\"' + block.quote.rich_text.map(t => t.plain_text).join('') + '\"';\n      }\n      // Handle callout blocks\n      else if (block.callout?.rich_text) {\n        content = block.callout.rich_text.map(t => t.plain_text).join('');\n      }\n      \n      if (content && content.trim()) {\n        const rootId = block.parent?.page_id || block.root_id || 'ungrouped';\n        const cleanRootId = rootId.replace(/-/g, ''); // Remove dashes to match with database IDs\n        if (!clientGroups[cleanRootId]) {\n          clientGroups[cleanRootId] = {\n            pageId: cleanRootId,\n            content: []\n          };\n        }\n        clientGroups[cleanRootId].content.push(content.trim());\n      }\n    }\n  }\n}\n\n// Convert to array format with combined content per page\nconst pages = Object.values(clientGroups).map(page => ({\n  pageId: page.pageId,\n  content: page.content.join('\\n\\n'),\n  blockCount: page.content.length\n}));\n\n// Create one combined text for all pages\nconst allPagesText = pages.map(p => p.content).join('\\n\\n---\\n\\n');\n\n// Return simplified format\nreturn [{\n  json: {\n    pages: pages,\n    totalPages: pages.length,\n    totalBlocks: pages.reduce((sum, p) => sum + p.blockCount, 0),\n    allContent: allPagesText\n  }\n}];"
+      },
+      "id": "22e60570-35da-4998-86b8-d147e65df54c",
+      "name": "Extract Block Content",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -208,
+        -160
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract client details and IDs from Notion database pages\nconst clients = [];\n\n// Process each database page\nfor (const item of $input.all()) {\n  // Extract page ID and remove dashes to match content data format\n  const pageIdWithDashes = item.json.id || 'unknown';\n  const pageId = pageIdWithDashes.replace(/-/g, ''); // Remove all dashes\n  \n  // Extract client name from properties\n  const client = item.json.properties?.Client?.select?.name || \n    item.json.properties?.Client?.rich_text?.[0]?.text?.content ||\n    item.json.properties?.Client?.title?.[0]?.text?.content ||\n    'Unknown Client';\n  \n  // Extract activity/project name\n  const activityName = \n    item.json.properties?.Name?.title?.[0]?.text?.content ||\n    item.json.properties?.Title?.title?.[0]?.text?.content ||\n    item.json.properties?.Activity?.title?.[0]?.text?.content ||\n    item.json.properties?.Project?.title?.[0]?.text?.content ||\n    'Untitled Activity';\n  \n  // Extract owner(s)\n  const owners = item.json.properties?.Owner?.people?.map(p => p.name || p.email) || \n    [item.json.properties?.Owner?.select?.name] || \n    [];\n  \n  // Extract status\n  const status = item.json.properties?.Status?.status?.name ||\n    item.json.properties?.Status?.select?.name ||\n    'Active';\n  \n  // Extract dates\n  const date = item.json.properties?.Date?.date?.start ||\n    item.json.properties?.Due?.date?.start ||\n    item.json.last_edited_time ||\n    '';\n  \n  // Extract priority\n  const priority = item.json.properties?.Priority?.select?.name ||\n    item.json.properties?.Priority?.multi_select?.[0]?.name ||\n    'Normal';\n  \n  // Add to clients array with dashless ID\n  clients.push({\n    pageId: pageId, // Now without dashes\n    client: client,\n    activityName: activityName,\n    url: item.json.url || '',\n    owners: owners,\n    ownersList: owners.join(', '),\n    status: status,\n    date: date,\n    priority: priority,\n    createdTime: item.json.created_time || '',\n    lastEditedTime: item.json.last_edited_time || ''\n  });\n}\n\n// Return the extracted client information\nreturn [{\n  json: {\n    clients: clients,\n    totalClients: clients.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        48
+      ],
+      "id": "0550678e-206d-4eed-af6f-7fbec1fd80ad",
+      "name": "Extract Client Details"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        48,
+        -64
+      ],
+      "id": "92c92ebf-fe4f-4ef9-9660-7c09cf1544d0",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code processes the merged data from the Merge node\n// The Merge node combines block content data and client details data\n\n// Get the input data - it's an array with two objects\nconst inputArray = $input.all();\nconst contentData = inputArray[0].json; // First object has block content data\nconst clientData = inputArray[1].json; // Second object has client metadata\n\n// Create a map for quick lookup of client metadata by page ID\nconst clientMetaMap = {};\nclientData.clients.forEach(client => {\n  clientMetaMap[client.pageId] = client;\n});\n\n// Merge content with metadata\nconst mergedActivities = contentData.pages.map(contentPage => {\n  const metadata = clientMetaMap[contentPage.pageId] || {};\n  return {\n    ...contentPage,\n    ...metadata,\n    // Ensure we keep the content and blockCount from contentData\n    content: contentPage.content,\n    blockCount: contentPage.blockCount\n  };\n});\n\n// Group activities by client\nconst activitiesByClient = {};\nmergedActivities.forEach(activity => {\n  const clientKey = activity.client || 'Unknown Client';\n  if (!activitiesByClient[clientKey]) {\n    activitiesByClient[clientKey] = [];\n  }\n  activitiesByClient[clientKey].push(activity);\n});\n\n// Sort activities within each client by date (most recent first)\nfor (const client in activitiesByClient) {\n  activitiesByClient[client].sort((a, b) => {\n    const dateA = new Date(a.date || 0);\n    const dateB = new Date(b.date || 0);\n    return dateB - dateA;\n  });\n}\n\n// Create client groups with full content for AI processing\nconst clientGroups = Object.entries(activitiesByClient).map(([client, activities]) => {\n  // Filter for activities with actual content\n  const activitiesWithContent = activities.filter(a => a.content && a.blockCount > 0);\n  \n  // Create detailed activity summaries\n  const detailedActivities = activitiesWithContent.map(a => {\n    let activitySummary = `**${a.activityName || 'Untitled Activity'}**\\n`;\n    if (a.date) activitySummary += `Date: ${new Date(a.date).toLocaleDateString()}\\n`;\n    if (a.ownersList) activitySummary += `Owner: ${a.ownersList}\\n`;\n    if (a.status) activitySummary += `Status: ${a.status}\\n`;\n    if (a.priority && a.priority !== 'Normal') activitySummary += `Priority: ${a.priority}\\n`;\n    activitySummary += `\\nDetails:\\n${a.content}`;\n    return activitySummary;\n  }).join('\\n\\n---\\n\\n');\n  \n  return {\n    client: client,\n    activityCount: activitiesWithContent.length,\n    totalActivities: activities.length,\n    activitiesWithContent: activitiesWithContent.length,\n    activities: activitiesWithContent,\n    summaryText: detailedActivities,\n    hasContent: activitiesWithContent.length > 0\n  };\n});\n\n// Filter to only include clients with actual content\nconst clientsWithContent = clientGroups.filter(g => g.hasContent);\n\n// Calculate statistics\nconst totalActivities = mergedActivities.length;\nconst activitiesWithContent = mergedActivities.filter(a => a.content && a.blockCount > 0).length;\nconst totalBlocks = mergedActivities.reduce((sum, a) => sum + (a.blockCount || 0), 0);\n\n// Return data formatted for AI processing\nreturn clientsWithContent.map(group => ({\n  json: {\n    client: group.client,\n    activityCount: group.activityCount,\n    summaryText: group.summaryText,\n    activities: group.activities,\n    statistics: {\n      totalActivities: totalActivities,\n      activitiesWithContent: activitiesWithContent,\n      totalBlocks: totalBlocks\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -64
+      ],
+      "id": "c1bdd33a-6ed0-49a3-b73f-71b1ba8ba4e3",
+      "name": "Combine Client Data with Blocks"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an executive assistant creating a client activity summary report. Analyze the following client activities and create a professional, concise summary:\n\nClient: {{ $json.client }}\nNumber of Activities: {{ $json.activityCount }}\n\nDetailed Activities:\n{{ $json.summaryText }}\n\nPlease provide:\n1. A brief executive summary of the client engagement\n2. Key activities and milestones from the recent period\n3. Any items requiring immediate attention or follow-up\n4. Next steps or upcoming activities\n5. Action items extracted from the content\n\nFormat the response in a clear, professional manner suitable for email communication. Use bullet points for clarity and keep the summary concise but informative. Focus on the actual content and updates rather than just listing activity names.",
+        "batching": {
+          "batchSize": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        688,
+        -160
+      ],
+      "id": "2b96a519-6a37-4f2a-8ecc-c103334ea36c",
+      "name": "Generate AI Summary"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        880,
+        48
+      ],
+      "id": "83ca8e80-0e63-4f82-8b47-0e50b626514f",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all client summaries into a single email\nconst allSummaries = [];\nconst currentDate = new Date().toLocaleDateString('en-US', { \n  weekday: 'long', \n  year: 'numeric', \n  month: 'long', \n  day: 'numeric' \n});\n\n// Process each client summary\nfor (const item of $input.all()) {\n  const clientName = item.json.client || 'Unknown Client';\n  const summary = item.json.text || item.json.response || 'No summary available';\n  const activityCount = item.json.activityCount || 0;\n  \n  allSummaries.push({\n    client: clientName,\n    summary: summary,\n    activityCount: activityCount\n  });\n}\n\n// Sort by client name\nallSummaries.sort((a, b) => a.client.localeCompare(b.client));\n\n// Create HTML email content\nlet htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }\n    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }\n    h2 { color: #34495e; margin-top: 30px; background: #ecf0f1; padding: 10px; border-left: 4px solid #3498db; }\n    .summary-section { background: #f9f9f9; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 3px solid #3498db; }\n    .activity-count { color: #7f8c8d; font-size: 0.9em; margin-bottom: 10px; }\n    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #7f8c8d; font-size: 0.9em; }\n    ul { margin: 10px 0; }\n    li { margin: 5px 0; }\n    strong { color: #2c3e50; }\n  </style>\n</head>\n<body>\n  <h1>Weekly Client Activity Report</h1>\n  <p><strong>Report Date:</strong> ${currentDate}</p>\n  <p><strong>Total Active Clients:</strong> ${allSummaries.length}</p>\n`;\n\n// Add each client summary\nfor (const clientData of allSummaries) {\n  htmlContent += `\n  <h2>${clientData.client}</h2>\n  <div class=\"activity-count\">Total Activities: ${clientData.activityCount}</div>\n  <div class=\"summary-section\">\n    ${clientData.summary.replace(/\\n/g, '<br>').replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')}\n  </div>\n  `;\n}\n\n// Add footer\nhtmlContent += `\n  <div class=\"footer\">\n    <p>This report was automatically generated from your Notion database.</p>\n    <p>For detailed information about any activity, please refer to your Notion workspace.</p>\n  </div>\n</body>\n</html>\n`;\n\n// Create plain text version\nlet textContent = `Weekly Client Activity Report\\n`;\ntextContent += `Report Date: ${currentDate}\\n`;\ntextContent += `Total Active Clients: ${allSummaries.length}\\n\\n`;\ntextContent += '='.repeat(50) + '\\n\\n';\n\nfor (const clientData of allSummaries) {\n  textContent += `CLIENT: ${clientData.client}\\n`;\n  textContent += `Total Activities: ${clientData.activityCount}\\n\\n`;\n  textContent += clientData.summary + '\\n\\n';\n  textContent += '-'.repeat(40) + '\\n\\n';\n}\n\ntextContent += `\\nThis report was automatically generated from your Notion database.\\n`;\ntextContent += `For detailed information about any activity, please refer to your Notion workspace.`;\n\n// Return formatted email content\nreturn [{\n  json: {\n    subject: `Weekly Client Activity Report - ${currentDate}`,\n    htmlContent: htmlContent,\n    textContent: textContent,\n    totalClients: allSummaries.length,\n    totalActivities: allSummaries.reduce((sum, c) => sum + c.activityCount, 0),\n    reportDate: currentDate\n  }\n}];"
+      },
+      "id": "7500d896-2f9b-49d2-b2cf-7f3006807d04",
+      "name": "Format Email Content",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1088,
+        -64
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "sendTo": "atharul.k@gmail.com",
+        "subject": "Test-n8n",
+        "message": "={{ $json.htmlContent }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1312,
+        -64
+      ],
+      "id": "b2d25be5-2341-4485-992d-08cd37ef1820",
+      "name": "Send a message",
+      "webhookId": "a7ee901b-2190-43f3-a748-351dc7fb9e2c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Weekly Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Notion Database Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Notion Database Pages": {
+      "main": [
+        [
+          {
+            "node": "Get Child Blocks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Client Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Child Blocks": {
+      "main": [
+        [
+          {
+            "node": "Extract Block Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Block Content": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Client Details": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Combine Client Data with Blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Client Data with Blocks": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Format Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1dad51b9-4549-493c-8ad7-6ed4ec1c3634",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "wUQmCoQ9LO76ZqEA",
+  "tags": []
+}

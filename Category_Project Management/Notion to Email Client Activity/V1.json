@@ -1,0 +1,214 @@
+{
+  "name": "Notion | SimplifAI/BFD | Client Activity",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 5"
+            }
+          ]
+        }
+      },
+      "id": "58e15b53-1119-4a47-a838-93d0657fb40d",
+      "name": "Weekly Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-960, 128],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
+          "mode": "url"
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            }
+          ]
+        },
+        "options": {
+
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-768, 128],
+      "id": "fc44773a-760f-4253-a847-666e807c3227",
+      "name": "Get Notion Activities",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and group activities by client\nconst activities = [];\n\n// Process each item from Notion\nfor (const item of $input.all()) {\n  const props = item.json.properties || {};\n  \n  // Extract client name\n  const client = props.Client?.select?.name || \n    props.Client?.rich_text?.[0]?.text?.content ||\n    props.Client?.title?.[0]?.text?.content ||\n    'Unknown Client';\n  \n  // Extract activity details\n  const activity = {\n    client: client,\n    activityName: props.Activity?.title?.[0]?.text?.content ||\n      props.Activity?.rich_text?.[0]?.text?.content ||\n      props.Name?.title?.[0]?.text?.content ||\n      'Untitled Activity',\n    date: props.Date?.date?.start || \n      props.Date?.last_edited_time ||\n      item.json.last_edited_time || \n      '',\n    description: props.Description?.rich_text?.[0]?.text?.content ||\n      props.Description?.title?.[0]?.text?.content ||\n      '',\n    owner: props.Owner?.people?.[0]?.name ||\n      props.Owner?.select?.name ||\n      props.Owner?.rich_text?.[0]?.text?.content ||\n      '',\n    priority: props.Priority?.select?.name ||\n      props.Priority?.multi_select?.[0]?.name ||\n      'Normal',\n    url: item.json.url || ''\n  };\n  \n  activities.push(activity);\n}\n\n// Group activities by client\nconst groupedByClient = {};\nfor (const activity of activities) {\n  if (!groupedByClient[activity.client]) {\n    groupedByClient[activity.client] = [];\n  }\n  groupedByClient[activity.client].push(activity);\n}\n\n// Sort activities within each client by date (most recent first)\nfor (const client in groupedByClient) {\n  groupedByClient[client].sort((a, b) =\u003E {\n    const dateA = new Date(a.date || 0);\n    const dateB = new Date(b.date || 0);\n    return dateB - dateA;\n  });\n}\n\n// Convert to array format for processing\nconst clientGroups = Object.entries(groupedByClient).map(([client, activities]) =\u003E ({\n  client: client,\n  activityCount: activities.length,\n  activities: activities,\n  // Create a summary text for this client\n  summaryText: activities.map(a =\u003E \n    `- ${a.activityName}${a.date ? ` (${new Date(a.date).toLocaleDateString()})` : ''}${a.description ? `: ${a.description}` : ''}`\n  ).join('\\n')\n}));\n\n// Return all client groups\nreturn clientGroups.map(group =\u003E ({ json: group }));"
+      },
+      "id": "06efb3d2-10b4-4a4e-aa80-6b976536ef1b",
+      "name": "Extract and Group by Client",
+      "type": "n8n-nodes-base.code",
+      "position": [-560, 128],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an executive assistant creating a client activity summary report. Analyze the following client activities and create a professional, concise summary:\n\nClient: {{ $json.client }}\nNumber of Activities: {{ $json.activityCount }}\n\nActivities:\n{{ $json.summaryText }}\n\nPlease provide:\n1. A brief executive summary of the client engagement\n2. Key activities and milestones from the past week\n3. Any items requiring immediate attention or follow-up\n4. Next steps or upcoming activities\n\nFormat the response in a clear, professional manner suitable for email communication. Use bullet points for clarity and keep the summary concise but informative.",
+        "batching": {
+          "batchSize": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [-160, 16],
+      "id": "c395ac70-c008-4110-a8a3-9950683d184f",
+      "name": "Generate AI Summary"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [48, 224],
+      "id": "8f456989-e092-44be-85c4-42dd7dff8035",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all client summaries into a single email\nconst allSummaries = [];\nconst currentDate = new Date().toLocaleDateString('en-US', { \n  weekday: 'long', \n  year: 'numeric', \n  month: 'long', \n  day: 'numeric' \n});\n\n// Process each client summary\nfor (const item of $input.all()) {\n  const clientName = item.json.client || 'Unknown Client';\n  const summary = item.json.text || item.json.response || 'No summary available';\n  const activityCount = item.json.activityCount || 0;\n  \n  allSummaries.push({\n    client: clientName,\n    summary: summary,\n    activityCount: activityCount\n  });\n}\n\n// Sort by client name\nallSummaries.sort((a, b) =\u003E a.client.localeCompare(b.client));\n\n// Create HTML email content\nlet htmlContent = `\n\u003C!DOCTYPE html\u003E\n\u003Chtml\u003E\n\u003Chead\u003E\n  \u003Cstyle\u003E\n    body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }\n    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }\n    h2 { color: #34495e; margin-top: 30px; background: #ecf0f1; padding: 10px; border-left: 4px solid #3498db; }\n    .summary-section { background: #f9f9f9; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 3px solid #3498db; }\n    .activity-count { color: #7f8c8d; font-size: 0.9em; margin-bottom: 10px; }\n    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #7f8c8d; font-size: 0.9em; }\n    ul { margin: 10px 0; }\n    li { margin: 5px 0; }\n  \u003C/style\u003E\n\u003C/head\u003E\n\u003Cbody\u003E\n  \u003Ch1\u003EWeekly Client Activity Report\u003C/h1\u003E\n  \u003Cp\u003E\u003Cstrong\u003EReport Date:\u003C/strong\u003E ${currentDate}\u003C/p\u003E\n  \u003Cp\u003E\u003Cstrong\u003ETotal Active Clients:\u003C/strong\u003E ${allSummaries.length}\u003C/p\u003E\n`;\n\n// Add each client summary\nfor (const clientData of allSummaries) {\n  htmlContent += `\n  \u003Ch2\u003E${clientData.client}\u003C/h2\u003E\n  \u003Cdiv class=\"activity-count\"\u003ETotal Activities: ${clientData.activityCount}\u003C/div\u003E\n  \u003Cdiv class=\"summary-section\"\u003E\n    ${clientData.summary.replace(/\\n/g, '\u003Cbr\u003E')}\n  \u003C/div\u003E\n  `;\n}\n\n// Add footer\nhtmlContent += `\n  \u003Cdiv class=\"footer\"\u003E\n    \u003Cp\u003EThis report was automatically generated from your Notion database.\u003C/p\u003E\n    \u003Cp\u003EFor detailed information about any activity, please refer to your Notion workspace.\u003C/p\u003E\n  \u003C/div\u003E\n\u003C/body\u003E\n\u003C/html\u003E\n`;\n\n// Create plain text version\nlet textContent = `Weekly Client Activity Report\\n`;\ntextContent += `Report Date: ${currentDate}\\n`;\ntextContent += `Total Active Clients: ${allSummaries.length}\\n\\n`;\ntextContent += '='.repeat(50) + '\\n\\n';\n\nfor (const clientData of allSummaries) {\n  textContent += `CLIENT: ${clientData.client}\\n`;\n  textContent += `Total Activities: ${clientData.activityCount}\\n\\n`;\n  textContent += clientData.summary + '\\n\\n';\n  textContent += '-'.repeat(40) + '\\n\\n';\n}\n\ntextContent += `\\nThis report was automatically generated from your Notion database.\\n`;\ntextContent += `For detailed information about any activity, please refer to your Notion workspace.`;\n\n// Return formatted email content\nreturn [{\n  json: {\n    subject: `Weekly Client Activity Report - ${currentDate}`,\n    htmlContent: htmlContent,\n    textContent: textContent,\n    totalClients: allSummaries.length,\n    totalActivities: allSummaries.reduce((sum, c) =\u003E sum + c.activityCount, 0),\n    reportDate: currentDate\n  }\n}];"
+      },
+      "id": "8ade6411-b802-4809-aa0c-c6ee040866a0",
+      "name": "Format Email Content",
+      "type": "n8n-nodes-base.code",
+      "position": [240, 128],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "fromEmail": "your-email@example.com",
+        "toEmail": "recipient@example.com",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "both",
+        "text": "={{ $json.textContent }}",
+        "html": "={{ $json.htmlContent }}",
+        "options": {
+          "appendAttribution": false,
+          "ccEmail": "",
+          "bccEmail": "",
+          "replyTo": "your-email@example.com"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [448, 128],
+      "id": "6182d998-b3eb-4bcd-9f4f-80d4294ed2e4",
+      "name": "Send Email Report",
+      "webhookId": "4ca3c61e-fed2-4e30-87af-44ab8b78b969"
+    }
+  ],
+  "pinData": {
+
+  },
+  "connections": {
+    "Weekly Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Notion Activities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Notion Activities": {
+      "main": [
+        [
+          {
+            "node": "Extract and Group by Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract and Group by Client": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Format Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9867fee2-5f81-4134-8e53-7db63945980a",
+  "meta": {
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "wUQmCoQ9LO76ZqEA",
+  "tags": []
+}
