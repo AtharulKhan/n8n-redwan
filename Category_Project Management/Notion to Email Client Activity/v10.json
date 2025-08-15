@@ -1,5 +1,5 @@
 {
-  "name": "Notion | SimplifAI/BFD | Dev Team Client Activity",
+  "name": "Notion | SimplifAI/BFD | Dev Team | Client Activity",
   "nodes": [
     {
       "parameters": {
@@ -126,7 +126,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Analyze this Notion data containing {{ $json.projects.length }} projects and {{ $json.blocks.length }} blocks.\n\nExtract text from blocks and match to projects using page IDs.\n\nMake sure when deciding what are next steps for the project, determine this based on the latest updates for the project (found based on date within the project)\n\nProjects data:\n{{ JSON.stringify($json.projects) }}\n\nBlocks data:\n{{ JSON.stringify($json.blocks) }}",
+        "text": "=Analyze this Notion data containing {{ $json.projects.length }} projects and {{ $json.blocks.length }} blocks.\n\nExtract text from blocks and match to projects using page IDs.\n\nMake sure when deciding what are next steps for the project, determine this based on the latest updates for the project (found based on date within the project)\n\nProjects data:\n{{ JSON.stringify($json.projects) }}\n\nBlocks data:\n{{ JSON.stringify($json.blocks) }}\n\n\nToday's date is: {{ $json.metadata.timestamp }}",
         "hasOutputParser": true,
         "batching": {
           "batchSize": 1
@@ -365,11 +365,11 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "67a3a74a-eb10-4b1e-a239-f87da300e8a4",
+  "versionId": "827387fb-9280-4d4b-9679-4cdaede8b4e4",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
