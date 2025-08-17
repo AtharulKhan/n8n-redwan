@@ -1,0 +1,445 @@
+{
+  "name": "Notion Projects to Slack Client Channels | Marketing Board",
+  "nodes": [
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09ATAUEPGE",
+          "mode": "list",
+          "cachedResultName": "client-simplifai"
+        },
+        "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1168, 96],
+      "id": "8cf978df-2874-489c-92f6-5c62ad41e3d4",
+      "name": "Send Slack Message",
+      "webhookId": "dbb72e3a-727d-45a3-9bff-f4c0a7032bcf",
+      "credentials": {
+        "slackApi": {
+          "id": "BwslAy6Dqpeg77Gq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Format AI-generated summary into Slack message\n  const aiSummary = $input.all()[0].json.output || $input.all()[0].json;\n\n  // Set target channel based on client\n  const clientChannelMap = {\n    'SimplifAI': 'simplifai-updates',\n    'WSI': 'wsi-updates',\n    'BFD': 'bfd-client-channel'\n  };\n  const targetChannel = clientChannelMap[aiSummary.clientName] || 'general-updates';\n\n  // Format status with emoji\n  const getStatusEmoji = (status) => {\n    const statusLower = (status || '').toLowerCase();\n    if (statusLower.includes('track')) return ':white_check_mark:';\n    if (statusLower.includes('attention') || statusLower.includes('review')) return ':warning:';\n    if (statusLower.includes('blocked') || statusLower.includes('critical')) return ':red_circle:';\n    return ':large_blue_circle:';\n  };\n\n  // Create Slack message\n  const overallStatusEmoji = getStatusEmoji(aiSummary.overallStatus);\n  const currentDate = new Date().toLocaleDateString('en-US', {\n    weekday: 'long',\n    year: 'numeric',\n    month: 'long',\n    day: 'numeric'\n  });\n\n  let slackMessage = `:chart_with_upwards_trend: *Dev Board | Daily Project Update for ${aiSummary.clientName}*\\n`;\n  slackMessage += `:calendar: ${currentDate}\\n\\n`;\n\n  // Overall status in blockquote\n  slackMessage += `>${overallStatusEmoji} *Overall Status:* ${aiSummary.overallStatus}\\n`;\n  slackMessage += `>:chart_with_upwards_trend: *Active Projects:* ${aiSummary.projectCount}\\n`;\n  slackMessage += `>:memo: *Last Update:* ${new Date(aiSummary.lastUpdateDate).toLocaleDateString()}\\n\\n`;\n\n  // Project-specific updates\n  if (aiSummary.projectUpdates && aiSummary.projectUpdates.length > 0) {\n    aiSummary.projectUpdates.forEach((project, index) => {\n      const projectStatusEmoji = getStatusEmoji(project.status);\n\n      // Project header in blockquote\n      slackMessage += `>${projectStatusEmoji} *${project.projectName}*\\n`;\n      slackMessage += `>_Status: ${project.status}_\\n\\n`;\n\n      // Latest updates for this project\n      if (project.latestUpdates && project.latestUpdates.length > 0) {\n        slackMessage += `*:memo: Recent Updates:*\\n`;\n        project.latestUpdates.forEach(update => {\n          slackMessage += `• ${update}\\n`;\n        });\n        slackMessage += `\\n`;\n      }\n\n      // Next actions for this project\n      if (project.nextActions && project.nextActions.length > 0) {\n        slackMessage += `*:dart: Next Actions:*\\n`;\n        project.nextActions.forEach(action => {\n          slackMessage += `• ${action}\\n`;\n        });\n        slackMessage += `\\n`;\n      }\n\n      // Blockers for this project\n      if (project.blockers && project.blockers.length > 0) {\n        slackMessage += `*:warning: Blockers:*\\n`;\n        project.blockers.forEach(blocker => {\n          slackMessage += `• ${blocker}\\n`;\n        });\n        slackMessage += `\\n`;\n      }\n\n      // Add spacing between projects (except for last project)\n      if (index < aiSummary.projectUpdates.length - 1) {\n        slackMessage += `\\n─────────────────────────\\n\\n`;\n      }\n    });\n  }\n\n  // Slack context in blockquote\n  if (aiSummary.slackContext && aiSummary.slackContext.trim() !== '') {\n    slackMessage += `\\n*:speech_balloon: Recent Team Discussions:*\\n`;\n    slackMessage += `>${aiSummary.slackContext}\\n\\n`;\n  }\n\n  // Footer\n  slackMessage += `─────────────────────────\\n`;\n  slackMessage += `:robot_face: _Automated update from Notion projects_\\n`;\n  slackMessage += `:clipboard: _For detailed project info, check your Notion workspace_`;\n\n  // Return formatted message\n  return [{\n    json: {\n      channelName: targetChannel,\n      message: slackMessage,\n      clientName: aiSummary.clientName,\n      overallStatus: aiSummary.overallStatus,\n      projectCount: aiSummary.projectCount\n    }\n  }];"
+      },
+      "id": "177d81fe-4ba0-4ccd-a537-14b018ef84c3",
+      "name": "Format Slack Message",
+      "type": "n8n-nodes-base.code",
+      "position": [928, 96],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"type\": \"object\",\n    \"properties\": {\n      \"clientName\": {\n        \"type\": \"string\",\n        \"description\": \"Name of the client\"\n      },\n      \"projectCount\": {\n        \"type\": \"number\",\n        \"description\": \"Number of active projects for this client\"\n      },\n      \"lastUpdateDate\": {\n        \"type\": \"string\",\n        \"description\": \"ISO format date of the last significant update\"\n      },\n      \"overallStatus\": {\n        \"type\": \"string\",\n        \"description\": \"Overall client status (On Track, Needs Attention, Blocked, etc.)\"\n      },\n      \"projectUpdates\": {\n        \"type\": \"array\",\n        \"items\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"projectName\": {\n              \"type\": \"string\",\n              \"description\": \"Name of the project\"\n            },\n            \"status\": {\n              \"type\": \"string\",\n              \"description\": \"Current status of this specific project\"\n            },\n            \"latestUpdates\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\"\n              },\n              \"description\": \"2-4 recent updates for this project\"\n            },\n            \"nextActions\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\"\n              },\n              \"description\": \"Immediate next steps for this project\"\n            },\n            \"blockers\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\"\n              },\n              \"description\": \"Current obstacles for this project (empty array if none)\"\n            }\n          },\n          \"required\": [\"projectName\", \"status\", \"latestUpdates\", \"nextActions\", \"blockers\"]\n        },\n        \"description\": \"Updates grouped by individual projects\"\n      },\n      \"slackContext\": {\n        \"type\": \"string\",\n        \"description\": \"Summary of relevant recent Slack discussions\"\n      }\n    },\n    \"required\": [\"clientName\", \"projectCount\", \"lastUpdateDate\", \"overallStatus\", \"projectUpdates\", \"slackContext\"]\n  }",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [640, 336],
+      "id": "da039fcc-0d44-4dcd-ba13-217cef5e65fc",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4",
+        "options": {
+          "maxTokens": 16000,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [448, 320],
+      "id": "dc2a097e-33a5-4669-9294-cfc69b573687",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are analyzing project data for **{{ $json.currentClient }}** to create a daily update summary.\n\n  **CONTEXT:**\n  - Client: {{ $json.currentClient }}\n  - Number of active projects: {{ $json.projects.length }}\n  - Block-level data available: {{ $json.blocks.length }} blocks\n  - Recent Slack messages (48h): {{ $json.slackContext.messageCount || 0 }}\n\n  **PROJECT DATA:**\n  {{ JSON.stringify($json.projects) }}\n\n  **BLOCK-LEVEL CONTENT:**\n  {{ JSON.stringify($json.blocks) }}\n\n  **RECENT SLACK DISCUSSIONS (Last 48 Hours):**\n  {% if $json.slackContext.recentMessages and $json.slackContext.recentMessages.length > 0 %}\n  Recent team discussions in #{{ $json.slackContext.channelName }}:\n  {{ $json.slackContext.recentMessages.map(msg => `- ${msg.timestamp}: ${msg.text}`).join('\\n') }}\n  {% else %}\n  No recent messages found in the client channel in the last 48 hours.\n  {% endif %}\n\n  **INSTRUCTIONS:**\n  Analyze the block-level content and project data to identify the latest updates for each project. Group all information by individual projects.\n\n  **OUTPUT FORMAT:**\n  Return a JSON object with:\n  - clientName: string ({{ $json.currentClient }})\n  - projectCount: number\n  - lastUpdateDate: string (ISO format of most recent activity found)\n  - overallStatus: string (On Track/Needs Attention/Blocked/Review Required)\n  - projectUpdates: array of objects, each containing:\n    - projectName: string\n    - status: string (project-specific status)\n    - latestUpdates: array of strings (2-4 recent updates for this project)\n    - nextActions: array of strings (immediate next steps for this project)\n    - blockers: array of strings (current obstacles for this project, empty array if none)\n  - slackContext: string (summary of relevant recent team discussions)\n\n  **Focus**: Group everything by project. Each project should have its own updates, actions, and blockers listed separately.\n\n  Today's date: {{ $json.metadata.timestamp }}",
+        "hasOutputParser": true,
+        "batching": {
+          "batchSize": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [448, 96],
+      "id": "5b5824f2-0a34-4181-83c2-1628c27784a9",
+      "name": "Generate AI Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Combine project data with Slack history for AI processing\n  const allInputs = $input.all();\n  console.log('Total inputs received:', allInputs.length);\n\n  // Initialize data containers\n  let projects = [];\n  let notionBlocks = [];\n  let slackHistory = [];\n  let currentClient = 'SimplifAI';\n  let targetChannel = 'simplifai-updates';\n\n  // Process all merged inputs to separate different data types\n  for (let i = 0; i < allInputs.length; i++) {\n    const input = allInputs[i].json;\n\n    // Check if this is aggregated project data\n    if (input.currentClient !== undefined && input.projects !== undefined) {\n      // This is from Aggregate Client Data\n      currentClient = input.currentClient;\n      targetChannel = input.targetChannel;\n      projects = input.projects || [];\n      notionBlocks = [...notionBlocks, ...(input.blocks || [])];\n      console.log('Found aggregated project data:', currentClient, 'projects:', projects.length);\n    }\n    // Check if this is a Slack message\n    else if (input.ts && (input.type === 'message' || input.subtype)) {\n      slackHistory.push(input);\n    }\n    // Check if this is a Notion block\n    else if (input.object === 'block') {\n      notionBlocks.push(input);\n    }\n    // Check if this item has project-like properties (fallback)\n    else if (input.pageId || input.projectName || input.client) {\n      projects.push(input);\n      // Extract client info if not set\n      if (currentClient === 'SimplifAI' && input.client) {\n        currentClient = input.client;\n      }\n    }\n  }\n\n  console.log('Data separation results:', {\n    projects: projects.length,\n    notionBlocks: notionBlocks.length,\n    slackMessages: slackHistory.length,\n    currentClient: currentClient\n  });\n\n  // Extract client from projects if still unknown\n  if (currentClient === 'Unknown Client' && projects.length > 0) {\n    currentClient = projects[0].client || 'SimplifAI';\n    console.log('Extracted client from projects:', currentClient);\n  }\n\n  // Set target channel based on client\n  if (targetChannel === 'unknown-channel') {\n    const clientChannelMap = {\n      'SimplifAI': 'simplifai-updates',\n      'WSI': 'wsi-updates',\n      'BFD': 'bfd-client-channel'\n    };\n    targetChannel = clientChannelMap[currentClient] || `${currentClient.toLowerCase().replace(/\\s+/g, '-')}-updates`;\n  }\n\n  // Filter blocks that belong to this client's projects\n  const clientProjectIds = projects.map(p => p.pageId);\n  const clientBlocks = notionBlocks.filter(block => {\n    if (!block.parent?.page_id) return false;\n    const blockPageId = block.parent.page_id.replace(/-/g, '');\n    return clientProjectIds.some(projectId => projectId === blockPageId);\n  });\n\n  console.log('Block filtering:', {\n    totalBlocks: notionBlocks.length,\n    clientProjectIds: clientProjectIds.length,\n    filteredBlocks: clientBlocks.length\n  });\n\n  // Filter Slack messages from last 48 hours\n  const now = new Date();\n  const fortyEightHoursAgo = new Date(now.getTime() - (48 * 60 * 60 * 1000));\n\n  const recentMessages = slackHistory\n    .filter(msg => {\n      if (!msg || !msg.ts) return false;\n      const msgDate = new Date(msg.ts * 1000);\n      const isRecent = msgDate >= fortyEightHoursAgo;\n      const hasContent = msg.text || msg.subtype;\n      const notBot = !msg.bot_id;\n      return isRecent && hasContent && notBot;\n    })\n    .slice(0, 20)\n    .map(msg => ({\n      text: msg.text || `${msg.subtype}: ${msg.user}`,\n      user: msg.user,\n      timestamp: new Date(msg.ts * 1000).toISOString(),\n      thread_ts: msg.thread_ts,\n      subtype: msg.subtype\n    }));\n\n  console.log('Slack message filtering:', {\n    totalSlackMessages: slackHistory.length,\n    filteredRecentMessages: recentMessages.length,\n    fortyEightHoursAgo: fortyEightHoursAgo.toISOString()\n  });\n\n  // Build final result\n  const result = {\n    currentClient: currentClient,\n    targetChannel: targetChannel,\n    projects: projects,\n    blocks: clientBlocks,\n    slackContext: {\n      channelName: targetChannel,\n      recentMessages: recentMessages,\n      messageCount: recentMessages.length,\n      timeWindow: '48 hours',\n      totalSlackItems: slackHistory.length,\n      filteredCount: recentMessages.length\n    },\n    metadata: {\n      timestamp: new Date().toISOString(),\n      processedClient: currentClient,\n      projectCount: projects.length,\n      blockCount: clientBlocks.length,\n      hasSlackContext: recentMessages.length > 0,\n      inputsProcessed: allInputs.length,\n      totalNotionBlocks: notionBlocks.length\n    }\n  };\n\n  console.log('Final result summary:', {\n    client: result.currentClient,\n    projects: result.projects.length,\n    blocks: result.blocks.length,\n    slackMessages: result.slackContext.messageCount,\n    totalProcessed: allInputs.length\n  });\n\n  return [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [256, 144],
+      "id": "4393b65d-a59b-4cd4-8228-8cbd69081a29",
+      "name": "Combine Project + Slack Data"
+    },
+    {
+      "parameters": {
+        "resource": "channel",
+        "operation": "history",
+        "channelId": {
+          "__rl": true,
+          "value": "C09ATAUEPGE",
+          "mode": "list",
+          "cachedResultName": "client-simplifai"
+        },
+        "limit": 30,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [-304, 48],
+      "id": "574cf230-074a-4b61-bd22-a403314adf72",
+      "name": "Get Slack Channel History",
+      "webhookId": "3e67a2be-ed6c-4bba-8408-901d29e0b0aa",
+      "credentials": {
+        "slackApi": {
+          "id": "BwslAy6Dqpeg77Gq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-720, 288],
+      "id": "eb7dd8ca-c972-4e90-9675-471e3b920dd2",
+      "name": "Merge Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and organize project data for the specified client\n  const allItems = $input.all();\n\n  // Try to get client config from previous execution context\n  let currentClient = 'Unknown Client';\n  let targetChannel = 'unknown-channel';\n\n  // Check if we can access the workflow data to get client config\n  try {\n    // Try to find client config from the workflow context\n    const workflowData = $workflow;\n    if (workflowData && workflowData.nodes) {\n      const configNode = workflowData.nodes.find(n => n.name === '📋 Client Configuration');\n      if (configNode && configNode.parameters && configNode.parameters.assignments) {\n        const assignments = configNode.parameters.assignments.assignments;\n        const clientNameAssignment = assignments.find(a => a.name === 'clientName');\n        const channelAssignment = assignments.find(a => a.name === 'slackChannelName');\n\n        if (clientNameAssignment) currentClient = clientNameAssignment.value;\n        if (channelAssignment) targetChannel = channelAssignment.value;\n      }\n    }\n  } catch (error) {\n    console.log('Could not access workflow config, using defaults');\n  }\n\n  // Separate blocks and project data\n  const blocks = [];\n  const projects = [];\n\n  // Process all items and identify their types\n  for (const item of allItems) {\n    if (item.json.type || item.json.object === 'block') {\n      // This is a Notion block\n      blocks.push(item.json);\n    } else if (item.json.properties || item.json.id) {\n      // This is a Notion page/project\n      const pageIdWithDashes = item.json.id || 'unknown';\n      const pageId = pageIdWithDashes.replace(/-/g, ''); // Remove all dashes\n\n      // Extract project details\n      const client = item.json.property_client ||\n        item.json.properties?.Client?.select?.name ||\n        item.json.properties?.Client?.rich_text?.[0]?.text?.content ||\n        item.json.properties?.Client?.title?.[0]?.text?.content ||\n        'Unknown Client';\n\n      const projectName = item.json.name ||\n        item.json.property_project_name ||\n        item.json.properties?.Name?.title?.[0]?.text?.content ||\n        item.json.properties?.Title?.title?.[0]?.text?.content ||\n        item.json.properties?.Activity?.title?.[0]?.text?.content ||\n        item.json.properties?.Project?.title?.[0]?.text?.content ||\n        'Untitled Project';\n\n      // Extract additional details\n      const status = item.json.property_status ||\n        item.json.properties?.Status?.status?.name ||\n        item.json.properties?.Status?.select?.name ||\n        'Active';\n\n      const owners = item.json.property_owner ||\n        item.json.properties?.Owner?.people?.map(p => p.name || p.email) ||\n        [];\n\n      const startDate = item.json.property_start_date?.start ||\n        item.json.properties?.StartDate?.date?.start || '';\n      const endDate = item.json.property_end_date?.start ||\n        item.json.properties?.EndDate?.date?.start || '';\n      const lastEdited = item.json.property_last_edited_time ||\n        item.json.last_edited_time || '';\n\n      const priority = item.json.property_priority ||\n        item.json.properties?.Priority?.select?.name ||\n        item.json.properties?.Priority?.multi_select?.[0]?.name ||\n        'Normal';\n\n      const serviceType = item.json.property_service_type ||\n        item.json.properties?.ServiceType?.select?.name || '';\n\n      const projectLinks = item.json.property_project_links ||\n        item.json.properties?.ProjectLinks?.url || [];\n\n      projects.push({\n        pageId: pageId,\n        pageIdOriginal: pageIdWithDashes,\n        client: client,\n        projectName: projectName,\n        url: item.json.url || '',\n        owners: owners,\n        ownersList: Array.isArray(owners) ? owners.join(', ') : owners,\n        status: status,\n        startDate: startDate,\n        endDate: endDate,\n        lastEditedTime: lastEdited,\n        priority: priority,\n        serviceType: serviceType,\n        projectLinks: Array.isArray(projectLinks) ? projectLinks : [projectLinks].filter(l => l),\n        hasLinks: projectLinks && (Array.isArray(projectLinks) ? projectLinks.length > 0 : true)\n      });\n    }\n  }\n\n  // Filter blocks for this client's projects\n  const clientProjectIds = projects.map(p => p.pageId);\n  const clientBlocks = blocks.filter(block => {\n    return clientProjectIds.some(projectId =>\n      block.parent?.page_id?.replace(/-/g, '') === projectId ||\n      block.page_id?.replace(/-/g, '') === projectId\n    );\n  });\n\n  console.log('Aggregate Client Data Results:', {\n    currentClient: currentClient,\n    targetChannel: targetChannel,\n    projectCount: projects.length,\n    blockCount: clientBlocks.length\n  });\n\n  // Return aggregated data for AI processing\n  return [{\n    json: {\n      currentClient: currentClient,\n      targetChannel: targetChannel,\n      projects: projects,\n      blocks: clientBlocks,\n      projectCount: projects.length,\n      blockCount: clientBlocks.length,\n      metadata: {\n        timestamp: new Date().toISOString(),\n        processedClient: currentClient,\n        targetChannel: targetChannel\n      }\n    }\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-304, 288],
+      "id": "e76eee2f-2e55-4442-a873-b2ca98b4a162",
+      "name": "Aggregate Client Data"
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "limit": 15,
+        "fetchNestedBlocks": true
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-720, 16],
+      "id": "60f9c16e-9a4b-4372-ba15-630974a827ef",
+      "name": "Get Child Blocks",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
+          "mode": "url"
+        },
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Client|select",
+              "condition": "equals",
+              "selectValue": "SimplifAI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-1232, 96],
+      "id": "6b195b8f-cb82-4726-a8c2-e56743f7e4e0",
+      "name": "Get Notion Database Pages",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 0,2,4"
+            }
+          ]
+        }
+      },
+      "id": "5b687861-809b-4703-81cf-066cb1211a4e",
+      "name": "Daily Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-1552, 96],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [0, 144],
+      "id": "d8681144-5f63-4006-bba3-82eac901156e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [576, 544],
+      "id": "d4e80844-2553-4d12-aa21-3dc1817cbfeb",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Client - SimplifAI",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-1600, -16],
+      "typeVersion": 1,
+      "id": "32072a1d-20ff-4af0-b6a3-a4bb65b1819f",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Format Slack Message": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Format Slack Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Project + Slack Data": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Slack Channel History": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Client Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Slack Channel History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Client Data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Child Blocks": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Notion Database Pages": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Get Child Blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Notion Database Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Combine Project + Slack Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e338aa3d-4150-4f38-9ab7-902daf9ad861",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "sGcwWk5VwzDZGQiZ",
+  "tags": [
+    {
+      "createdAt": "2025-08-17T20:00:58.638Z",
+      "updatedAt": "2025-08-17T20:00:58.638Z",
+      "id": "AcBnyW08HnPACs3E",
+      "name": "Notion"
+    },
+    {
+      "createdAt": "2025-08-17T23:12:38.701Z",
+      "updatedAt": "2025-08-17T23:12:38.701Z",
+      "id": "HTCzEWybixzofcrj",
+      "name": "Slack Updates"
+    },
+    {
+      "createdAt": "2025-08-17T20:01:00.158Z",
+      "updatedAt": "2025-08-17T20:01:00.158Z",
+      "id": "z1qNg60fa8ZXazIY",
+      "name": "Slack"
+    }
+  ]
+}
