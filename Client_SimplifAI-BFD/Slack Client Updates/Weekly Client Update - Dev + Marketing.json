@@ -1,0 +1,694 @@
+{
+  "name": "Notion | SimplifAI/BFD | Weekly Dev + Marketing Team | Client Activity Email",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "224b529c-e6a4-43b7-8394-fb896c5a6c6d",
+      "name": "Weekly Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-2048, 256],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/2626ab60b479805daf3be7f77576900a?v=2626ab60b4798122bdfc000c5a3ae2d6",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Service Team|select",
+              "condition": "equals",
+              "selectValue": "Dev"
+            },
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-1808, 256],
+      "id": "3cb6d051-4055-46b3-b742-f4fbc7ed83d6",
+      "name": "Get Notion Database Pages",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "limit": 100,
+        "fetchNestedBlocks": true
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-1568, 160],
+      "id": "ec60765b-6d96-42f7-b6c4-70a8c50a1dd5",
+      "name": "Get Child Blocks",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract client and project details from Notion database pages\nconst projects = [];\nconst items = $input.all();\n\n// Process each database page\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  \n  // Extract page ID and remove dashes to match content data format\n  const pageIdWithDashes = item.json.id || 'unknown';\n  const pageId = pageIdWithDashes.replace(/-/g, ''); // Remove all dashes\n  \n  // Extract client name - Check multiple possible property names\n  const client = item.json.property_client || \n    item.json.properties?.Client?.select?.name || \n    item.json.properties?.Client?.rich_text?.[0]?.text?.content ||\n    item.json.properties?.Client?.title?.[0]?.text?.content ||\n    'Unknown Client';\n  \n  // Extract project/activity name\n  const projectName = item.json.name ||\n    item.json.property_project_name ||\n    item.json.properties?.Name?.title?.[0]?.text?.content ||\n    item.json.properties?.Title?.title?.[0]?.text?.content ||\n    item.json.properties?.Activity?.title?.[0]?.text?.content ||\n    item.json.properties?.Project?.title?.[0]?.text?.content ||\n    'Untitled Project';\n  \n  // Extract owner(s)\n  const owners = item.json.property_owner || \n    item.json.properties?.Owner?.people?.map(p => p.name || p.email) || \n    [];\n  \n  // Extract status\n  const status = item.json.property_status ||\n    item.json.properties?.Status?.status?.name ||\n    item.json.properties?.Status?.select?.name ||\n    'Active';\n  \n  // Extract dates\n  const startDate = item.json.property_start_date?.start || \n    item.json.properties?.StartDate?.date?.start || '';\n  const endDate = item.json.property_end_date?.start || \n    item.json.properties?.EndDate?.date?.start || '';\n  const lastEdited = item.json.property_last_edited_time || \n    item.json.last_edited_time || '';\n  \n  // Extract priority\n  const priority = item.json.property_priority ||\n    item.json.properties?.Priority?.select?.name ||\n    item.json.properties?.Priority?.multi_select?.[0]?.name ||\n    'Normal';\n  \n  // Extract service type\n  const serviceType = item.json.property_service_type || \n    item.json.properties?.ServiceType?.select?.name || '';\n  \n  // Extract project links\n  const projectLinks = item.json.property_project_links || \n    item.json.properties?.ProjectLinks?.url || [];\n  \n  // Add to projects array\n  projects.push({\n    pageId: pageId,\n    pageIdOriginal: pageIdWithDashes,\n    client: client,\n    projectName: projectName,\n    url: item.json.url || '',\n    owners: owners,\n    ownersList: Array.isArray(owners) ? owners.join(', ') : owners,\n    status: status,\n    startDate: startDate,\n    endDate: endDate,\n    lastEditedTime: lastEdited,\n    priority: priority,\n    serviceType: serviceType,\n    projectLinks: Array.isArray(projectLinks) ? projectLinks : [projectLinks].filter(l => l),\n    hasLinks: projectLinks && (Array.isArray(projectLinks) ? projectLinks.length > 0 : true)\n  });\n}\n\n// Return the extracted project information\nreturn [{\n  json: {\n    projects: projects,\n    totalProjects: projects.length,\n    uniqueClients: [...new Set(projects.map(p => p.client))]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1568, 368],
+      "id": "fe7384e4-8483-4942-a80e-6a467713180f",
+      "name": "Extract Client Details"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-1088, 256],
+      "id": "998956dc-4666-44cc-bad2-a03964e29130",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate all items into a single data structure for AI processing\nconst allItems = $input.all();\n\n// Separate blocks and project data\nconst blocks = [];\nlet projectData = null;\n\n// Process all items and identify their types\nfor (const item of allItems) {\n  if (item.json.projects) {\n    // This is the project metadata\n    projectData = item.json;\n  } else if (item.json.type || item.json.object === 'block') {\n    // This is a Notion block\n    blocks.push(item.json);\n  }\n}\n\n// Create aggregated data structure\nconst aggregatedData = {\n  metadata: {\n    totalItems: allItems.length,\n    blockCount: blocks.length,\n    timestamp: new Date().toISOString()\n  },\n  projects: projectData ? projectData.projects : [],\n  blocks: blocks,\n  uniqueClients: projectData ? projectData.uniqueClients : []\n};\n\n// Return as single item for AI processing\nreturn [{\n  json: aggregatedData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-848, 256],
+      "id": "9b3fa2d1-4030-4278-9eb6-727879126408",
+      "name": "Aggregate Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this Notion data containing {{ $json.projects.length }} projects and {{ $json.blocks.length }} blocks.\n\nExtract text from blocks and match to projects using page IDs.\n\nMake sure when deciding what are next steps for the project, determine this based on the latest updates for the project (found based on date within the project)\n\nProjects data:\n{{ JSON.stringify($json.projects) }}\n\nBlocks data:\n{{ JSON.stringify($json.blocks) }}\n\n\nToday's date is: {{ $json.metadata.timestamp }}",
+        "hasOutputParser": true,
+        "batching": {
+          "batchSize": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [-608, 160],
+      "id": "045b621d-cf48-48d0-b136-f153e9f61598",
+      "name": "Generate AI Summary"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-pro",
+        "options": {
+          "maxTokens": 16000,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-608, 368],
+      "id": "2941cc55-623e-487d-b914-52c61379eb2e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format the AI-generated JSON into an email\nconst item = $input.all()[0];\nlet reportData;\n\n// The output parser ensures we get properly structured JSON\nif (item.json.output) {\n  reportData = item.json.output;\n} else if (item.json.clients) {\n  reportData = item.json;\n} else {\n  // Fallback\n  reportData = {\n    reportDate: new Date().toLocaleDateString('en-US', { \n      weekday: 'long', \n      year: 'numeric', \n      month: 'long', \n      day: 'numeric' \n    }),\n    clients: [],\n    statistics: { totalClients: 0, totalProjects: 0, projectsWithUpdates: 0 }\n  };\n}\n\nconst currentDate = reportData.reportDate || new Date().toLocaleDateString('en-US', { \n  weekday: 'long', \n  year: 'numeric', \n  month: 'long', \n  day: 'numeric' \n});\n\n// Create HTML email content\nlet htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n  <title>Weekly Client Activity Report</title>\n  <style>\n    /* Base / tokens */\n    :root { color-scheme: light dark; }\n    body { \n      margin: 0; \n      padding: 0; \n      background: #f5f7fb; \n      -webkit-text-size-adjust: 100%;\n      -ms-text-size-adjust: 100%;\n    }\n    .email-container {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;\n      line-height: 1.55;\n      color: #2b2f38;\n      max-width: 860px;\n      margin: 0 auto;\n      padding: 16px;\n    }\n    .card {\n      background: #ffffff;\n      border-radius: 14px;\n      padding: 24px;\n      box-shadow: 0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04);\n      border: 1px solid #eef2f7;\n    }\n\n    /* Headings */\n    h1 { \n      margin: 0 0 12px 0;\n      font-size: 24px;\n      line-height: 1.25;\n      letter-spacing: -0.02em;\n      color: #1f2a37;\n    }\n    .subtle {\n      color: #667085;\n      font-size: 14px;\n      margin: 0 0 20px 0;\n    }\n\n    /* Section titles */\n    h2 { \n      color: #1f2a37; \n      margin: 28px 0 12px; \n      font-size: 18px;\n      padding: 10px 12px;\n      background: #f3f7ff;\n      border: 1px solid #e4edff;\n      border-left: 4px solid #3b82f6;\n      border-radius: 10px;\n    }\n    h3 {\n      color: #344054;\n      margin: 10px 0 8px;\n      font-size: 16px;\n    }\n\n    /* Meta rows */\n    .row, .client-header {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 12px;\n      flex-wrap: wrap;\n      margin-bottom: 10px;\n    }\n\n    /* Stats → single row on desktop, stack on phones */\n    .stats {\n      background: #f3f7ff;\n      border: 1px solid #e4edff;\n      padding: 0;\n      border-radius: 14px;\n      margin: 18px 0 8px 0;\n    }\n    .stats-strip {\n      display: flex;\n      align-items: stretch;\n      justify-content: space-between;\n      gap: 0;\n      overflow: hidden;\n      border-radius: 12px;\n      background: #f8fbff;\n    }\n    .stat-cell {\n      flex: 1 1 0%;\n      display: grid;\n      place-items: center;\n      padding: 18px 12px;\n      text-align: center;\n      background: #ffffff;\n    }\n    .stat-cell + .stat-cell { border-left: 1px solid #e8efff; }\n    .stat-value {\n      font-size: 22px;\n      font-weight: 800;\n      color: #3b82f6;\n      line-height: 1;\n      margin-bottom: 4px;\n    }\n    .stat-label { color: #667085; font-size: 12.5px; }\n\n    /* Pills / badges */\n    .pill, .project-status {\n      display: inline-flex;\n      align-items: center;\n      gap: 8px;\n      padding: 6px 12px;\n      border-radius: 999px;\n      font-size: 12px;\n      font-weight: 700;\n      line-height: 1;\n      white-space: nowrap;\n      border: 1px solid transparent;\n      box-shadow: 0 1px 0 rgba(16,24,40,0.06);\n    }\n    .project-status .dot {\n      width: 8px;\n      height: 8px;\n      border-radius: 999px;\n      background: currentColor;\n      display: inline-block;\n    }\n\n    /* Status palettes */\n    .status-in-progress {\n      color: #0b4a6f;\n      background: linear-gradient(180deg, #eaf6ff 0%, #e3f1ff 100%);\n      border-color: #cfe9ff;\n    }\n    .status-active, .status-done {\n      color: #146c43;\n      background: linear-gradient(180deg, #eafaf0 0%, #e3f7ea 100%);\n      border-color: #ccebd7;\n    }\n    .status-needs-review, .status-review {\n      color: #8a6100;\n      background: linear-gradient(180deg, #fff7e6 0%, #fff1d6 100%);\n      border-color: #ffe7b7;\n    }\n    .status-completed {\n      color: #193b7b;\n      background: linear-gradient(180deg, #edf3ff 0%, #e8efff 100%);\n      border-color: #d8e3ff;\n    }\n    .status-to-do {\n      color: #8a1c1c;\n      background: linear-gradient(180deg, #ffecec 0%, #ffe3e3 100%);\n      border-color: #ffd3d3;\n    }\n\n    /* Priority colors (text only) */\n    .priority-high, .priority-very-high { color: #d92d20; font-weight: 700; }\n    .priority-medium { color: #b54708; font-weight: 600; }\n    .priority-low { color: #067647; font-weight: 600; }\n    .priority-normal { color: #475467; }\n\n    .project-count {\n      background: #3b82f6;\n      color: white;\n      padding: 6px 12px;\n      border-radius: 999px;\n      font-size: 12px;\n      font-weight: 700;\n    }\n\n    /* Cards & sections */\n    .summary-section { \n      background: #f8fafc; \n      padding: 16px; \n      margin: 12px 0; \n      border-radius: 12px; \n      border: 1px solid #eef2f7;\n    }\n    .project-card {\n      background: #ffffff;\n      padding: 16px;\n      margin: 14px 0;\n      border-radius: 12px;\n      border: 1px solid #eef2f7;\n    }\n    .project-header {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 12px;\n      flex-wrap: wrap;\n      margin-bottom: 8px;\n    }\n    .project-title {\n      margin: 0;\n      font-size: 16px;\n      font-weight: 700;\n      color: #1f2a37;\n    }\n    .project-meta { color: #667085; font-size: 12.5px; }\n\n    /* Lists */\n    ul { margin: 8px 0 0 0; padding-left: 18px; }\n    li { margin: 6px 0; line-height: 1.45; }\n    strong { color: #1f2a37; font-weight: 650; }\n\n    .action-items {\n      background: #fff7e6;\n      border: 1px solid #ffe7b7;\n      padding: 12px;\n      border-radius: 10px;\n      margin: 10px 0;\n    }\n    .next-steps {\n      background: #eaf6ff;\n      border: 1px solid #cfe9ff;\n      padding: 12px;\n      border-radius: 10px;\n      margin: 10px 0;\n    }\n\n    .footer { \n      margin-top: 28px; \n      padding-top: 16px; \n      border-top: 1px solid #eef2f7; \n      color: #667085; \n      font-size: 12.5px;\n      text-align: center;\n    }\n\n/* Space and align pills consistently */\n.project-count,\n.project-status,\n.pill {\n  margin-left: 6px;        /* space from label text */\n  vertical-align: middle;  /* align with text baseline */\n}\n\n.client-header .project-count {\n  margin-left: 8px;        /* a bit more space for the client header count */\n}\n\n.project-status,\n.pill {\n  display: inline-flex;    /* keeps dot and text aligned */\n  align-items: center;\n  gap: 6px;                /* space between dot and text */\n  margin-top: 2px;         /* tweak vertical position */\n  margin-bottom: 2px;\n}\n\n    \n    a { color: #3b82f6; text-decoration: none; }\n    a:hover { text-decoration: underline; }\n\n    /* Responsive */\n    @media only screen and (max-width: 560px) {\n      .email-container { padding: 12px; }\n      .card { padding: 18px; border-radius: 12px; }\n      h1 { font-size: 20px; }\n      h2 { font-size: 16px; padding: 8px 10px; }\n      h3 { font-size: 15px; }\n      .stats-strip { flex-direction: column; }\n      .stat-cell + .stat-cell { border-left: 0; border-top: 1px solid #e8efff; }\n      .project-title { font-size: 15px; }\n      .row, .project-header, .client-header { gap: 8px; }\n      .project-status, .pill { font-size: 11.5px; padding: 5px 10px; }\n      .project-meta { font-size: 12px; }\n      .project-count { padding: 5px 10px; font-size: 11.5px; }\n    }\n\n    /* Dark mode (basic) */\n    @media (prefers-color-scheme: dark) {\n      body { background: #0b1220; }\n      .card, .project-card { background: #0f172a; border-color: #1e293b; }\n      .email-container, .subtle, .project-meta, .stat-label { color: #cbd5e1; }\n      h1, h2, h3, strong { color: #e2e8f0; }\n      .summary-section { background: #0f172a; border-color: #1e293b; }\n      .stats { background: #0f172a; border-color: #1e293b; }\n      .stat-cell { background: #0f172a; }\n      a { color: #93c5fd; }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"email-container\">\n    <div class=\"card\">\n      <h1>📊 Weekly Client Activity Report</h1>\n      <p class=\"subtle\"><strong>Report Date:</strong> ${currentDate}</p>\n\n      <!-- Stats: single-row on desktop -->\n      <div class=\"stats\">\n        <div class=\"stats-strip\">\n          <div class=\"stat-cell\">\n            <div class=\"stat-value\">${reportData.statistics?.totalClients || 0}</div>\n            <div class=\"stat-label\">Active Clients</div>\n          </div>\n          <div class=\"stat-cell\">\n            <div class=\"stat-value\">${reportData.statistics?.totalProjects || 0}</div>\n            <div class=\"stat-label\">Total Projects</div>\n          </div>\n          <div class=\"stat-cell\">\n            <div class=\"stat-value\">${reportData.statistics?.projectsWithUpdates || 0}</div>\n            <div class=\"stat-label\">Projects with Updates</div>\n          </div>\n        </div>\n      </div>\n`;\n\n// Add each client section\nif (reportData.clients && reportData.clients.length > 0) {\n  for (const client of reportData.clients) {\n    htmlContent += `\n    <h2>🏢 ${client.name}</h2>\n    <div class=\"client-header\">\n      <span><strong>Projects:</strong> ${client.projectCount || 0} total</span>\n      <span class=\"project-count\">${client.projects?.length || 0} Active</span>\n    </div>\n    `;\n    \n    // Client summary\n    if (client.clientSummary) {\n      htmlContent += `\n      <div class=\"summary-section\">\n        <h3>Client Overview</h3>\n        <p>${client.clientSummary}</p>\n      </div>`;\n    }\n    \n    // Key highlights\n    if (client.keyHighlights && client.keyHighlights.length > 0) {\n      htmlContent += `\n      <div class=\"summary-section\">\n        <h3>Key Highlights</h3>\n        <ul>${client.keyHighlights.map(h => `<li>${h}</li>`).join('')}</ul>\n      </div>`;\n    }\n    \n    // Projects\n    if (client.projects && client.projects.length > 0) {\n      for (const project of client.projects) {\n        const status = (project.status || 'Active').toLowerCase().replace(/\\s+/g, '-');\n        const statusClass = `status-${status}`;\n        const priority = (project.priority || 'Normal').toLowerCase().replace(/\\s+/g, '-');\n        const priorityClass = `priority-${priority}`;\n        \n        htmlContent += `\n        <div class=\"project-card\">\n          <div class=\"project-header\">\n            <h3 class=\"project-title\">${project.name}</h3>\n            <span class=\"project-status ${statusClass}\">\n              <span class=\"dot\"></span>${project.status || 'Active'}\n            </span>\n          </div>\n        `;\n        \n        // Project metadata\n        if (project.owner || project.priority || project.startDate || project.endDate) {\n          htmlContent += `<p class=\"project-meta\">`;\n          if (project.owner) htmlContent += `<strong>Owner:</strong> ${project.owner} | `;\n          if (project.priority) htmlContent += `<strong>Priority:</strong> <span class=\"${priorityClass}\">${project.priority}</span> | `;\n          if (project.startDate) htmlContent += `<strong>Start:</strong> ${project.startDate} | `;\n          if (project.endDate) htmlContent += `<strong>End:</strong> ${project.endDate}`;\n          htmlContent += `</p>`;\n        }\n        \n        // Summary\n        if (project.summary) {\n          htmlContent += `\n          <div style=\"margin: 10px 0;\">\n            <strong>Summary:</strong>\n            <p>${project.summary}</p>\n          </div>`;\n        }\n        \n        // Action items\n        if (project.actionItems && project.actionItems.length > 0) {\n          htmlContent += `\n          <div class=\"action-items\">\n            <strong>📌 Action Items:</strong>\n            <ul>${project.actionItems.slice(0, 5).map(item => `<li>${item}</li>`).join('')}</ul>\n          </div>`;\n        }\n        \n        // Next steps\n        if (project.nextSteps && project.nextSteps.length > 0) {\n          htmlContent += `\n          <div class=\"next-steps\">\n            <strong>➡️ Next Steps:</strong>\n            <ul>${project.nextSteps.slice(0, 5).map(step => `<li>${step}</li>`).join('')}</ul>\n          </div>`;\n        }\n        \n        htmlContent += `</div>`; // close project-card\n      }\n    }\n  }\n} else {\n  htmlContent += `\n    <div class=\"summary-section\">\n      <p>No client data available for this period.</p>\n    </div>`;\n}\n\n// Footer\nhtmlContent += `\n    <div class=\"footer\">\n      <p><strong>📧 Automated Report</strong></p>\n      <p>This report was automatically generated from your Notion database.</p>\n      <p>For detailed information about any activity, please refer to your <a href=\"https://notion.so\">Notion workspace</a>.</p>\n    </div>\n  </div>\n</div>\n</body>\n</html>\n`;\n\n// Create plain text version\nlet textContent = `WEEKLY CLIENT ACTIVITY REPORT\nReport Date: ${currentDate}\n\nSUMMARY STATISTICS\n==================\nActive Clients: ${reportData.statistics?.totalClients || 0}\nTotal Projects: ${reportData.statistics?.totalProjects || 0}\nProjects with Updates: ${reportData.statistics?.projectsWithUpdates || 0}\n\n${'='.repeat(60)}\n\n`;\n\nif (reportData.clients && reportData.clients.length > 0) {\n  for (const client of reportData.clients) {\n    textContent += `CLIENT: ${client.name}\nProjects: ${client.projectCount || 0} total\n\n`;\n    if (client.clientSummary) {\n      textContent += `Overview: ${client.clientSummary}\n\n`;\n    }\n    if (client.projects && client.projects.length > 0) {\n      for (const project of client.projects) {\n        textContent += `\nPROJECT: ${project.name}\nStatus: ${project.status || 'Active'}\n${project.owner ? `Owner: ${project.owner}\\n` : ``}\n${project.priority ? `Priority: ${project.priority}\\n` : ``}\n${project.summary ? `\\nSummary:\\n${project.summary}\\n` : ``}\n${project.actionItems && project.actionItems.length > 0 ? `\\nAction Items:\\n- ${project.actionItems.slice(0, 5).join('\\n- ')}\\n` : ``}\n${project.nextSteps && project.nextSteps.length > 0 ? `\\nNext Steps:\\n- ${project.nextSteps.slice(0, 5).join('\\n- ')}\\n` : ``}\n`;\n      }\n    }\n    textContent += `${'-'.repeat(50)}\\n\\n`;\n  }\n}\n\ntextContent += `\n========================================\nThis report was automatically generated from your Notion database.\nFor detailed information about any activity, please refer to your Notion workspace.`;\n\n// Return formatted email content\nreturn [{\n  json: {\n    subject: `📊 Weekly Client Activity Report - ${currentDate} | ${reportData.statistics?.totalClients || 0} Clients`,\n    htmlContent,\n    textContent,\n    totalClients: reportData.statistics?.totalClients || 0,\n    totalProjects: reportData.statistics?.totalProjects || 0,\n    projectsWithUpdates: reportData.statistics?.projectsWithUpdates || 0,\n    reportDate: currentDate\n  }\n}];\n"
+      },
+      "id": "071cb5f1-bc1d-4df1-a2b6-098d8de32190",
+      "name": "Format Email Content",
+      "type": "n8n-nodes-base.code",
+      "position": [-208, 256],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "sendTo": "atharul.k@gmail.com, mdrahman.bfd@gmail.com, nurulbfd@gmail.com",
+        "subject": "=Dev Projects: {{ $json.subject }}",
+        "message": "={{ $json.htmlContent }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [16, 256],
+      "id": "0f70bcb2-40a8-43bd-92df-7766bd435041",
+      "name": "Send a message",
+      "webhookId": "a7ee901b-2190-43f3-a748-351dc7fb9e2c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"reportDate\": {\n      \"type\": \"string\"\n    },\n    \"clients\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          },\n          \"projectCount\": {\n            \"type\": \"number\"\n          },\n          \"projects\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"name\": {\n                  \"type\": \"string\"\n                },\n                \"status\": {\n                  \"type\": \"string\"\n                },\n                \"owner\": {\n                  \"type\": \"string\"\n                },\n                \"priority\": {\n                  \"type\": \"string\"\n                },\n                \"startDate\": {\n                  \"type\": \"string\"\n                },\n                \"endDate\": {\n                  \"type\": \"string\"\n                },\n                \"summary\": {\n                  \"type\": \"string\"\n                },\n                \"actionItems\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"string\"\n                  }\n                },\n                \"nextSteps\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"string\"\n                  }\n                }\n              },\n              \"required\": [\"name\", \"status\"]\n            }\n          },\n          \"clientSummary\": {\n            \"type\": \"string\"\n          },\n          \"keyHighlights\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        \"required\": [\"name\", \"projects\"]\n      }\n    },\n    \"statistics\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"totalClients\": {\n          \"type\": \"number\"\n        },\n        \"totalProjects\": {\n          \"type\": \"number\"\n        },\n        \"projectsWithUpdates\": {\n          \"type\": \"number\"\n        }\n      },\n      \"required\": [\"totalClients\", \"totalProjects\"]\n    }\n  },\n  \"required\": [\"reportDate\", \"clients\", \"statistics\"]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [-464, 368],
+      "id": "2877ea3e-2937-41de-aeb4-b540db795043",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-544, 576],
+      "id": "0ad48e06-9047-4659-8348-8a37ad8a4b4e",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "eb0bde42-685f-4bb2-a71b-5975aaed942f",
+      "name": "Weekly Schedule Trigger1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-2016, 1088],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/2626ab60b479805daf3be7f77576900a?v=2626ab60b4798122bdfc000c5a3ae2d6",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Service Team|select",
+              "condition": "equals",
+              "selectValue": "Marketing"
+            },
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-1776, 1088],
+      "id": "5e000430-f4ca-410e-8eae-0dd1e12d9a01",
+      "name": "Get Notion Database Pages1",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "limit": 100,
+        "fetchNestedBlocks": true
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-1536, 992],
+      "id": "4c2fc7b1-bbb2-4541-9972-441d4d59fc8f",
+      "name": "Get Child Blocks1",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract client and project details from Notion database pages\nconst projects = [];\nconst items = $input.all();\n\n// Process each database page\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  \n  // Extract page ID and remove dashes to match content data format\n  const pageIdWithDashes = item.json.id || 'unknown';\n  const pageId = pageIdWithDashes.replace(/-/g, ''); // Remove all dashes\n  \n  // Extract client name - Check multiple possible property names\n  const client = item.json.property_client || \n    item.json.properties?.Client?.select?.name || \n    item.json.properties?.Client?.rich_text?.[0]?.text?.content ||\n    item.json.properties?.Client?.title?.[0]?.text?.content ||\n    'Unknown Client';\n  \n  // Extract project/activity name\n  const projectName = item.json.name ||\n    item.json.property_project_name ||\n    item.json.properties?.Name?.title?.[0]?.text?.content ||\n    item.json.properties?.Title?.title?.[0]?.text?.content ||\n    item.json.properties?.Activity?.title?.[0]?.text?.content ||\n    item.json.properties?.Project?.title?.[0]?.text?.content ||\n    'Untitled Project';\n  \n  // Extract owner(s)\n  const owners = item.json.property_owner || \n    item.json.properties?.Owner?.people?.map(p => p.name || p.email) || \n    [];\n  \n  // Extract status\n  const status = item.json.property_status ||\n    item.json.properties?.Status?.status?.name ||\n    item.json.properties?.Status?.select?.name ||\n    'Active';\n  \n  // Extract dates\n  const startDate = item.json.property_start_date?.start || \n    item.json.properties?.StartDate?.date?.start || '';\n  const endDate = item.json.property_end_date?.start || \n    item.json.properties?.EndDate?.date?.start || '';\n  const lastEdited = item.json.property_last_edited_time || \n    item.json.last_edited_time || '';\n  \n  // Extract priority\n  const priority = item.json.property_priority ||\n    item.json.properties?.Priority?.select?.name ||\n    item.json.properties?.Priority?.multi_select?.[0]?.name ||\n    'Normal';\n  \n  // Extract service type\n  const serviceType = item.json.property_service_type || \n    item.json.properties?.ServiceType?.select?.name || '';\n  \n  // Extract project links\n  const projectLinks = item.json.property_project_links || \n    item.json.properties?.ProjectLinks?.url || [];\n  \n  // Add to projects array\n  projects.push({\n    pageId: pageId,\n    pageIdOriginal: pageIdWithDashes,\n    client: client,\n    projectName: projectName,\n    url: item.json.url || '',\n    owners: owners,\n    ownersList: Array.isArray(owners) ? owners.join(', ') : owners,\n    status: status,\n    startDate: startDate,\n    endDate: endDate,\n    lastEditedTime: lastEdited,\n    priority: priority,\n    serviceType: serviceType,\n    projectLinks: Array.isArray(projectLinks) ? projectLinks : [projectLinks].filter(l => l),\n    hasLinks: projectLinks && (Array.isArray(projectLinks) ? projectLinks.length > 0 : true)\n  });\n}\n\n// Return the extracted project information\nreturn [{\n  json: {\n    projects: projects,\n    totalProjects: projects.length,\n    uniqueClients: [...new Set(projects.map(p => p.client))]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1536, 1200],
+      "id": "1c36b451-5228-4e25-bb5d-47a76088784c",
+      "name": "Extract Client Details1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-1056, 1088],
+      "id": "790bcaec-10b6-4b88-ac63-58837740859a",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate all items into a single data structure for AI processing\nconst allItems = $input.all();\n\n// Separate blocks and project data\nconst blocks = [];\nlet projectData = null;\n\n// Process all items and identify their types\nfor (const item of allItems) {\n  if (item.json.projects) {\n    // This is the project metadata\n    projectData = item.json;\n  } else if (item.json.type || item.json.object === 'block') {\n    // This is a Notion block\n    blocks.push(item.json);\n  }\n}\n\n// Create aggregated data structure\nconst aggregatedData = {\n  metadata: {\n    totalItems: allItems.length,\n    blockCount: blocks.length,\n    timestamp: new Date().toISOString()\n  },\n  projects: projectData ? projectData.projects : [],\n  blocks: blocks,\n  uniqueClients: projectData ? projectData.uniqueClients : []\n};\n\n// Return as single item for AI processing\nreturn [{\n  json: aggregatedData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-816, 1088],
+      "id": "8a625c39-e04c-449b-8828-2d713e70b27b",
+      "name": "Aggregate Data1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this Notion data containing {{ $json.projects.length }} projects and {{ $json.blocks.length }} blocks.\n\nExtract text from blocks and match to projects using page IDs.\n\nMake sure when deciding what are next steps for the project, determine this based on the latest updates for the project (found based on date within the project)\n\nProjects data:\n{{ JSON.stringify($json.projects) }}\n\nBlocks data:\n{{ JSON.stringify($json.blocks) }}\n\n\nToday's date is: {{ $json.metadata.timestamp }}",
+        "hasOutputParser": true,
+        "batching": {
+          "batchSize": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [-576, 992],
+      "id": "942e6b74-41fc-408d-abff-2d5eab0ee3de",
+      "name": "Generate AI Summary1"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-pro",
+        "options": {
+          "maxTokens": 16000,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-576, 1200],
+      "id": "aa079ee7-4805-4dfb-be59-15223b028e52",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format the AI-generated JSON into an email\nconst item = $input.all()[0];\nlet reportData;\n\n// The output parser ensures we get properly structured JSON\nif (item.json.output) {\n  reportData = item.json.output;\n} else if (item.json.clients) {\n  reportData = item.json;\n} else {\n  // Fallback\n  reportData = {\n    reportDate: new Date().toLocaleDateString('en-US', { \n      weekday: 'long', \n      year: 'numeric', \n      month: 'long', \n      day: 'numeric' \n    }),\n    clients: [],\n    statistics: { totalClients: 0, totalProjects: 0, projectsWithUpdates: 0 }\n  };\n}\n\nconst currentDate = reportData.reportDate || new Date().toLocaleDateString('en-US', { \n  weekday: 'long', \n  year: 'numeric', \n  month: 'long', \n  day: 'numeric' \n});\n\n// Create HTML email content\nlet htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n  <title>Weekly Client Activity Report</title>\n  <style>\n    /* Base / tokens */\n    :root { color-scheme: light dark; }\n    body { \n      margin: 0; \n      padding: 0; \n      background: #f5f7fb; \n      -webkit-text-size-adjust: 100%;\n      -ms-text-size-adjust: 100%;\n    }\n    .email-container {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;\n      line-height: 1.55;\n      color: #2b2f38;\n      max-width: 860px;\n      margin: 0 auto;\n      padding: 16px;\n    }\n    .card {\n      background: #ffffff;\n      border-radius: 14px;\n      padding: 24px;\n      box-shadow: 0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04);\n      border: 1px solid #eef2f7;\n    }\n\n    /* Headings */\n    h1 { \n      margin: 0 0 12px 0;\n      font-size: 24px;\n      line-height: 1.25;\n      letter-spacing: -0.02em;\n      color: #1f2a37;\n    }\n    .subtle {\n      color: #667085;\n      font-size: 14px;\n      margin: 0 0 20px 0;\n    }\n\n    /* Section titles */\n    h2 { \n      color: #1f2a37; \n      margin: 28px 0 12px; \n      font-size: 18px;\n      padding: 10px 12px;\n      background: #f3f7ff;\n      border: 1px solid #e4edff;\n      border-left: 4px solid #3b82f6;\n      border-radius: 10px;\n    }\n    h3 {\n      color: #344054;\n      margin: 10px 0 8px;\n      font-size: 16px;\n    }\n\n    /* Meta rows */\n    .row, .client-header {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 12px;\n      flex-wrap: wrap;\n      margin-bottom: 10px;\n    }\n\n    /* Stats → single row on desktop, stack on phones */\n    .stats {\n      background: #f3f7ff;\n      border: 1px solid #e4edff;\n      padding: 0;\n      border-radius: 14px;\n      margin: 18px 0 8px 0;\n    }\n    .stats-strip {\n      display: flex;\n      align-items: stretch;\n      justify-content: space-between;\n      gap: 0;\n      overflow: hidden;\n      border-radius: 12px;\n      background: #f8fbff;\n    }\n    .stat-cell {\n      flex: 1 1 0%;\n      display: grid;\n      place-items: center;\n      padding: 18px 12px;\n      text-align: center;\n      background: #ffffff;\n    }\n    .stat-cell + .stat-cell { border-left: 1px solid #e8efff; }\n    .stat-value {\n      font-size: 22px;\n      font-weight: 800;\n      color: #3b82f6;\n      line-height: 1;\n      margin-bottom: 4px;\n    }\n    .stat-label { color: #667085; font-size: 12.5px; }\n\n    /* Pills / badges */\n    .pill, .project-status {\n      display: inline-flex;\n      align-items: center;\n      gap: 8px;\n      padding: 6px 12px;\n      border-radius: 999px;\n      font-size: 12px;\n      font-weight: 700;\n      line-height: 1;\n      white-space: nowrap;\n      border: 1px solid transparent;\n      box-shadow: 0 1px 0 rgba(16,24,40,0.06);\n    }\n    .project-status .dot {\n      width: 8px;\n      height: 8px;\n      border-radius: 999px;\n      background: currentColor;\n      display: inline-block;\n    }\n\n    /* Status palettes */\n    .status-in-progress {\n      color: #0b4a6f;\n      background: linear-gradient(180deg, #eaf6ff 0%, #e3f1ff 100%);\n      border-color: #cfe9ff;\n    }\n    .status-active, .status-done {\n      color: #146c43;\n      background: linear-gradient(180deg, #eafaf0 0%, #e3f7ea 100%);\n      border-color: #ccebd7;\n    }\n    .status-needs-review, .status-review {\n      color: #8a6100;\n      background: linear-gradient(180deg, #fff7e6 0%, #fff1d6 100%);\n      border-color: #ffe7b7;\n    }\n    .status-completed {\n      color: #193b7b;\n      background: linear-gradient(180deg, #edf3ff 0%, #e8efff 100%);\n      border-color: #d8e3ff;\n    }\n    .status-to-do {\n      color: #8a1c1c;\n      background: linear-gradient(180deg, #ffecec 0%, #ffe3e3 100%);\n      border-color: #ffd3d3;\n    }\n\n    /* Priority colors (text only) */\n    .priority-high, .priority-very-high { color: #d92d20; font-weight: 700; }\n    .priority-medium { color: #b54708; font-weight: 600; }\n    .priority-low { color: #067647; font-weight: 600; }\n    .priority-normal { color: #475467; }\n\n    .project-count {\n      background: #3b82f6;\n      color: white;\n      padding: 6px 12px;\n      border-radius: 999px;\n      font-size: 12px;\n      font-weight: 700;\n    }\n\n    /* Cards & sections */\n    .summary-section { \n      background: #f8fafc; \n      padding: 16px; \n      margin: 12px 0; \n      border-radius: 12px; \n      border: 1px solid #eef2f7;\n    }\n    .project-card {\n      background: #ffffff;\n      padding: 16px;\n      margin: 14px 0;\n      border-radius: 12px;\n      border: 1px solid #eef2f7;\n    }\n    .project-header {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 12px;\n      flex-wrap: wrap;\n      margin-bottom: 8px;\n    }\n    .project-title {\n      margin: 0;\n      font-size: 16px;\n      font-weight: 700;\n      color: #1f2a37;\n    }\n    .project-meta { color: #667085; font-size: 12.5px; }\n\n    /* Lists */\n    ul { margin: 8px 0 0 0; padding-left: 18px; }\n    li { margin: 6px 0; line-height: 1.45; }\n    strong { color: #1f2a37; font-weight: 650; }\n\n    .action-items {\n      background: #fff7e6;\n      border: 1px solid #ffe7b7;\n      padding: 12px;\n      border-radius: 10px;\n      margin: 10px 0;\n    }\n    .next-steps {\n      background: #eaf6ff;\n      border: 1px solid #cfe9ff;\n      padding: 12px;\n      border-radius: 10px;\n      margin: 10px 0;\n    }\n\n    .footer { \n      margin-top: 28px; \n      padding-top: 16px; \n      border-top: 1px solid #eef2f7; \n      color: #667085; \n      font-size: 12.5px;\n      text-align: center;\n    }\n\n/* Space and align pills consistently */\n.project-count,\n.project-status,\n.pill {\n  margin-left: 6px;        /* space from label text */\n  vertical-align: middle;  /* align with text baseline */\n}\n\n.client-header .project-count {\n  margin-left: 8px;        /* a bit more space for the client header count */\n}\n\n.project-status,\n.pill {\n  display: inline-flex;    /* keeps dot and text aligned */\n  align-items: center;\n  gap: 6px;                /* space between dot and text */\n  margin-top: 2px;         /* tweak vertical position */\n  margin-bottom: 2px;\n}\n\n    \n    a { color: #3b82f6; text-decoration: none; }\n    a:hover { text-decoration: underline; }\n\n    /* Responsive */\n    @media only screen and (max-width: 560px) {\n      .email-container { padding: 12px; }\n      .card { padding: 18px; border-radius: 12px; }\n      h1 { font-size: 20px; }\n      h2 { font-size: 16px; padding: 8px 10px; }\n      h3 { font-size: 15px; }\n      .stats-strip { flex-direction: column; }\n      .stat-cell + .stat-cell { border-left: 0; border-top: 1px solid #e8efff; }\n      .project-title { font-size: 15px; }\n      .row, .project-header, .client-header { gap: 8px; }\n      .project-status, .pill { font-size: 11.5px; padding: 5px 10px; }\n      .project-meta { font-size: 12px; }\n      .project-count { padding: 5px 10px; font-size: 11.5px; }\n    }\n\n    /* Dark mode (basic) */\n    @media (prefers-color-scheme: dark) {\n      body { background: #0b1220; }\n      .card, .project-card { background: #0f172a; border-color: #1e293b; }\n      .email-container, .subtle, .project-meta, .stat-label { color: #cbd5e1; }\n      h1, h2, h3, strong { color: #e2e8f0; }\n      .summary-section { background: #0f172a; border-color: #1e293b; }\n      .stats { background: #0f172a; border-color: #1e293b; }\n      .stat-cell { background: #0f172a; }\n      a { color: #93c5fd; }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"email-container\">\n    <div class=\"card\">\n      <h1>📊 Weekly Client Activity Report</h1>\n      <p class=\"subtle\"><strong>Report Date:</strong> ${currentDate}</p>\n\n      <!-- Stats: single-row on desktop -->\n      <div class=\"stats\">\n        <div class=\"stats-strip\">\n          <div class=\"stat-cell\">\n            <div class=\"stat-value\">${reportData.statistics?.totalClients || 0}</div>\n            <div class=\"stat-label\">Active Clients</div>\n          </div>\n          <div class=\"stat-cell\">\n            <div class=\"stat-value\">${reportData.statistics?.totalProjects || 0}</div>\n            <div class=\"stat-label\">Total Projects</div>\n          </div>\n          <div class=\"stat-cell\">\n            <div class=\"stat-value\">${reportData.statistics?.projectsWithUpdates || 0}</div>\n            <div class=\"stat-label\">Projects with Updates</div>\n          </div>\n        </div>\n      </div>\n`;\n\n// Add each client section\nif (reportData.clients && reportData.clients.length > 0) {\n  for (const client of reportData.clients) {\n    htmlContent += `\n    <h2>🏢 ${client.name}</h2>\n    <div class=\"client-header\">\n      <span><strong>Projects:</strong> ${client.projectCount || 0} total</span>\n      <span class=\"project-count\">${client.projects?.length || 0} Active</span>\n    </div>\n    `;\n    \n    // Client summary\n    if (client.clientSummary) {\n      htmlContent += `\n      <div class=\"summary-section\">\n        <h3>Client Overview</h3>\n        <p>${client.clientSummary}</p>\n      </div>`;\n    }\n    \n    // Key highlights\n    if (client.keyHighlights && client.keyHighlights.length > 0) {\n      htmlContent += `\n      <div class=\"summary-section\">\n        <h3>Key Highlights</h3>\n        <ul>${client.keyHighlights.map(h => `<li>${h}</li>`).join('')}</ul>\n      </div>`;\n    }\n    \n    // Projects\n    if (client.projects && client.projects.length > 0) {\n      for (const project of client.projects) {\n        const status = (project.status || 'Active').toLowerCase().replace(/\\s+/g, '-');\n        const statusClass = `status-${status}`;\n        const priority = (project.priority || 'Normal').toLowerCase().replace(/\\s+/g, '-');\n        const priorityClass = `priority-${priority}`;\n        \n        htmlContent += `\n        <div class=\"project-card\">\n          <div class=\"project-header\">\n            <h3 class=\"project-title\">${project.name}</h3>\n            <span class=\"project-status ${statusClass}\">\n              <span class=\"dot\"></span>${project.status || 'Active'}\n            </span>\n          </div>\n        `;\n        \n        // Project metadata\n        if (project.owner || project.priority || project.startDate || project.endDate) {\n          htmlContent += `<p class=\"project-meta\">`;\n          if (project.owner) htmlContent += `<strong>Owner:</strong> ${project.owner} | `;\n          if (project.priority) htmlContent += `<strong>Priority:</strong> <span class=\"${priorityClass}\">${project.priority}</span> | `;\n          if (project.startDate) htmlContent += `<strong>Start:</strong> ${project.startDate} | `;\n          if (project.endDate) htmlContent += `<strong>End:</strong> ${project.endDate}`;\n          htmlContent += `</p>`;\n        }\n        \n        // Summary\n        if (project.summary) {\n          htmlContent += `\n          <div style=\"margin: 10px 0;\">\n            <strong>Summary:</strong>\n            <p>${project.summary}</p>\n          </div>`;\n        }\n        \n        // Action items\n        if (project.actionItems && project.actionItems.length > 0) {\n          htmlContent += `\n          <div class=\"action-items\">\n            <strong>📌 Action Items:</strong>\n            <ul>${project.actionItems.slice(0, 5).map(item => `<li>${item}</li>`).join('')}</ul>\n          </div>`;\n        }\n        \n        // Next steps\n        if (project.nextSteps && project.nextSteps.length > 0) {\n          htmlContent += `\n          <div class=\"next-steps\">\n            <strong>➡️ Next Steps:</strong>\n            <ul>${project.nextSteps.slice(0, 5).map(step => `<li>${step}</li>`).join('')}</ul>\n          </div>`;\n        }\n        \n        htmlContent += `</div>`; // close project-card\n      }\n    }\n  }\n} else {\n  htmlContent += `\n    <div class=\"summary-section\">\n      <p>No client data available for this period.</p>\n    </div>`;\n}\n\n// Footer\nhtmlContent += `\n    <div class=\"footer\">\n      <p><strong>📧 Automated Report</strong></p>\n      <p>This report was automatically generated from your Notion database.</p>\n      <p>For detailed information about any activity, please refer to your <a href=\"https://notion.so\">Notion workspace</a>.</p>\n    </div>\n  </div>\n</div>\n</body>\n</html>\n`;\n\n// Create plain text version\nlet textContent = `WEEKLY CLIENT ACTIVITY REPORT\nReport Date: ${currentDate}\n\nSUMMARY STATISTICS\n==================\nActive Clients: ${reportData.statistics?.totalClients || 0}\nTotal Projects: ${reportData.statistics?.totalProjects || 0}\nProjects with Updates: ${reportData.statistics?.projectsWithUpdates || 0}\n\n${'='.repeat(60)}\n\n`;\n\nif (reportData.clients && reportData.clients.length > 0) {\n  for (const client of reportData.clients) {\n    textContent += `CLIENT: ${client.name}\nProjects: ${client.projectCount || 0} total\n\n`;\n    if (client.clientSummary) {\n      textContent += `Overview: ${client.clientSummary}\n\n`;\n    }\n    if (client.projects && client.projects.length > 0) {\n      for (const project of client.projects) {\n        textContent += `\nPROJECT: ${project.name}\nStatus: ${project.status || 'Active'}\n${project.owner ? `Owner: ${project.owner}\\n` : ``}\n${project.priority ? `Priority: ${project.priority}\\n` : ``}\n${project.summary ? `\\nSummary:\\n${project.summary}\\n` : ``}\n${project.actionItems && project.actionItems.length > 0 ? `\\nAction Items:\\n- ${project.actionItems.slice(0, 5).join('\\n- ')}\\n` : ``}\n${project.nextSteps && project.nextSteps.length > 0 ? `\\nNext Steps:\\n- ${project.nextSteps.slice(0, 5).join('\\n- ')}\\n` : ``}\n`;\n      }\n    }\n    textContent += `${'-'.repeat(50)}\\n\\n`;\n  }\n}\n\ntextContent += `\n========================================\nThis report was automatically generated from your Notion database.\nFor detailed information about any activity, please refer to your Notion workspace.`;\n\n// Return formatted email content\nreturn [{\n  json: {\n    subject: `📊 Weekly Client Activity Report - ${currentDate} | ${reportData.statistics?.totalClients || 0} Clients`,\n    htmlContent,\n    textContent,\n    totalClients: reportData.statistics?.totalClients || 0,\n    totalProjects: reportData.statistics?.totalProjects || 0,\n    projectsWithUpdates: reportData.statistics?.projectsWithUpdates || 0,\n    reportDate: currentDate\n  }\n}];\n"
+      },
+      "id": "07d8f016-9900-4fa1-b467-f871f07ede44",
+      "name": "Format Email Content1",
+      "type": "n8n-nodes-base.code",
+      "position": [-176, 1088],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "sendTo": "atharul.k@gmail.com, mdrahman.bfd@gmail.com, nurulbfd@gmail.com",
+        "subject": "=Marketing Projects: {{ $json.subject }}",
+        "message": "={{ $json.htmlContent }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [48, 1088],
+      "id": "03b4f7f4-f13a-4a33-a646-75614bb4617a",
+      "name": "Send a message1",
+      "webhookId": "a7ee901b-2190-43f3-a748-351dc7fb9e2c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"reportDate\": {\n      \"type\": \"string\"\n    },\n    \"clients\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          },\n          \"projectCount\": {\n            \"type\": \"number\"\n          },\n          \"projects\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"name\": {\n                  \"type\": \"string\"\n                },\n                \"status\": {\n                  \"type\": \"string\"\n                },\n                \"owner\": {\n                  \"type\": \"string\"\n                },\n                \"priority\": {\n                  \"type\": \"string\"\n                },\n                \"startDate\": {\n                  \"type\": \"string\"\n                },\n                \"endDate\": {\n                  \"type\": \"string\"\n                },\n                \"summary\": {\n                  \"type\": \"string\"\n                },\n                \"actionItems\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"string\"\n                  }\n                },\n                \"nextSteps\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"string\"\n                  }\n                }\n              },\n              \"required\": [\"name\", \"status\"]\n            }\n          },\n          \"clientSummary\": {\n            \"type\": \"string\"\n          },\n          \"keyHighlights\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        \"required\": [\"name\", \"projects\"]\n      }\n    },\n    \"statistics\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"totalClients\": {\n          \"type\": \"number\"\n        },\n        \"totalProjects\": {\n          \"type\": \"number\"\n        },\n        \"projectsWithUpdates\": {\n          \"type\": \"number\"\n        }\n      },\n      \"required\": [\"totalClients\", \"totalProjects\"]\n    }\n  },\n  \"required\": [\"reportDate\", \"clients\", \"statistics\"]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [-432, 1200],
+      "id": "fc09964d-c532-4b54-825f-a5692b06c27e",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-512, 1408],
+      "id": "1b2a7519-6e8a-4404-9303-0126a4b34f8e",
+      "name": "OpenRouter Chat Model3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Weekly Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Notion Database Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Notion Database Pages": {
+      "main": [
+        [
+          {
+            "node": "Get Child Blocks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Client Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Child Blocks": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Client Details": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Data": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Format Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get Notion Database Pages1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Notion Database Pages1": {
+      "main": [
+        [
+          {
+            "node": "Get Child Blocks1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Client Details1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Child Blocks1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Client Details1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Data1": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Summary1": {
+      "main": [
+        [
+          {
+            "node": "Format Email Content1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate AI Summary1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Content1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate AI Summary1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "abb93f2a-8233-4183-b6f6-a0972d7b8b80",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "wUQmCoQ9LO76ZqEA",
+  "tags": [
+    {
+      "createdAt": "2025-08-21T00:35:03.642Z",
+      "updatedAt": "2025-08-21T00:35:03.642Z",
+      "id": "fOzvbGe65FFy2bRY",
+      "name": "Client Reporting"
+    }
+  ]
+}
