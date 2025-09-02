@@ -261,7 +261,7 @@
           "__rl": true,
           "value": "C09BHU139LY",
           "mode": "list",
-          "cachedResultName": "client-bfd-yma"
+          "cachedResultName": "client-yma"
         },
         "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
         "otherOptions": {}
@@ -354,7 +354,7 @@
           "__rl": true,
           "value": "C09BHU139LY",
           "mode": "list",
-          "cachedResultName": "client-bfd-yma"
+          "cachedResultName": "client-yma"
         },
         "filters": {}
       },
@@ -514,7 +514,7 @@
           "__rl": true,
           "value": "C09B41AGM25",
           "mode": "list",
-          "cachedResultName": "client-simplifai-johngollnick"
+          "cachedResultName": "client-johngollnick"
         },
         "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
         "otherOptions": {}
@@ -607,7 +607,7 @@
           "__rl": true,
           "value": "C09B41AGM25",
           "mode": "list",
-          "cachedResultName": "client-simplifai-johngollnick"
+          "cachedResultName": "client-johngollnick"
         },
         "filters": {}
       },
@@ -1273,7 +1273,7 @@
           "__rl": true,
           "value": "C09AL3G59PV",
           "mode": "list",
-          "cachedResultName": "client-mkgrowth-alareebi"
+          "cachedResultName": "mkgrowth-alareebi"
         },
         "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
         "otherOptions": {}
@@ -1366,7 +1366,7 @@
           "__rl": true,
           "value": "C09AL3G59PV",
           "mode": "list",
-          "cachedResultName": "client-mkgrowth-alareebi"
+          "cachedResultName": "mkgrowth-alareebi"
         },
         "filters": {}
       },
@@ -1526,7 +1526,7 @@
           "__rl": true,
           "value": "C09ADRTT2UF",
           "mode": "list",
-          "cachedResultName": "client-mkgrowth-lavender"
+          "cachedResultName": "mkgrowth-lavender"
         },
         "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
         "otherOptions": {}
@@ -1619,7 +1619,7 @@
           "__rl": true,
           "value": "C09ADRTT2UF",
           "mode": "list",
-          "cachedResultName": "client-mkgrowth-lavender"
+          "cachedResultName": "mkgrowth-lavender"
         },
         "filters": {}
       },
@@ -1779,7 +1779,7 @@
           "__rl": true,
           "value": "C09ADBQUM7H",
           "mode": "list",
-          "cachedResultName": "client-simplifai-richard"
+          "cachedResultName": "client-richard-ireland"
         },
         "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
         "otherOptions": {}
@@ -1872,7 +1872,7 @@
           "__rl": true,
           "value": "C09ADBQUM7H",
           "mode": "list",
-          "cachedResultName": "client-simplifai-richard"
+          "cachedResultName": "client-richard-ireland"
         },
         "filters": {}
       },
@@ -2032,7 +2032,7 @@
           "__rl": true,
           "value": "C09AV4VG79A",
           "mode": "list",
-          "cachedResultName": "client-bfd-adreamkitchen"
+          "cachedResultName": "client-adreamkitchen"
         },
         "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
         "otherOptions": {}
@@ -2125,7 +2125,7 @@
           "__rl": true,
           "value": "C09AV4VG79A",
           "mode": "list",
-          "cachedResultName": "client-bfd-adreamkitchen"
+          "cachedResultName": "client-adreamkitchen"
         },
         "filters": {}
       },
@@ -2285,7 +2285,7 @@
           "__rl": true,
           "value": "C09AX5PANRL",
           "mode": "list",
-          "cachedResultName": "client-simplifai-bailexpress"
+          "cachedResultName": "client-bailexpress"
         },
         "text": "={{ $json.message }}\n---\nLink to Notion: https://www.notion.so/23f6ab60b47980c18179e18a888e6c30?v=2406ab60b479808da84c000c91334e51",
         "otherOptions": {}
@@ -2378,7 +2378,7 @@
           "__rl": true,
           "value": "C09AX5PANRL",
           "mode": "list",
-          "cachedResultName": "client-simplifai-bailexpress"
+          "cachedResultName": "client-bailexpress"
         },
         "filters": {}
       },
@@ -4069,7 +4069,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9bb11130-6549-442c-9b58-590d3846838a",
+  "versionId": "80638431-813b-48dc-b485-b3dd8bb247f0",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"

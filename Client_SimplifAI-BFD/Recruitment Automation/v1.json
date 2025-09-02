@@ -1,0 +1,442 @@
+{
+  "name": "BFD/SimplifAI Recruitment",
+  "nodes": [
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.email }}",
+        "subject": "= Welcome to Bangladesh Digital Talent Hub 🚀",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n  <title>Join Our Skool Community</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f3f4f7;font-family:Arial,Helvetica,sans-serif;color:#333;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"background:#f3f4f7;\">\n    <tr>\n      <td align=\"center\" style=\"padding:30px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);\">\n          <!-- Header -->\n          <tr>\n            <td align=\"center\" style=\"background:#1a73e8;padding:24px;\">\n              <h1 style=\"margin:0;font-size:22px;line-height:1.4;color:#ffffff;font-weight:600;\">\n                Next Step for the {{ $json.body.talent }} Role\n              </h1>\n            </td>\n          </tr>\n          <!-- Body -->\n          <tr>\n            <td style=\"padding:32px 28px 20px 28px;\">\n              <h2 style=\"margin:0 0 12px 0;font-size:20px;line-height:1.4;color:#111;font-weight:600;\">\n                Hi {{$json.body.name}},\n              </h2>\n              <p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444;\">\n                Thank you for applying for the <strong>{{ $json.body.talent }}</strong> position at <strong>SimplifAi/BFD</strong>, \n                a thriving cutting-edge tech-marketing company.\n              </p>\n              <p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444;font-weight:bold;\">\n                Congratulations on taking the first step!\n              </p>\n              <p style=\"margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#444;\">\n                If your application passes our initial review, we’ll personally reach out to schedule your interview.\n              </p>\n              <p style=\"margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#444;\">\n                In the meantime, we’d love for you to join our growing <strong>Skool community</strong> — a space designed to foster innovation and collaboration in the MarTech space. Inside, you’ll find expert-led discussions, skill-building resources, networking opportunities, and mentorship to help you grow your career.\n              </p>\n              <!-- CTA Button -->\n              <p style=\"margin:0 0 26px 0;text-align:center;\">\n                <a href=\"https://www.skool.com/bangladesh-digital-talent-hub-9108/about?ref=d4b55dc782e041d98c216b6795cc0a83\"\n                   role=\"button\"\n                   aria-label=\"Join Skool Community\"\n                   style=\"background:#1a73e8;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:6px;display:inline-block;font-weight:bold;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,0.1);\">\n                  👉 Join Skool Community\n                </a>\n              </p>\n              <p style=\"margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#666;\">\n                Or copy and paste this link into your browser:<br>\n                <a href=\"https://www.skool.com/bangladesh-digital-talent-hub-9108/about?ref=d4b55dc782e041d98c216b6795cc0a83\" style=\"color:#1a73e8;text-decoration:underline;\">\n                  https://www.skool.com/bangladesh-digital-talent-hub-9108/about?ref=d4b55dc782e041d98c216b6795cc0a83\n                </a>\n              </p>\n              <p style=\"margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#444;\">\n                This is our space to learn, share insights, and build the future of digital marketing in Bangladesh together.\n              </p>\n              <p style=\"margin:0;font-size:15px;line-height:1.6;color:#444;\">\n                Looking forward to seeing you inside the community!\n              </p>\n            </td>\n          </tr>\n          <!-- Footer -->\n          <tr>\n            <td style=\"padding:0 28px 28px 28px;\">\n              <p style=\"margin:0;font-size:14px;line-height:1.6;color:#333;\">\n                Best regards,<br>\n                <strong>SimplifAi/BFD Hiring Team</strong>\n              </p>\n            </td>\n          </tr>\n          <!-- Disclaimer -->\n          <tr>\n            <td style=\"background:#f9fafc;padding:16px 28px;\">\n              <p style=\"margin:0;font-size:12px;line-height:1.6;color:#6b7280;\">\n                You are receiving this email because you applied for the <strong>{{ $json.body.talent }}</strong> role at SimplifAi/BFD.\n              </p>\n            </td>\n          </tr>\n        </table>\n        <div style=\"height:24px;\"></div>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [32, -176],
+      "id": "697322ee-a1c9-4e85-a6ab-6284f05d20dd",
+      "name": "Send a message",
+      "webhookId": "9ff2bd50-8b44-4d1c-bb54-ef89d40950e6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "google-form",
+        "options": {}
+      },
+      "id": "a2502bcf-da46-407d-95d5-f51db6bcecbb",
+      "name": "Webhook : Google Form",
+      "type": "n8n-nodes-base.webhook",
+      "position": [-240, -176],
+      "webhookId": "e92bb825-14ff-43e0-bd7c-24504d4acb56",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "content": "## This is for receive applications & send email to participants"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-176, -384],
+      "typeVersion": 1,
+      "id": "abb6d27f-85fb-4c95-8f9a-026a399252e6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3015d75b-bbf5-490c-9733-126c92474c59",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Pass",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-304, 560],
+      "id": "0fca2963-c96d-41da-b1f2-54b3eddbc59c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email '] }}",
+        "subject": "=Next Step: Schedule Your Interview.",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n  <title>Schedule Your Interview</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;color:#333;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"background:#f4f6f9;\">\n    <tr>\n      <td align=\"center\" style=\"padding:30px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);\">\n          \n          <!-- Header -->\n          <tr>\n            <td align=\"center\" style=\"background:#1a73e8;padding:28px;\">\n              <h1 style=\"margin:0;font-size:22px;line-height:1.4;color:#ffffff;font-weight:600;\">\n                🎉 Congratulations! You’ve Passed — Schedule Your Interview\n              </h1>\n            </td>\n          </tr>\n\n          <!-- Body -->\n          <tr>\n            <td style=\"padding:32px 28px 20px 28px;\">\n              <h2 style=\"margin:0 0 16px 0;font-size:20px;line-height:1.4;color:#111;font-weight:600;\">\n                Hi {{$json.Name}},\n              </h2>\n              <p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444;\">\n                Congratulations on successfully passing the application process for the <strong>{{ $json.body.talent }}</strong> role at <strong>SimplifAi/BFD</strong>! 🌟  \n              </p>\n              <p style=\"margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#444;\">\n                The next step is to schedule your interview with our team. Please pick a time that works best for you using the link below:\n              </p>\n              \n              <!-- CTA Button -->\n              <p style=\"margin:0 0 26px 0;text-align:center;\">\n                <a href=\"https://calendly.com/outsourceconnect-ca/30min?month=2025-08\"\n                   role=\"button\"\n                   aria-label=\"Schedule your interview\"\n                   style=\"background:#1a73e8;color:#ffffff;text-decoration:none;padding:14px 26px;border-radius:6px;display:inline-block;font-weight:bold;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,0.1);\">\n                  Schedule Your Interview\n                </a>\n              </p>\n              \n              <p style=\"margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#666;text-align:center;\">\n                Or copy and paste this link into your browser:<br>\n                <a href=\"https://calendly.com/outsourceconnect-ca/30min?month=2025-08\" style=\"color:#1a73e8;text-decoration:underline;\">\n                  https://calendly.com/outsourceconnect-ca/30min?month=2025-08\n                </a>\n              </p>\n            </td>\n          </tr>\n\n          <!-- Footer -->\n          <tr>\n            <td style=\"padding:0 28px 28px 28px;\">\n              <p style=\"margin:0 0 14px 0;font-size:15px;line-height:1.6;color:#444;\">\n                We’re excited to speak with you and learn more about your journey. If you have any questions, feel free to reply to this email—we’re happy to help.  \n              </p>\n              <p style=\"margin:0;font-size:14px;line-height:1.6;color:#333;\">\n                Best regards,<br>\n                <strong>The SimplifAi/BFD Hiring Team</strong>\n              </p>\n            </td>\n          </tr>\n\n          <!-- Disclaimer -->\n          <tr>\n            <td style=\"background:#f9fafc;padding:16px 28px;\">\n              <p style=\"margin:0;font-size:12px;line-height:1.6;color:#6b7280;\">\n                You’re receiving this email because you applied and passed the initial screening for the <strong>{{ $json.body.talent }}</strong> role at SimplifAi/BFD.\n              </p>\n            </td>\n          </tr>\n        </table>\n        <div style=\"height:24px;\"></div>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [-80, 400],
+      "id": "1cfd867d-ccec-4aec-bfeb-1308afca141c",
+      "name": "Send a message1",
+      "webhookId": "25512d57-6ebb-492f-914e-7a7861bd16a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "14XGRPx8TY96-NJpLj5Jx970jnYQoByqJPzQUHlR3RYg",
+          "mode": "list",
+          "cachedResultName": "Skills & Introduction Assessment (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14XGRPx8TY96-NJpLj5Jx970jnYQoByqJPzQUHlR3RYg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1769883856,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14XGRPx8TY96-NJpLj5Jx970jnYQoByqJPzQUHlR3RYg/edit#gid=1769883856"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email ": "={{ $('If').item.json['Email '] }}",
+            "Invite Status": "Invited",
+            "Invite Send Date": "={{ $now }}"
+          },
+          "matchingColumns": ["Email "],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email ",
+              "displayName": "Email ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "What Talent Are you?",
+              "displayName": "What Talent Are you?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Briefly describe your most recent project(s) relevant to your talent. \n\nWhat was your role, the tools/technologies you used, and what impact or results did your work achieve?\n\n**Please provide a link to your the project if you are able to.**",
+              "displayName": "Briefly describe your most recent project(s) relevant to your talent. \n\nWhat was your role, the tools/technologies you used, and what impact or results did your work achieve?\n\n**Please provide a link to your the project if you are able to.**",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Share an example of a challenge you faced in your work (technical, creative, or strategic). \n\nHow did you approach solving it, and what did you learn from the process?",
+              "displayName": "Share an example of a challenge you faced in your work (technical, creative, or strategic). \n\nHow did you approach solving it, and what did you learn from the process?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Portfolio Link ((Github, Behance, Google Drive, etc.)",
+              "displayName": "Portfolio Link ((Github, Behance, Google Drive, etc.)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Please Upload Your Resume",
+              "displayName": "Please Upload Your Resume",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Skill Rating",
+              "displayName": "Skill Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invite Status",
+              "displayName": "Invite Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invite Send Date",
+              "displayName": "Invite Send Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Skool Community",
+              "displayName": "Skool Community",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [128, 400],
+      "id": "c9968f83-06a4-41f9-a4cb-50670213ab0e",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XTfYeEotsbhc5dxV",
+          "name": "Google Sheets account - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## If pass send school community link and update on sheet"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-32, 224],
+      "typeVersion": 1,
+      "id": "192f92b5-0c28-4d89-9208-d397a55da6d8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## If fail send a fail message",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-144, 816],
+      "typeVersion": 1,
+      "id": "6cb06ed1-ae03-46fa-88f0-c5eff7053aaf",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email '] }}",
+        "subject": "Thank you for your application - Next Steps",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n  <title>Application Update</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f5f6fa;font-family:Arial,Helvetica,sans-serif;color:#333;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"background:#f5f6fa;\">\n    <tr>\n      <td align=\"center\" style=\"padding:30px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.08);\">\n          \n          <!-- Header -->\n          <tr>\n            <td align=\"center\" style=\"background:#374151;padding:24px;\">\n              <h1 style=\"margin:0;font-size:20px;line-height:1.4;color:#ffffff;font-weight:600;\">\n                Thank You for Your Application\n              </h1>\n            </td>\n          </tr>\n\n          <!-- Body -->\n          <tr>\n            <td style=\"padding:32px 28px 24px 28px;\">\n              <p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444;\">\n                Dear <strong>{{$json.Name}}</strong>,\n              </p>\n              <p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444;\">\n                Thank you for taking the time to apply and for your interest in joining our team. We truly appreciate the effort you put into your application and the information you shared with us.  \n              </p>\n              <p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444;\">\n                After careful review, we have decided to move forward with other candidates whose experience more closely aligns with the current requirements for this role.  \n              </p>\n              <p style=\"margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444;\">\n                We will keep your contact information on file and may reach out if future opportunities arise that better match your background and expertise. In the meantime, we encourage you to continue developing your skills and pursuing your career goals.  \n              </p>\n              <p style=\"margin:0;font-size:15px;line-height:1.6;color:#444;\">\n                We sincerely wish you the best in your career journey and future endeavors.  \n              </p>\n            </td>\n          </tr>\n\n          <!-- Footer -->\n          <tr>\n            <td style=\"background:#f9fafc;padding:20px 28px;text-align:center;\">\n              <p style=\"margin:0;font-size:13px;line-height:1.6;color:#6b7280;\">\n                Thank you again for considering an opportunity with <strong>SimplifAi/BFD</strong>.  \n              </p>\n            </td>\n          </tr>\n        </table>\n        <div style=\"height:24px;\"></div>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [-96, 656],
+      "id": "4e488a67-01d1-4dff-96cd-b9fb9790638c",
+      "name": "Send a message2",
+      "webhookId": "71366225-99e3-47d3-90a8-18effc149bb0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "14XGRPx8TY96-NJpLj5Jx970jnYQoByqJPzQUHlR3RYg",
+          "mode": "list",
+          "cachedResultName": "Skills & Introduction Assessment (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14XGRPx8TY96-NJpLj5Jx970jnYQoByqJPzQUHlR3RYg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1769883856,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14XGRPx8TY96-NJpLj5Jx970jnYQoByqJPzQUHlR3RYg/edit#gid=1769883856"
+        },
+        "event": "rowUpdate",
+        "options": {
+          "columnsToWatch": ["Status"]
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [-512, 560],
+      "id": "75045012-3201-4420-92e1-1832943e0f9d",
+      "name": "Google Sheets Trigger - Redwan",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "WH4ACZX7gzUnAQBj",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook : Google Form": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger - Redwan": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "daa76144-b87a-4632-8fc6-c099894a3929",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "prFOq9euH6ZubimE",
+  "tags": [
+    {
+      "createdAt": "2025-08-25T15:30:29.956Z",
+      "updatedAt": "2025-08-25T15:30:29.956Z",
+      "id": "wqhICmSBx0aVBO5H",
+      "name": "Recruitment"
+    }
+  ]
+}

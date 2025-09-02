@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__n8n-mcp__search_nodes",
+      "mcp__n8n-mcp__get_node_documentation",
+      "mcp__n8n-mcp__validate_workflow",
+      "mcp__n8n-mcp__get_node_info",
+      "Bash(mv:*)"
+    ],
+    "deny": []
+  }
+}

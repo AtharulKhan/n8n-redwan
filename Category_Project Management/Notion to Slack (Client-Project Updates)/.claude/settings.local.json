@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__n8n-mcp__search_nodes",
+      "mcp__n8n-mcp__get_node_documentation",
+      "mcp__n8n-mcp__validate_workflow",
+      "mcp__n8n-mcp__validate_node_minimal",
+      "mcp__n8n-mcp__validate_node_operation",
+      "mcp__n8n-mcp__get_node_info",
+      "mcp__n8n-mcp__get_node_essentials",
+      "mcp__n8n-mcp__search_node_properties"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
