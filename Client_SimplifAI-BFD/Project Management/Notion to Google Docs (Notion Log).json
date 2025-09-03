@@ -1,0 +1,751 @@
+{
+  "name": "Notion to Google Docs (Notion Log)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 3,
+              "triggerAtDay": [1],
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "id": "677b0721-5874-4d45-ad02-9d0bb5874c54",
+      "name": "Schedule Trigger1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1312, 704]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/2626ab60b479805daf3be7f77576900a?v=2626ab60b4798122bdfc000c5a3ae2d6",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Project Links|files",
+              "condition": "is_not_empty"
+            },
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Service Team|select",
+              "condition": "equals",
+              "selectValue": "Dev"
+            }
+          ]
+        },
+        "options": {
+          "downloadFiles": false
+        }
+      },
+      "id": "e1c89a6b-e9d6-4d77-8816-a1efb256a9d2",
+      "name": "Get Pages with Google Docs1",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-1120, 704],
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process ALL pages and extract Google Doc IDs from property_project_links\nconst pages = $input.all();\nconst validPages = [];\n\nfor (const page of pages) {\n  const pageData = page.json;\n\n  // Check if property_project_links exists and is an array\n  if (pageData.property_project_links && Array.isArray(pageData.property_project_links)) {\n    // Find Google Docs URLs in the array\n    const googleDocLinks = pageData.property_project_links.filter(url =>\n      url && url.includes('docs.google.com/document')\n    );\n\n    // Process each Google Docs link\n    for (const googleDocLink of googleDocLinks) {\n      // Extract document ID from the URL\n      const cleanUrl = googleDocLink.split('?')[0];\n      const match = cleanUrl.match(/\\/document\\/d\\/([a-zA-Z0-9-_]+)/);\n\n      if (match) {\n        validPages.push({\n          json: {\n            ...pageData,\n            googleDocsId: match[1],\n            googleDocsUrl: googleDocLink,\n            pageId: pageData.id\n          }\n        });\n      }\n    }\n  }\n}\n\nconsole.log(`Found ${validPages.length} valid Google Docs links`);\nreturn validPages;\n"
+      },
+      "id": "ee8110c3-cd9c-464d-a123-d66acc70b181",
+      "name": "Filter & Extract Doc IDs1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-928, 704],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.pageId }}",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "fetchNestedBlocks": true
+      },
+      "id": "53086452-98b7-465c-ae21-42fe23688f87",
+      "name": "Get Page Blocks1",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-736, 704],
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all pages data from Filter & Extract Doc IDs\nconst allPages = $('Filter & Extract Doc IDs1').all();\n\n// Get all blocks data from Get Page Blocks\nconst allBlocks = $input.all();\n\n// Create a map of pageId to blocks\nconst blocksByPage = {};\nfor (const blockItem of allBlocks) {\n  const block = blockItem.json;\n  // For blocks, get the page ID from parent structure\n  const parentPageId = block.parent?.page_id || block.parent?.database_id || block.root_id;\n  \n  if (!blocksByPage[parentPageId]) {\n    blocksByPage[parentPageId] = [];\n  }\n  blocksByPage[parentPageId].push(block);\n}\n\n// Process each page with its blocks\nconst processedPages = [];\n\nfor (const pageItem of allPages) {\n  const pageData = pageItem.json;\n  const pageBlocks = blocksByPage[pageData.pageId] || [];\n  \n  console.log(`Processing: ${pageData.property_project_name || pageData.name}`);\n  console.log(`Page ID: ${pageData.pageId}`);\n  console.log(`Blocks found: ${pageBlocks.length}`);\n  \n  // Process blocks content\n  let content = '';\n  \n  // Add separator for this update\n  content += `\\n\\n========== UPDATE: ${new Date().toISOString()} ==========\\n\\n`;\n  \n  // Add project header\n  content += `# ${pageData.property_project_name || pageData.name}\\n\\n`;\n  content += `**Client:** ${pageData.property_client || 'N/A'}\\n`;\n  content += `**Status:** ${pageData.property_status || 'N/A'}\\n`;\n  content += `**Priority:** ${pageData.property_priority || 'N/A'}\\n`;\n  \n  if (pageData.property_owner && pageData.property_owner.length > 0) {\n    content += `**Owner(s):** ${pageData.property_owner.join(', ')}\\n`;\n  }\n  \n  // Format dates properly\n  if (pageData.property_start_date) {\n    const startDate = typeof pageData.property_start_date === 'object' && pageData.property_start_date.start\n      ? pageData.property_start_date.start\n      : pageData.property_start_date;\n    content += `**Start Date:** ${startDate}\\n`;\n  }\n  \n  if (pageData.property_end_date) {\n    const endDate = typeof pageData.property_end_date === 'object' && pageData.property_end_date.start\n      ? pageData.property_end_date.start\n      : pageData.property_end_date;\n    content += `**End Date:** ${endDate}\\n`;\n  }\n  \n  content += `\\n---\\n\\n`;\n  content += `## Content from Notion Page\\n\\n`;\n  \n  // Create maps to track blocks and their relationships\n  const blockMap = {};\n  const childrenMap = {};\n  const processedBlocks = new Set();\n  \n  // First pass: organize blocks by ID and track parent-child relationships\n  for (const block of pageBlocks) {\n    blockMap[block.id] = block;\n    \n    // Use parent_id field to establish parent-child relationships\n    if (block.parent_id && block.parent_id !== pageData.pageId) {\n      if (!childrenMap[block.parent_id]) {\n        childrenMap[block.parent_id] = [];\n      }\n      childrenMap[block.parent_id].push(block.id);\n    }\n  }\n  \n  console.log('Block hierarchy:', JSON.stringify(childrenMap, null, 2));\n  \n  // Helper function to process a block and its children\n  function processBlock(block, level = 0) {\n    // Avoid processing the same block twice\n    if (processedBlocks.has(block.id)) {\n      return '';\n    }\n    processedBlocks.add(block.id);\n    \n    // Skip unsupported block types\n    if (block.type === 'unsupported' || block.type === 'child_page' || block.type === 'child_database') {\n      return '';\n    }\n    \n    let blockContent = '';\n    const indent = '    '.repeat(level); // Four spaces per level\n    \n    switch (block.type) {\n      case 'paragraph':\n        if (block.content) {\n          blockContent += indent + block.content + '\\n';\n          // Add extra newline only if no children\n          if (!block.has_children) {\n            blockContent += '\\n';\n          }\n        }\n        break;\n        \n      case 'heading_1':\n        if (block.content) {\n          blockContent += indent + '# ' + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'heading_2':\n        if (block.content) {\n          blockContent += indent + '## ' + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'heading_3':\n        if (block.content) {\n          blockContent += indent + '### ' + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'bulleted_list_item':\n        if (block.content) {\n          blockContent += indent + '• ' + block.content + '\\n';\n        }\n        break;\n        \n      case 'numbered_list_item':\n        if (block.content) {\n          blockContent += indent + '1. ' + block.content + '\\n';\n        }\n        break;\n        \n      case 'to_do':\n        // Check if block has the checked property\n        const isChecked = block.checked === true;\n        const checkbox = isChecked ? '☑' : '☐';\n        blockContent += indent + checkbox + ' ' + (block.content || '') + '\\n';\n        break;\n        \n      case 'divider':\n        blockContent += indent + '---\\n\\n';\n        break;\n        \n      case 'code':\n        if (block.content) {\n          const language = (block.code && block.code.language) || '';\n          blockContent += indent + '```' + language + '\\n';\n          const codeLines = block.content.split('\\n');\n          for (const line of codeLines) {\n            blockContent += indent + line + '\\n';\n          }\n          blockContent += indent + '```\\n\\n';\n        }\n        break;\n        \n      case 'video':\n        if (block.video && block.video.external && block.video.external.url) {\n          blockContent += indent + `[Video: ${block.video.external.url}]\\n\\n`;\n        } else if (block.content && block.content.includes('youtube.com')) {\n          blockContent += indent + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'bookmark':\n        if (block.bookmark && block.bookmark.url) {\n          blockContent += indent + `[Bookmark: ${block.bookmark.url}]\\n\\n`;\n        }\n        break;\n        \n      case 'image':\n        // Skip image blocks as requested\n        break;\n        \n      default:\n        if (block.content) {\n          blockContent += indent + block.content + '\\n\\n';\n        }\n        break;\n    }\n    \n    // Process children if they exist (based on has_children flag and childrenMap)\n    if (block.has_children && childrenMap[block.id]) {\n      const children = childrenMap[block.id];\n      for (const childId of children) {\n        const childBlock = blockMap[childId];\n        if (childBlock) {\n          blockContent += processBlock(childBlock, level + 1);\n        }\n      }\n    }\n    \n    // Add spacing after list items with children\n    if (block.has_children && (block.type === 'to_do' || block.type === 'bulleted_list_item' || block.type === 'numbered_list_item')) {\n      blockContent += '\\n';\n    }\n    \n    return blockContent;\n  }\n  \n  // Process only top-level blocks (direct children of the page)\n  for (const block of pageBlocks) {\n    // Only process if it's a direct child of the page (not a child of another block)\n    const isTopLevel = !block.parent_id || block.parent_id === pageData.pageId || \n                      (block.parent && (block.parent.type === 'page_id' || block.parent.type === 'database_id'));\n    \n    if (isTopLevel && !processedBlocks.has(block.id)) {\n      content += processBlock(block, 0);\n    }\n  }\n  \n  // Add timestamp at the end\n  content += `\\n\\n---\\n_Last synced from Notion: ${new Date().toISOString()}_\\n\\n`;\n  \n  // Add processed page to results\n  processedPages.push({\n    json: {\n      pageData: pageData,\n      pageId: pageData.pageId,\n      content: content,\n      googleDocsId: pageData.googleDocsId,\n      projectName: pageData.property_project_name || pageData.name\n    }\n  });\n}\n\nreturn processedPages;"
+      },
+      "id": "0d7e3bcf-38cc-43bb-92df-b9f725d9fe9e",
+      "name": "Process All Blocks1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-544, 704],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.googleDocsId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "includeTabsContent",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9f923aa4-bc2b-4e84-8653-1b2ab9a613be",
+      "name": "Get All Docs Tabs1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-352, 704],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "IO0v12gY17SD37Iu",
+          "name": "Google Docs account - Redwan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the processed pages from Process All Blocks\nconst processedPages = $('Process All Blocks1').all();\n\n// Get all docs tabs\nconst allDocsTabs = $input.all();\n\n// Create a map of googleDocsId to tabs\nconst tabsByDocId = {};\nfor (let i = 0; i < allDocsTabs.length; i++) {\n  const docData = allDocsTabs[i].json;\n  // Match by index since they're processed in the same order\n  const correspondingPage = processedPages[i].json;\n  tabsByDocId[correspondingPage.googleDocsId] = docData.tabs || [];\n}\n\n// Combine the data\nconst finalData = [];\nfor (const pageItem of processedPages) {\n  const pageData = pageItem.json;\n  const docTabs = tabsByDocId[pageData.googleDocsId] || [];\n  \n  finalData.push({\n    json: {\n      ...pageData,\n      docTabs: docTabs\n    }\n  });\n}\n\nreturn finalData;"
+      },
+      "id": "b609af29-a2f8-4beb-abe9-cb847c8d596b",
+      "name": "Merge Data1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, 704]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "58148111-5058-4e4f-a74a-d0b576a6610d",
+      "name": "Split In Batches1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [32, 704]
+    },
+    {
+      "parameters": {
+        "jsCode": "// N8N \"Prepare Update Request\" — Wipe the entire \"Notion Log\" tab and rewrite a single anchored block.\n// Requirements we rely on (Docs API):\n// - Fetch document with includeTabsContent=true so tabs + per-tab indices are present.\n// - Every Request targets the tab via tabId. See: \"Work with tabs\" & Best Practices.\n//   https://developers.google.com/workspace/docs/api/how-tos/tabs\n//   https://developers.google.com/workspace/docs/api/how-tos/best-practices\n\nif (!$input.item || !$input.item.json) {\n  return { error: true, message: \"No batch item to process\" };\n}\n\nconst data = $input.item.json;\nconst TAB_TITLE = \"Notion Log\";\nconst START_ANCHOR = \"[Replace Start]\";\nconst END_ANCHOR   = \"[Replace End]\";\n\n/** Find a tab by title (handles nested child tabs) */\nfunction findTabByTitle(tabs, title) {\n  for (const t of tabs || []) {\n    if (t?.tabProperties?.title === title) return t;\n    const child = findTabByTitle(t.childTabs || [], title);\n    if (child) return child;\n  }\n  return null;\n}\n\n/** Collect a tab’s max end index by walking its structural elements */\nfunction computeTabEndIndex(tab) {\n  // The content is under tab.documentTab.* (body, headers, footers, etc.)\n  const docTab = tab?.documentTab || {};\n  const buckets = [\n    ...(docTab.body?.content || []),\n    // include other containers if present\n    ...(docTab.headers || []).flatMap(h => h.content || []),\n    ...(docTab.footers || []).flatMap(f => f.content || []),\n    ...(docTab.footnotes || []).flatMap(fn => fn.content || []),\n  ];\n\n  let maxEnd = 1; // minimal safe value (Docs indices start at 1)\n  function walk(el) {\n    if (!el) return;\n    if (typeof el.endIndex === \"number\") maxEnd = Math.max(maxEnd, el.endIndex);\n\n    // Paragraph runs\n    if (el.paragraph && Array.isArray(el.paragraph.elements)) {\n      for (const pe of el.paragraph.elements) {\n        if (typeof pe.endIndex === \"number\") maxEnd = Math.max(maxEnd, pe.endIndex);\n      }\n    }\n\n    // Tables\n    if (el.table && Array.isArray(el.table.tableRows)) {\n      for (const row of el.table.tableRows) {\n        for (const cell of row.tableCells || []) {\n          for (const c of cell.content || []) walk(c);\n        }\n      }\n    }\n\n    // Generic nested content\n    if (Array.isArray(el.content)) for (const c of el.content) walk(c);\n  }\n\n  for (const el of buckets) walk(el);\n  return maxEnd;\n}\n\n// ---------- Locate the \"Notion Log\" tab ----------\nconst notionLogTab = findTabByTitle(data.docTabs, TAB_TITLE);\nif (!notionLogTab) {\n  return {\n    error: true,\n    message: `No '${TAB_TITLE}' tab found in the document`,\n    projectName: data.projectName,\n    documentId: data.googleDocsId\n  };\n}\n\nconst tabId = notionLogTab.tabProperties.tabId;\nconst tabEnd = computeTabEndIndex(notionLogTab);\n\n// Build the final text to write\nconst finalText =\n  `${START_ANCHOR}\\n${data.content}${END_ANCHOR}\\n`;\n\n// Batch requests:\n// 1) Delete everything in the tab (if there is anything).\n// 2) Insert our single anchored block at index 1.\nconst requests = [];\n\n// Defensive: only delete if we have a usable end index > 1\nif (tabEnd > 1) {\n  requests.push({\n    deleteContentRange: {\n      range: { tabId, startIndex: 1, endIndex: tabEnd - 1 } // endIndex is exclusive\n    }\n  });\n}\n\nrequests.push({\n  insertText: {\n    location: { tabId, index: 1 },\n    text: finalText\n  }\n});\n\n// Optional: include WriteControl using a revisionId you fetched in Get All Docs Tabs,\n// to avoid race conditions if collaborators are typing. See Best Practices.\n// https://developers.google.com/workspace/docs/api/how-tos/best-practices\n// const writeControl = { requiredRevisionId: data.revisionId }; // if you pass it along\n\nreturn {\n  url: `https://docs.googleapis.com/v1/documents/${data.googleDocsId}:batchUpdate`,\n  body: {\n    requests\n    // , writeControl // uncomment if you plumb revisionId from your Get call\n  },\n  documentId: data.googleDocsId,\n  projectName: data.projectName,\n  error: false\n};\n"
+      },
+      "id": "d242ec42-824d-4cb9-8381-ac85555ee153",
+      "name": "Prepare Update Request1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 704],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c5b6d1e5-4321-4d8a-b7e9-8f9a0c1e2d3f",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71d41df3-b512-4007-b548-5fa9d84c938a",
+      "name": "Check Error1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [416, 704]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "6b086403-37b6-4d15-af1b-f79852ce4617",
+      "name": "Update Google Doc1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [608, 672],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "IO0v12gY17SD37Iu",
+          "name": "Google Docs account - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Dev",
+        "height": 80,
+        "width": 150,
+        "color": 4
+      },
+      "id": "06629672-b9b3-4a7c-b132-529b93bd12c4",
+      "name": "Workflow Notes v",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1296, 592]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 3,
+              "triggerAtDay": [2],
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "id": "b602d908-323b-4709-9526-1c7ffb03b305",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1312, 1136]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/2626ab60b479805daf3be7f77576900a?v=2626ab60b4798122bdfc000c5a3ae2d6",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Project Links|files",
+              "condition": "is_not_empty"
+            },
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Service Team|select",
+              "condition": "equals",
+              "selectValue": "Marketing"
+            }
+          ]
+        },
+        "options": {
+          "downloadFiles": false
+        }
+      },
+      "id": "f235b567-70c3-49ec-b68b-e0a1ce22610b",
+      "name": "Get Pages with Google Docs",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-1120, 1136],
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process ALL pages and extract Google Doc IDs from property_project_links\nconst pages = $input.all();\nconst validPages = [];\n\nfor (const page of pages) {\n  const pageData = page.json;\n\n  // Check if property_project_links exists and is an array\n  if (pageData.property_project_links && Array.isArray(pageData.property_project_links)) {\n    // Find Google Docs URLs in the array\n    const googleDocLinks = pageData.property_project_links.filter(url =>\n      url && url.includes('docs.google.com/document')\n    );\n\n    // Process each Google Docs link\n    for (const googleDocLink of googleDocLinks) {\n      // Extract document ID from the URL\n      const cleanUrl = googleDocLink.split('?')[0];\n      const match = cleanUrl.match(/\\/document\\/d\\/([a-zA-Z0-9-_]+)/);\n\n      if (match) {\n        validPages.push({\n          json: {\n            ...pageData,\n            googleDocsId: match[1],\n            googleDocsUrl: googleDocLink,\n            pageId: pageData.id\n          }\n        });\n      }\n    }\n  }\n}\n\nconsole.log(`Found ${validPages.length} valid Google Docs links`);\nreturn validPages;\n"
+      },
+      "id": "1fa90161-1f0d-4c0a-99c6-e8e373094b97",
+      "name": "Filter & Extract Doc IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-928, 1136],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "block",
+        "operation": "getAll",
+        "blockId": {
+          "__rl": true,
+          "value": "={{ $json.pageId }}",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "fetchNestedBlocks": true
+      },
+      "id": "ae824de0-8b38-4b3f-8419-2892c2965c6e",
+      "name": "Get Page Blocks",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-736, 1136],
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all pages data from Filter & Extract Doc IDs\nconst allPages = $('Filter & Extract Doc IDs').all();\n\n// Get all blocks data from Get Page Blocks\nconst allBlocks = $input.all();\n\n// Create a map of pageId to blocks\nconst blocksByPage = {};\nfor (const blockItem of allBlocks) {\n  const block = blockItem.json;\n  // For blocks, get the page ID from parent structure\n  const parentPageId = block.parent?.page_id || block.parent?.database_id || block.root_id;\n  \n  if (!blocksByPage[parentPageId]) {\n    blocksByPage[parentPageId] = [];\n  }\n  blocksByPage[parentPageId].push(block);\n}\n\n// Process each page with its blocks\nconst processedPages = [];\n\nfor (const pageItem of allPages) {\n  const pageData = pageItem.json;\n  const pageBlocks = blocksByPage[pageData.pageId] || [];\n  \n  console.log(`Processing: ${pageData.property_project_name || pageData.name}`);\n  console.log(`Page ID: ${pageData.pageId}`);\n  console.log(`Blocks found: ${pageBlocks.length}`);\n  \n  // Process blocks content\n  let content = '';\n  \n  // Add separator for this update\n  content += `\\n\\n========== UPDATE: ${new Date().toISOString()} ==========\\n\\n`;\n  \n  // Add project header\n  content += `# ${pageData.property_project_name || pageData.name}\\n\\n`;\n  content += `**Client:** ${pageData.property_client || 'N/A'}\\n`;\n  content += `**Status:** ${pageData.property_status || 'N/A'}\\n`;\n  content += `**Priority:** ${pageData.property_priority || 'N/A'}\\n`;\n  \n  if (pageData.property_owner && pageData.property_owner.length > 0) {\n    content += `**Owner(s):** ${pageData.property_owner.join(', ')}\\n`;\n  }\n  \n  // Format dates properly\n  if (pageData.property_start_date) {\n    const startDate = typeof pageData.property_start_date === 'object' && pageData.property_start_date.start\n      ? pageData.property_start_date.start\n      : pageData.property_start_date;\n    content += `**Start Date:** ${startDate}\\n`;\n  }\n  \n  if (pageData.property_end_date) {\n    const endDate = typeof pageData.property_end_date === 'object' && pageData.property_end_date.start\n      ? pageData.property_end_date.start\n      : pageData.property_end_date;\n    content += `**End Date:** ${endDate}\\n`;\n  }\n  \n  content += `\\n---\\n\\n`;\n  content += `## Content from Notion Page\\n\\n`;\n  \n  // Create maps to track blocks and their relationships\n  const blockMap = {};\n  const childrenMap = {};\n  const processedBlocks = new Set();\n  \n  // First pass: organize blocks by ID and track parent-child relationships\n  for (const block of pageBlocks) {\n    blockMap[block.id] = block;\n    \n    // Use parent_id field to establish parent-child relationships\n    if (block.parent_id && block.parent_id !== pageData.pageId) {\n      if (!childrenMap[block.parent_id]) {\n        childrenMap[block.parent_id] = [];\n      }\n      childrenMap[block.parent_id].push(block.id);\n    }\n  }\n  \n  console.log('Block hierarchy:', JSON.stringify(childrenMap, null, 2));\n  \n  // Helper function to process a block and its children\n  function processBlock(block, level = 0) {\n    // Avoid processing the same block twice\n    if (processedBlocks.has(block.id)) {\n      return '';\n    }\n    processedBlocks.add(block.id);\n    \n    // Skip unsupported block types\n    if (block.type === 'unsupported' || block.type === 'child_page' || block.type === 'child_database') {\n      return '';\n    }\n    \n    let blockContent = '';\n    const indent = '    '.repeat(level); // Four spaces per level\n    \n    switch (block.type) {\n      case 'paragraph':\n        if (block.content) {\n          blockContent += indent + block.content + '\\n';\n          // Add extra newline only if no children\n          if (!block.has_children) {\n            blockContent += '\\n';\n          }\n        }\n        break;\n        \n      case 'heading_1':\n        if (block.content) {\n          blockContent += indent + '# ' + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'heading_2':\n        if (block.content) {\n          blockContent += indent + '## ' + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'heading_3':\n        if (block.content) {\n          blockContent += indent + '### ' + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'bulleted_list_item':\n        if (block.content) {\n          blockContent += indent + '• ' + block.content + '\\n';\n        }\n        break;\n        \n      case 'numbered_list_item':\n        if (block.content) {\n          blockContent += indent + '1. ' + block.content + '\\n';\n        }\n        break;\n        \n      case 'to_do':\n        // Check if block has the checked property\n        const isChecked = block.checked === true;\n        const checkbox = isChecked ? '☑' : '☐';\n        blockContent += indent + checkbox + ' ' + (block.content || '') + '\\n';\n        break;\n        \n      case 'divider':\n        blockContent += indent + '---\\n\\n';\n        break;\n        \n      case 'code':\n        if (block.content) {\n          const language = (block.code && block.code.language) || '';\n          blockContent += indent + '```' + language + '\\n';\n          const codeLines = block.content.split('\\n');\n          for (const line of codeLines) {\n            blockContent += indent + line + '\\n';\n          }\n          blockContent += indent + '```\\n\\n';\n        }\n        break;\n        \n      case 'video':\n        if (block.video && block.video.external && block.video.external.url) {\n          blockContent += indent + `[Video: ${block.video.external.url}]\\n\\n`;\n        } else if (block.content && block.content.includes('youtube.com')) {\n          blockContent += indent + block.content + '\\n\\n';\n        }\n        break;\n        \n      case 'bookmark':\n        if (block.bookmark && block.bookmark.url) {\n          blockContent += indent + `[Bookmark: ${block.bookmark.url}]\\n\\n`;\n        }\n        break;\n        \n      case 'image':\n        // Skip image blocks as requested\n        break;\n        \n      default:\n        if (block.content) {\n          blockContent += indent + block.content + '\\n\\n';\n        }\n        break;\n    }\n    \n    // Process children if they exist (based on has_children flag and childrenMap)\n    if (block.has_children && childrenMap[block.id]) {\n      const children = childrenMap[block.id];\n      for (const childId of children) {\n        const childBlock = blockMap[childId];\n        if (childBlock) {\n          blockContent += processBlock(childBlock, level + 1);\n        }\n      }\n    }\n    \n    // Add spacing after list items with children\n    if (block.has_children && (block.type === 'to_do' || block.type === 'bulleted_list_item' || block.type === 'numbered_list_item')) {\n      blockContent += '\\n';\n    }\n    \n    return blockContent;\n  }\n  \n  // Process only top-level blocks (direct children of the page)\n  for (const block of pageBlocks) {\n    // Only process if it's a direct child of the page (not a child of another block)\n    const isTopLevel = !block.parent_id || block.parent_id === pageData.pageId || \n                      (block.parent && (block.parent.type === 'page_id' || block.parent.type === 'database_id'));\n    \n    if (isTopLevel && !processedBlocks.has(block.id)) {\n      content += processBlock(block, 0);\n    }\n  }\n  \n  // Add timestamp at the end\n  content += `\\n\\n---\\n_Last synced from Notion: ${new Date().toISOString()}_\\n\\n`;\n  \n  // Add processed page to results\n  processedPages.push({\n    json: {\n      pageData: pageData,\n      pageId: pageData.pageId,\n      content: content,\n      googleDocsId: pageData.googleDocsId,\n      projectName: pageData.property_project_name || pageData.name\n    }\n  });\n}\n\nreturn processedPages;"
+      },
+      "id": "b77f631b-040a-4152-9e8b-ac8c73fce8c0",
+      "name": "Process All Blocks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-544, 1136],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.googleDocsId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "includeTabsContent",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "94899e0f-b38b-42ca-93a1-09fec2e130cc",
+      "name": "Get All Docs Tabs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-352, 1136],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "IO0v12gY17SD37Iu",
+          "name": "Google Docs account - Redwan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the processed pages from Process All Blocks\nconst processedPages = $('Process All Blocks').all();\n\n// Get all docs tabs\nconst allDocsTabs = $input.all();\n\n// Create a map of googleDocsId to tabs\nconst tabsByDocId = {};\nfor (let i = 0; i < allDocsTabs.length; i++) {\n  const docData = allDocsTabs[i].json;\n  // Match by index since they're processed in the same order\n  const correspondingPage = processedPages[i].json;\n  tabsByDocId[correspondingPage.googleDocsId] = docData.tabs || [];\n}\n\n// Combine the data\nconst finalData = [];\nfor (const pageItem of processedPages) {\n  const pageData = pageItem.json;\n  const docTabs = tabsByDocId[pageData.googleDocsId] || [];\n  \n  finalData.push({\n    json: {\n      ...pageData,\n      docTabs: docTabs\n    }\n  });\n}\n\nreturn finalData;"
+      },
+      "id": "847c6628-8589-40a7-8971-5508fe6e45e5",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, 1136]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "01196b60-51ae-4563-ae08-fd8b4e018f1e",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [32, 1136]
+    },
+    {
+      "parameters": {
+        "jsCode": "// N8N \"Prepare Update Request\" — Wipe the entire \"Notion Log\" tab and rewrite a single anchored block.\n// Requirements we rely on (Docs API):\n// - Fetch document with includeTabsContent=true so tabs + per-tab indices are present.\n// - Every Request targets the tab via tabId. See: \"Work with tabs\" & Best Practices.\n//   https://developers.google.com/workspace/docs/api/how-tos/tabs\n//   https://developers.google.com/workspace/docs/api/how-tos/best-practices\n\nif (!$input.item || !$input.item.json) {\n  return { error: true, message: \"No batch item to process\" };\n}\n\nconst data = $input.item.json;\nconst TAB_TITLE = \"Notion Log\";\nconst START_ANCHOR = \"[Replace Start]\";\nconst END_ANCHOR   = \"[Replace End]\";\n\n/** Find a tab by title (handles nested child tabs) */\nfunction findTabByTitle(tabs, title) {\n  for (const t of tabs || []) {\n    if (t?.tabProperties?.title === title) return t;\n    const child = findTabByTitle(t.childTabs || [], title);\n    if (child) return child;\n  }\n  return null;\n}\n\n/** Collect a tab’s max end index by walking its structural elements */\nfunction computeTabEndIndex(tab) {\n  // The content is under tab.documentTab.* (body, headers, footers, etc.)\n  const docTab = tab?.documentTab || {};\n  const buckets = [\n    ...(docTab.body?.content || []),\n    // include other containers if present\n    ...(docTab.headers || []).flatMap(h => h.content || []),\n    ...(docTab.footers || []).flatMap(f => f.content || []),\n    ...(docTab.footnotes || []).flatMap(fn => fn.content || []),\n  ];\n\n  let maxEnd = 1; // minimal safe value (Docs indices start at 1)\n  function walk(el) {\n    if (!el) return;\n    if (typeof el.endIndex === \"number\") maxEnd = Math.max(maxEnd, el.endIndex);\n\n    // Paragraph runs\n    if (el.paragraph && Array.isArray(el.paragraph.elements)) {\n      for (const pe of el.paragraph.elements) {\n        if (typeof pe.endIndex === \"number\") maxEnd = Math.max(maxEnd, pe.endIndex);\n      }\n    }\n\n    // Tables\n    if (el.table && Array.isArray(el.table.tableRows)) {\n      for (const row of el.table.tableRows) {\n        for (const cell of row.tableCells || []) {\n          for (const c of cell.content || []) walk(c);\n        }\n      }\n    }\n\n    // Generic nested content\n    if (Array.isArray(el.content)) for (const c of el.content) walk(c);\n  }\n\n  for (const el of buckets) walk(el);\n  return maxEnd;\n}\n\n// ---------- Locate the \"Notion Log\" tab ----------\nconst notionLogTab = findTabByTitle(data.docTabs, TAB_TITLE);\nif (!notionLogTab) {\n  return {\n    error: true,\n    message: `No '${TAB_TITLE}' tab found in the document`,\n    projectName: data.projectName,\n    documentId: data.googleDocsId\n  };\n}\n\nconst tabId = notionLogTab.tabProperties.tabId;\nconst tabEnd = computeTabEndIndex(notionLogTab);\n\n// Build the final text to write\nconst finalText =\n  `${START_ANCHOR}\\n${data.content}${END_ANCHOR}\\n`;\n\n// Batch requests:\n// 1) Delete everything in the tab (if there is anything).\n// 2) Insert our single anchored block at index 1.\nconst requests = [];\n\n// Defensive: only delete if we have a usable end index > 1\nif (tabEnd > 1) {\n  requests.push({\n    deleteContentRange: {\n      range: { tabId, startIndex: 1, endIndex: tabEnd - 1 } // endIndex is exclusive\n    }\n  });\n}\n\nrequests.push({\n  insertText: {\n    location: { tabId, index: 1 },\n    text: finalText\n  }\n});\n\n// Optional: include WriteControl using a revisionId you fetched in Get All Docs Tabs,\n// to avoid race conditions if collaborators are typing. See Best Practices.\n// https://developers.google.com/workspace/docs/api/how-tos/best-practices\n// const writeControl = { requiredRevisionId: data.revisionId }; // if you pass it along\n\nreturn {\n  url: `https://docs.googleapis.com/v1/documents/${data.googleDocsId}:batchUpdate`,\n  body: {\n    requests\n    // , writeControl // uncomment if you plumb revisionId from your Get call\n  },\n  documentId: data.googleDocsId,\n  projectName: data.projectName,\n  error: false\n};\n"
+      },
+      "id": "12117e19-ea35-4d9e-8ba3-f0222c35226e",
+      "name": "Prepare Update Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 1136],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c5b6d1e5-4321-4d8a-b7e9-8f9a0c1e2d3f",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d71c7c14-e4e5-417f-a7f0-8e54eb52c234",
+      "name": "Check Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [416, 1136]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "ee48d6a2-4098-4c95-91bc-67b151306f3e",
+      "name": "Update Google Doc",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [608, 1104],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "IO0v12gY17SD37Iu",
+          "name": "Google Docs account - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Marketing",
+        "height": 80,
+        "width": 214,
+        "color": 4
+      },
+      "id": "8a89257a-adb2-4f35-af86-9a8f56b0ac41",
+      "name": "Workflow Notes v1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1296, 1024]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get Pages with Google Docs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pages with Google Docs1": {
+      "main": [
+        [
+          {
+            "node": "Filter & Extract Doc IDs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Extract Doc IDs1": {
+      "main": [
+        [
+          {
+            "node": "Get Page Blocks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Page Blocks1": {
+      "main": [
+        [
+          {
+            "node": "Process All Blocks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process All Blocks1": {
+      "main": [
+        [
+          {
+            "node": "Get All Docs Tabs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Docs Tabs1": {
+      "main": [
+        [
+          {
+            "node": "Merge Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data1": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Prepare Update Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Update Request1": {
+      "main": [
+        [
+          {
+            "node": "Check Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Error1": {
+      "main": [
+        [
+          {
+            "node": "Update Google Doc1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split In Batches1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Google Doc1": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pages with Google Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pages with Google Docs": {
+      "main": [
+        [
+          {
+            "node": "Filter & Extract Doc IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Extract Doc IDs": {
+      "main": [
+        [
+          {
+            "node": "Get Page Blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Page Blocks": {
+      "main": [
+        [
+          {
+            "node": "Process All Blocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process All Blocks": {
+      "main": [
+        [
+          {
+            "node": "Get All Docs Tabs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Docs Tabs": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Prepare Update Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Update Request": {
+      "main": [
+        [
+          {
+            "node": "Check Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Error": {
+      "main": [
+        [
+          {
+            "node": "Update Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bbfd58af-a194-45a5-9106-a68a0fb29a81",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "WB9fljI4kHhHkB82",
+  "tags": []
+}
