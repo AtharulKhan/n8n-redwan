@@ -1,0 +1,408 @@
+{
+  "name": "Notion to Slack (Projects Overdue)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "8028a93d-ea57-4c18-8317-3dc3ffebca2e",
+      "name": "Daily Schedule Trigger1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-928, 160],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/2626ab60b479805daf3be7f77576900a?v=2626ab60b4798122bdfc000c5a3ae2d6",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Status|status",
+              "condition": "does_not_equal",
+              "statusValue": "Done"
+            },
+            {
+              "key": "Service Team|select",
+              "condition": "equals",
+              "selectValue": "Dev"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-688, 160],
+      "id": "56527ca5-4191-45d8-8a99-6e19a264a38c",
+      "name": "Get many database pages1",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following project data:\n\nToday's Date: {{ new Date().toISOString().split('T')[0] }}\nProject Details: {{ JSON.stringify($json, null, 2) }}\n\nLook at all the projects, identify which task is over due and make a quick announcement letting us know which projects are overdue.\n\nAlso talk about approaching due dates (any project due within next 2-3 days)\n\nKeep your response very brief, just overdue tasks and/or approaching deadlines.\n\nStart your message by saying \"Project Deadline Status Update: \"\n\n-----\n\n*Tips for formatting Slack messages*Updated February 28, 2025 11:18 AM\n\nYou can format Slack messages in Zaps to add [styling](https://slack.com/help/articles/202288908-Format-your-messages), [user mentions](https://slack.com/help/articles/205240127-Use-mentions-in-Slack), and [channel and workspace notifications](https://slack.com/help/articles/202009646-Notify-a-channel-or-workspace).\n\n# *Text*\n\n- Bold text: wrap your text with asterisks (*).bold*\n- Italic text: wrap your text with underscores (_)._italic_\n- Strikethrough text: wrap your text with tildes (~).~strikethrough~\n\n# *Inline code and blockquotes*\n\n- Inline code blocks that are a single word or line: wrap your text with a single backtick ().inline code block`\n- For inline code blocks that are a block of text: wrap your text with three backticks.`inline code block text block`\n- For blockquotes: start the blockquote with a closing angle bracket (>).>blockquote\n\n# *Lists*\n\n- Ordered lists: type the *number, a **period (.), and a **space* before your text. 1. ordered list\n- Bulleted lists: it's not possible to format bulleted lists in the same way it's done directly on Slack (using asterisks). However, you can mimic the formatting using the bullet point symbol () and a *space* before your text. bulleted list\n\n# *Links*\n\nURL links are automatically hyperlinked in Slack without additional formatting.\n\nTo display link text instead of the URL:\n\n- Type an *open angle bracket (<), your **URL link, a **pipe character (|), your **link text, and a **closing angle bracket*.<https://zapier.com|Link text>\n\n*Tip*\n\n![ratingStar icon](https://cdn.zapier.com/storage/photos/8843673cace5f7b922c65168a85d657e.png)\n\nLink text will include spaces between words.\n\n# *New lines*\n\nNo special formatting is required. To add a new line, use the *return (enter) key* on your keyboard.\n\n*Note*\n\n![miscEye icon](https://cdn.zapier.com/storage/photos/335619ab6472fe1fefab18d493cb39bf.png)\n\nYou can enter only enter a single new line between lines of text. Two or more consecutive new lines are not supported.\n\n# *Emoji*\n\n- Wrap the name of the emoji in colons (:).:heart_eyes:\n\n# *Mentions and notifications*\n\n- User mentions: type an *open angle bracket, the **at symbol (@), the user’s **Slack member ID* (see below how to find the member ID), and a *closing angle bracket*.<@UG1234567>\n- “Everyone” notification (notifies everyone in your workspace in the #general channel): type an *open angle bracket, an **exclamation point (!), “everyone”, and a **closing angle bracket*.<!everyone>\n- “Here” notification (notifies active members in a specific channel): type an *open angle bracket, an **exclamation point (!), “here”, and a **closing angle bracket*.<!here>\n- “User group” notification (notifies all members of a user group): type an *open angle bracket, an **exclamation point (!), type in “subteam” , a **caret symbol (^), the **user group ID* (see below how to find the group ID), and a *closing angle bracket*.<!subteam^abcde123456>\n\n---",
+        "batching": {
+          "batchSize": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [-48, 80],
+      "id": "bafa7ad9-42af-436f-a5d2-b3dd41f7ea63",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [128, 272],
+      "id": "8cf20123-ac61-4022-9421-754c5ab94718",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract project names and IDs from Notion database pages\nconst projects = [];\n// Process each database page\nfor (const item of $input.all()) {\n  // Extract project ID and remove dashes to match content data format\n  const projectIdWithDashes = item.json.id || 'unknown';\n  const projectId = projectIdWithDashes.replace(/-/g, ''); // Remove all dashes\n  \n  // Extract project name from Notion properties\n  // Try different possible property names that might contain the project title\n  const projectName = \n    item.json.properties?.Name?.title?.[0]?.text?.content ||\n    item.json.properties?.Title?.title?.[0]?.text?.content ||\n    item.json.properties?.Project?.title?.[0]?.text?.content ||\n    item.json.properties?.name?.title?.[0]?.text?.content ||\n    item.json.properties?.title?.title?.[0]?.text?.content ||\n    item.json.property_project_name || // Based on your data structure\n    item.json.title || // Sometimes title might be at root level\n    item.json.name ||  // Or name at root level\n    `Untitled Project (${projectId.slice(0, 8)})`;\n  \n  // Extract owner(s) - property_owner appears to be an array\n  const owners = item.json.property_owner || \n    item.json.properties?.owner?.people?.map(p => p.name || p.email || p.id) ||\n    [];\n  \n  // Extract client\n  const client = item.json.property_client ||\n    item.json.properties?.client?.rich_text?.[0]?.text?.content ||\n    item.json.properties?.Client?.rich_text?.[0]?.text?.content ||\n    '';\n  \n  // Extract status\n  const status = item.json.property_status || \n    item.json.properties?.status?.status?.name ||\n    item.json.properties?.Status?.status?.name ||\n    'Unknown';\n  \n  // Extract project documents - property_project_doc appears to be an array of URLs\n  const projectDocs = item.json.property_project_doc ||\n    item.json.properties?.project_doc?.url ||\n    item.json.properties?.Project_Doc?.url ||\n    [];\n  \n  // Extract start date\n  const startDate = item.json.property_start_date?.start ||\n    item.json.property_start_date ||\n    item.json.properties?.start_date?.date?.start ||\n    item.json.properties?.Start_Date?.date?.start ||\n    null;\n  \n  // Extract end date\n  const endDate = item.json.property_end_date?.start ||\n    item.json.property_end_date ||\n    item.json.properties?.end_date?.date?.start ||\n    item.json.properties?.End_Date?.date?.start ||\n    null;\n  \n  // Calculate project duration if both dates exist\n  let durationDays = null;\n  if (startDate && endDate) {\n    const start = new Date(startDate);\n    const end = new Date(endDate);\n    durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));\n  }\n  \n  // Check if project is overdue (end date has passed)\n  const today = new Date();\n  today.setHours(0, 0, 0, 0); // Set to start of day for comparison\n  let isOverdue = false;\n  if (endDate) {\n    const end = new Date(endDate);\n    end.setHours(0, 0, 0, 0);\n    isOverdue = end < today && status !== 'Completed' && status !== 'Done';\n  }\n  \n  // Add to projects array with dashless ID\n  projects.push({\n    projectId: projectId, // Now without dashes\n    projectName: projectName,\n    url: item.json.url || '',\n    owners: owners, // Array of owner names\n    ownersList: owners.join(', '), // Comma-separated string for easy display\n    client: client,\n    status: status,\n    startDate: startDate,\n    endDate: endDate,\n    durationDays: durationDays,\n    isOverdue: isOverdue,\n    projectDocs: projectDocs, // Array of document URLs\n    hasDocuments: projectDocs.length > 0,\n    // Include any other metadata you might need\n    createdTime: item.json.created_time || '',\n    lastEditedTime: item.json.last_edited_time || ''\n  });\n}\n\n// Return the extracted project information\nreturn [{\n  json: {\n    projects: projects,\n    totalProjects: projects.length,\n    overdueProjects: projects.filter(p => p.isOverdue).length,\n    projectsWithDates: projects.filter(p => p.startDate && p.endDate).length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-416, 288],
+      "id": "b9acddb8-7996-47a0-8588-29dd6f082278",
+      "name": "Extract Project Details"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C097S4MNMEV",
+          "mode": "list",
+          "cachedResultName": "simplifai-dev-team"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [304, 80],
+      "id": "88e82547-5d42-4592-9307-92315cf3cd9f",
+      "name": "Send a message",
+      "webhookId": "90330ccf-ca92-4def-9070-df30d0e472e1",
+      "credentials": {
+        "slackApi": {
+          "id": "BwslAy6Dqpeg77Gq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Dev",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-944, 32],
+      "typeVersion": 1,
+      "id": "ed929bc9-39b3-4c08-8520-7473ad9c5180",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "2ed8bcf5-a9cb-4566-9706-3de54ede9e9a",
+      "name": "Daily Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-928, 704],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/2626ab60b479805daf3be7f77576900a?v=2626ab60b4798122bdfc000c5a3ae2d6",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Status|status",
+              "condition": "does_not_equal",
+              "statusValue": "Done"
+            },
+            {
+              "key": "Service Team|select",
+              "condition": "equals",
+              "selectValue": "Marketing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-688, 704],
+      "id": "94bc4d12-525e-4cd3-b554-3c30516a7ebb",
+      "name": "Get many database pages",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following project data:\n\nToday's Date: {{ new Date().toISOString().split('T')[0] }}\nProject Details: {{ JSON.stringify($json, null, 2) }}\n\nLook at all the projects, identify which task is over due and make a quick announcement letting us know which projects are overdue.\n\nAlso talk about approaching due dates (any project due within next 2-3 days)\n\nKeep your response very brief, just overdue tasks and/or approaching deadlines.\n\nStart your message by saying \"Project Deadline Status Update: \"\n\n-----\n\n*Tips for formatting Slack messages*Updated February 28, 2025 11:18 AM\n\nYou can format Slack messages in Zaps to add [styling](https://slack.com/help/articles/202288908-Format-your-messages), [user mentions](https://slack.com/help/articles/205240127-Use-mentions-in-Slack), and [channel and workspace notifications](https://slack.com/help/articles/202009646-Notify-a-channel-or-workspace).\n\n# *Text*\n\n- Bold text: wrap your text with asterisks (*).bold*\n- Italic text: wrap your text with underscores (_)._italic_\n- Strikethrough text: wrap your text with tildes (~).~strikethrough~\n\n# *Inline code and blockquotes*\n\n- Inline code blocks that are a single word or line: wrap your text with a single backtick ().inline code block`\n- For inline code blocks that are a block of text: wrap your text with three backticks.`inline code block text block`\n- For blockquotes: start the blockquote with a closing angle bracket (>).>blockquote\n\n# *Lists*\n\n- Ordered lists: type the *number, a **period (.), and a **space* before your text. 1. ordered list\n- Bulleted lists: it's not possible to format bulleted lists in the same way it's done directly on Slack (using asterisks). However, you can mimic the formatting using the bullet point symbol () and a *space* before your text. bulleted list\n\n# *Links*\n\nURL links are automatically hyperlinked in Slack without additional formatting.\n\nTo display link text instead of the URL:\n\n- Type an *open angle bracket (<), your **URL link, a **pipe character (|), your **link text, and a **closing angle bracket*.<https://zapier.com|Link text>\n\n*Tip*\n\n![ratingStar icon](https://cdn.zapier.com/storage/photos/8843673cace5f7b922c65168a85d657e.png)\n\nLink text will include spaces between words.\n\n# *New lines*\n\nNo special formatting is required. To add a new line, use the *return (enter) key* on your keyboard.\n\n*Note*\n\n![miscEye icon](https://cdn.zapier.com/storage/photos/335619ab6472fe1fefab18d493cb39bf.png)\n\nYou can enter only enter a single new line between lines of text. Two or more consecutive new lines are not supported.\n\n# *Emoji*\n\n- Wrap the name of the emoji in colons (:).:heart_eyes:\n\n# *Mentions and notifications*\n\n- User mentions: type an *open angle bracket, the **at symbol (@), the user’s **Slack member ID* (see below how to find the member ID), and a *closing angle bracket*.<@UG1234567>\n- “Everyone” notification (notifies everyone in your workspace in the #general channel): type an *open angle bracket, an **exclamation point (!), “everyone”, and a **closing angle bracket*.<!everyone>\n- “Here” notification (notifies active members in a specific channel): type an *open angle bracket, an **exclamation point (!), “here”, and a **closing angle bracket*.<!here>\n- “User group” notification (notifies all members of a user group): type an *open angle bracket, an **exclamation point (!), type in “subteam” , a **caret symbol (^), the **user group ID* (see below how to find the group ID), and a *closing angle bracket*.<!subteam^abcde123456>\n\n---",
+        "batching": {
+          "batchSize": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [-48, 624],
+      "id": "3e0c3b80-8fa8-4516-aac2-30671b6ef0ef",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [128, 816],
+      "id": "6b425f21-0bbc-491b-bdfc-6338d65bcb67",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "6it7RJzJeBc7WSQ7",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract project names and IDs from Notion database pages\nconst projects = [];\n// Process each database page\nfor (const item of $input.all()) {\n  // Extract project ID and remove dashes to match content data format\n  const projectIdWithDashes = item.json.id || 'unknown';\n  const projectId = projectIdWithDashes.replace(/-/g, ''); // Remove all dashes\n  \n  // Extract project name from Notion properties\n  // Try different possible property names that might contain the project title\n  const projectName = \n    item.json.properties?.Name?.title?.[0]?.text?.content ||\n    item.json.properties?.Title?.title?.[0]?.text?.content ||\n    item.json.properties?.Project?.title?.[0]?.text?.content ||\n    item.json.properties?.name?.title?.[0]?.text?.content ||\n    item.json.properties?.title?.title?.[0]?.text?.content ||\n    item.json.property_project_name || // Based on your data structure\n    item.json.title || // Sometimes title might be at root level\n    item.json.name ||  // Or name at root level\n    `Untitled Project (${projectId.slice(0, 8)})`;\n  \n  // Extract owner(s) - property_owner appears to be an array\n  const owners = item.json.property_owner || \n    item.json.properties?.owner?.people?.map(p => p.name || p.email || p.id) ||\n    [];\n  \n  // Extract client\n  const client = item.json.property_client ||\n    item.json.properties?.client?.rich_text?.[0]?.text?.content ||\n    item.json.properties?.Client?.rich_text?.[0]?.text?.content ||\n    '';\n  \n  // Extract status\n  const status = item.json.property_status || \n    item.json.properties?.status?.status?.name ||\n    item.json.properties?.Status?.status?.name ||\n    'Unknown';\n  \n  // Extract project documents - property_project_doc appears to be an array of URLs\n  const projectDocs = item.json.property_project_doc ||\n    item.json.properties?.project_doc?.url ||\n    item.json.properties?.Project_Doc?.url ||\n    [];\n  \n  // Extract start date\n  const startDate = item.json.property_start_date?.start ||\n    item.json.property_start_date ||\n    item.json.properties?.start_date?.date?.start ||\n    item.json.properties?.Start_Date?.date?.start ||\n    null;\n  \n  // Extract end date\n  const endDate = item.json.property_end_date?.start ||\n    item.json.property_end_date ||\n    item.json.properties?.end_date?.date?.start ||\n    item.json.properties?.End_Date?.date?.start ||\n    null;\n  \n  // Calculate project duration if both dates exist\n  let durationDays = null;\n  if (startDate && endDate) {\n    const start = new Date(startDate);\n    const end = new Date(endDate);\n    durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));\n  }\n  \n  // Check if project is overdue (end date has passed)\n  const today = new Date();\n  today.setHours(0, 0, 0, 0); // Set to start of day for comparison\n  let isOverdue = false;\n  if (endDate) {\n    const end = new Date(endDate);\n    end.setHours(0, 0, 0, 0);\n    isOverdue = end < today && status !== 'Completed' && status !== 'Done';\n  }\n  \n  // Add to projects array with dashless ID\n  projects.push({\n    projectId: projectId, // Now without dashes\n    projectName: projectName,\n    url: item.json.url || '',\n    owners: owners, // Array of owner names\n    ownersList: owners.join(', '), // Comma-separated string for easy display\n    client: client,\n    status: status,\n    startDate: startDate,\n    endDate: endDate,\n    durationDays: durationDays,\n    isOverdue: isOverdue,\n    projectDocs: projectDocs, // Array of document URLs\n    hasDocuments: projectDocs.length > 0,\n    // Include any other metadata you might need\n    createdTime: item.json.created_time || '',\n    lastEditedTime: item.json.last_edited_time || ''\n  });\n}\n\n// Return the extracted project information\nreturn [{\n  json: {\n    projects: projects,\n    totalProjects: projects.length,\n    overdueProjects: projects.filter(p => p.isOverdue).length,\n    projectsWithDates: projects.filter(p => p.startDate && p.endDate).length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-416, 832],
+      "id": "d9bff07d-8d92-41a6-82a4-400cea21344b",
+      "name": "Extract Project Details1"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C099CHT838F",
+          "mode": "list",
+          "cachedResultName": "marketing-team-psa"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [304, 624],
+      "id": "3b74a3a0-6e30-4e07-8395-6bbe71a2b675",
+      "name": "Send a message1",
+      "webhookId": "90330ccf-ca92-4def-9070-df30d0e472e1",
+      "credentials": {
+        "slackApi": {
+          "id": "BwslAy6Dqpeg77Gq",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Marketing",
+        "height": 80,
+        "width": 198
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-944, 576],
+      "typeVersion": 1,
+      "id": "028f1867-d22f-46e7-823a-2b8e238ade6d",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages1": {
+      "main": [
+        [
+          {
+            "node": "Extract Project Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Project Details": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "Extract Project Details1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Project Details1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "84891dcd-8bcf-4590-95a3-b1519a269551",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "6dsrmn4YQFT69CK8",
+  "tags": []
+}
