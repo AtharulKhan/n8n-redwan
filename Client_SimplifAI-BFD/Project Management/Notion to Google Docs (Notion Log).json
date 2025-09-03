@@ -227,8 +227,8 @@
     },
     {
       "parameters": {
-        "content": "# Dev",
-        "height": 80,
+        "content": "# Dev\n## Deleted & Added",
+        "height": 144,
         "width": 150,
         "color": 4
       },
@@ -236,16 +236,14 @@
       "name": "Workflow Notes v",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-1296, 592]
+      "position": [-1296, 528]
     },
     {
       "parameters": {
         "rule": {
           "interval": [
             {
-              "field": "weeks",
-              "weeksInterval": 3,
-              "triggerAtDay": [2],
+              "daysInterval": 25,
               "triggerAtHour": 5
             }
           ]
@@ -400,7 +398,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// N8N \"Prepare Update Request\" — Wipe the entire \"Notion Log\" tab and rewrite a single anchored block.\n// Requirements we rely on (Docs API):\n// - Fetch document with includeTabsContent=true so tabs + per-tab indices are present.\n// - Every Request targets the tab via tabId. See: \"Work with tabs\" & Best Practices.\n//   https://developers.google.com/workspace/docs/api/how-tos/tabs\n//   https://developers.google.com/workspace/docs/api/how-tos/best-practices\n\nif (!$input.item || !$input.item.json) {\n  return { error: true, message: \"No batch item to process\" };\n}\n\nconst data = $input.item.json;\nconst TAB_TITLE = \"Notion Log\";\nconst START_ANCHOR = \"[Replace Start]\";\nconst END_ANCHOR   = \"[Replace End]\";\n\n/** Find a tab by title (handles nested child tabs) */\nfunction findTabByTitle(tabs, title) {\n  for (const t of tabs || []) {\n    if (t?.tabProperties?.title === title) return t;\n    const child = findTabByTitle(t.childTabs || [], title);\n    if (child) return child;\n  }\n  return null;\n}\n\n/** Collect a tab’s max end index by walking its structural elements */\nfunction computeTabEndIndex(tab) {\n  // The content is under tab.documentTab.* (body, headers, footers, etc.)\n  const docTab = tab?.documentTab || {};\n  const buckets = [\n    ...(docTab.body?.content || []),\n    // include other containers if present\n    ...(docTab.headers || []).flatMap(h => h.content || []),\n    ...(docTab.footers || []).flatMap(f => f.content || []),\n    ...(docTab.footnotes || []).flatMap(fn => fn.content || []),\n  ];\n\n  let maxEnd = 1; // minimal safe value (Docs indices start at 1)\n  function walk(el) {\n    if (!el) return;\n    if (typeof el.endIndex === \"number\") maxEnd = Math.max(maxEnd, el.endIndex);\n\n    // Paragraph runs\n    if (el.paragraph && Array.isArray(el.paragraph.elements)) {\n      for (const pe of el.paragraph.elements) {\n        if (typeof pe.endIndex === \"number\") maxEnd = Math.max(maxEnd, pe.endIndex);\n      }\n    }\n\n    // Tables\n    if (el.table && Array.isArray(el.table.tableRows)) {\n      for (const row of el.table.tableRows) {\n        for (const cell of row.tableCells || []) {\n          for (const c of cell.content || []) walk(c);\n        }\n      }\n    }\n\n    // Generic nested content\n    if (Array.isArray(el.content)) for (const c of el.content) walk(c);\n  }\n\n  for (const el of buckets) walk(el);\n  return maxEnd;\n}\n\n// ---------- Locate the \"Notion Log\" tab ----------\nconst notionLogTab = findTabByTitle(data.docTabs, TAB_TITLE);\nif (!notionLogTab) {\n  return {\n    error: true,\n    message: `No '${TAB_TITLE}' tab found in the document`,\n    projectName: data.projectName,\n    documentId: data.googleDocsId\n  };\n}\n\nconst tabId = notionLogTab.tabProperties.tabId;\nconst tabEnd = computeTabEndIndex(notionLogTab);\n\n// Build the final text to write\nconst finalText =\n  `${START_ANCHOR}\\n${data.content}${END_ANCHOR}\\n`;\n\n// Batch requests:\n// 1) Delete everything in the tab (if there is anything).\n// 2) Insert our single anchored block at index 1.\nconst requests = [];\n\n// Defensive: only delete if we have a usable end index > 1\nif (tabEnd > 1) {\n  requests.push({\n    deleteContentRange: {\n      range: { tabId, startIndex: 1, endIndex: tabEnd - 1 } // endIndex is exclusive\n    }\n  });\n}\n\nrequests.push({\n  insertText: {\n    location: { tabId, index: 1 },\n    text: finalText\n  }\n});\n\n// Optional: include WriteControl using a revisionId you fetched in Get All Docs Tabs,\n// to avoid race conditions if collaborators are typing. See Best Practices.\n// https://developers.google.com/workspace/docs/api/how-tos/best-practices\n// const writeControl = { requiredRevisionId: data.revisionId }; // if you pass it along\n\nreturn {\n  url: `https://docs.googleapis.com/v1/documents/${data.googleDocsId}:batchUpdate`,\n  body: {\n    requests\n    // , writeControl // uncomment if you plumb revisionId from your Get call\n  },\n  documentId: data.googleDocsId,\n  projectName: data.projectName,\n  error: false\n};\n"
+        "jsCode": "// Append fresh content into the \"Notion Log\" tab.\n// If anchors exist, append BEFORE [Replace End].\n// If anchors don't exist, append at end-of-tab (safe fallback).\n\nif (!$input.item || !$input.item.json) {\n  return { error: true, message: \"No batch item to process\" };\n}\n\nconst data = $input.item.json;\nconst TAB_TITLE = \"Notion Log\";\nconst START_ANCHOR = \"[Replace Start]\";\nconst END_ANCHOR   = \"[Replace End]\";\n\n// Optional: add a separator before each appended chunk\nconst APPEND_PREFIX = \"\\n\\n---\\n\";\n\n// ---- helpers ----\nfunction findTabByTitle(tabs, title) {\n  for (const t of tabs || []) {\n    if (t?.tabProperties?.title === title) return t;\n    const child = findTabByTitle(t.childTabs || [], title);\n    if (child) return child;\n  }\n  return null;\n}\n\nfunction computeTabEndIndex(tab) {\n  const dt = tab?.documentTab || {};\n  const buckets = [\n    ...(dt.body?.content || []),\n    ...(dt.headers || []).flatMap(h => h.content || []),\n    ...(dt.footers || []).flatMap(f => f.content || []),\n    ...(dt.footnotes || []).flatMap(fn => fn.content || []),\n  ];\n  let maxEnd = 1;\n  function walk(el) {\n    if (!el) return;\n    if (typeof el.endIndex === \"number\") maxEnd = Math.max(maxEnd, el.endIndex);\n\n    // Paragraph runs\n    if (el.paragraph && Array.isArray(el.paragraph.elements)) {\n      for (const pe of el.paragraph.elements) {\n        if (typeof pe.endIndex === \"number\") maxEnd = Math.max(maxEnd, pe.endIndex);\n      }\n    }\n    // Tables\n    if (el.table && Array.isArray(el.table.tableRows)) {\n      for (const row of el.table.tableRows) {\n        for (const cell of row.tableCells || []) {\n          for (const c of cell.content || []) walk(c);\n        }\n      }\n    }\n    // Generic nested\n    if (Array.isArray(el.content)) for (const c of el.content) walk(c);\n  }\n  for (const el of buckets) walk(el);\n  return maxEnd;\n}\n\n// Build stitched text + char->docIndex map for anchor search\nfunction collectTextAndIndexMap(tab) {\n  const dt = tab?.documentTab || {};\n  const buckets = [\n    ...(dt.body?.content || []),\n    ...(dt.headers || []).flatMap(h => h.content || []),\n    ...(dt.footers || []).flatMap(f => f.content || []),\n    ...(dt.footnotes || []).flatMap(fn => fn.content || []),\n  ];\n  const acc = { text: \"\", indexMap: [], tabEnd: 0 };\n\n  function walk(el) {\n    if (!el) return;\n    if (typeof el.endIndex === \"number\") acc.tabEnd = Math.max(acc.tabEnd, el.endIndex);\n\n    // Paragraph\n    if (el.paragraph && Array.isArray(el.paragraph.elements)) {\n      for (const pe of el.paragraph.elements) {\n        const tr = pe.textRun;\n        const runText = (tr && typeof tr.content === \"string\") ? tr.content : \"\";\n        const start = (typeof pe.startIndex === \"number\") ? pe.startIndex : null;\n        if (start != null) {\n          for (let i = 0; i < runText.length; i++) {\n            acc.text += runText[i];\n            acc.indexMap.push(start + i);\n          }\n        }\n      }\n    }\n\n    // Tables\n    if (el.table && Array.isArray(el.table.tableRows)) {\n      for (const row of el.table.tableRows) {\n        for (const cell of row.tableCells || []) {\n          for (const c of cell.content || []) walk(c);\n        }\n      }\n    }\n\n    // Generic nested\n    if (Array.isArray(el.content)) for (const c of el.content) walk(c);\n  }\n\n  for (const el of (dt.body?.content || [])) walk(el);\n  for (const h of (dt.headers || [])) for (const c of (h.content || [])) walk(c);\n  for (const f of (dt.footers || [])) for (const c of (f.content || [])) walk(c);\n  for (const fn of (dt.footnotes || [])) for (const c of (fn.content || [])) walk(c);\n\n  return acc;\n}\n\nfunction findFirst(acc, needle, fromPos = 0) {\n  const pos = acc.text.indexOf(needle, fromPos);\n  if (pos === -1) return null;\n  return {\n    pos,\n    startDocIndex: acc.indexMap[pos],\n    endDocIndexExclusive: acc.indexMap[pos + needle.length - 1] + 1\n  };\n}\n\n// ---- locate tab ----\nconst tab = findTabByTitle(data.docTabs, TAB_TITLE);\nif (!tab) {\n  return {\n    error: true,\n    message: `No '${TAB_TITLE}' tab found`,\n    projectName: data.projectName,\n    documentId: data.googleDocsId\n  };\n}\nconst tabId = tab.tabProperties.tabId;\n\n// ---- compute insertion index ----\nconst acc = collectTextAndIndexMap(tab);\nconst tabEnd = acc.tabEnd || computeTabEndIndex(tab);\n\n// Try to append inside anchors (before END)\nconst startHit = findFirst(acc, START_ANCHOR, 0);\nconst endHit   = startHit ? findFirst(acc, END_ANCHOR, startHit.pos + START_ANCHOR.length) : null;\n\n// Build append text (optional separator + your content)\nconst appendText = APPEND_PREFIX + data.content;\n\n// If both anchors exist in correct order, insert at endHit.startDocIndex\nlet insertIndex;\nif (startHit && endHit && startHit.startDocIndex < endHit.startDocIndex) {\n  insertIndex = endHit.startDocIndex; // right before [Replace End]\n} else {\n  // Fallback: append at end of tab\n  insertIndex = Math.max(1, (tabEnd ? (tabEnd - 1) : 1)); // endIndex is exclusive\n  // If you'd rather create an anchored block when missing, replace append with:\n  // return { ... do an insertText at index 1 with `${START_ANCHOR}\\n${data.content}\\n${END_ANCHOR}\\n` }\n}\n\nconst requests = [\n  {\n    insertText: {\n      location: { tabId: tabId, index: insertIndex },\n      text: appendText\n    }\n  }\n];\n\n// Optional: WriteControl to guard against collaborators changing the doc between get & update\n// (plumb revisionId from your \"Get All Docs Tabs\" response).\n// See: https://developers.google.com/workspace/docs/api/how-tos/batch\n// const writeControl = { requiredRevisionId: data.revisionId };\n\nreturn {\n  url: `https://docs.googleapis.com/v1/documents/${data.googleDocsId}:batchUpdate`,\n  body: { requests /*, writeControl*/ },\n  documentId: data.googleDocsId,\n  projectName: data.projectName,\n  error: false\n};\n"
       },
       "id": "12117e19-ea35-4d9e-8ba3-f0222c35226e",
       "name": "Prepare Update Request",
@@ -464,8 +462,8 @@
     },
     {
       "parameters": {
-        "content": "# Marketing",
-        "height": 80,
+        "content": "# Marketing\n## Appended",
+        "height": 96,
         "width": 214,
         "color": 4
       },
@@ -473,7 +471,7 @@
       "name": "Workflow Notes v1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-1296, 1024]
+      "position": [-1296, 1008]
     }
   ],
   "pinData": {},
@@ -741,7 +739,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "bbfd58af-a194-45a5-9106-a68a0fb29a81",
+  "versionId": "38d1696b-0a07-487a-b62a-0e6e32f489bc",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
