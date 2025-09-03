@@ -73,7 +73,7 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-304, 560],
+      "position": [-320, 448],
       "id": "0fca2963-c96d-41da-b1f2-54b3eddbc59c",
       "name": "If"
     },
@@ -255,6 +255,16 @@
               "removed": false
             },
             {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
               "id": "row_number",
               "displayName": "row_number",
               "required": false,
@@ -299,7 +309,7 @@
         "height": 80
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [-144, 816],
+      "position": [-240, 816],
       "typeVersion": 1,
       "id": "6cb06ed1-ae03-46fa-88f0-c5eff7053aaf",
       "name": "Sticky Note2"
@@ -315,7 +325,7 @@
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [-96, 656],
+      "position": [-16, 640],
       "id": "4e488a67-01d1-4dff-96cd-b9fb9790638c",
       "name": "Send a message2",
       "webhookId": "71366225-99e3-47d3-90a8-18effc149bb0",
@@ -365,6 +375,37 @@
           "name": "Google Sheets Trigger account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3015d75b-bbf5-490c-9733-126c92474c59",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Fail",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-288, 672],
+      "id": "e5b41340-866d-48d2-be27-789c2a4b409e",
+      "name": "If1"
     }
   ],
   "pinData": {},
@@ -389,13 +430,7 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Send a message2",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Send a message1": {
@@ -416,6 +451,22 @@
             "node": "If",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -425,7 +476,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "daa76144-b87a-4632-8fc6-c099894a3929",
+  "versionId": "ad6c4677-6b36-4da7-9491-32f90f8f0838",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
