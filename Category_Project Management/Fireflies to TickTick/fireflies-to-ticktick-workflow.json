@@ -12,42 +12,13 @@
       "name": "Fireflies Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-640, 128],
+      "position": [-464, 128],
       "webhookId": "fireflies-transcript-webhook"
     },
     {
       "parameters": {
-        "url": "https://api.ticktick.com/open/v1/project",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "oAuth2Api",
-        "options": {}
-      },
-      "id": "74d319f1-8663-4eac-b8f1-3619009713be",
-      "name": "Get TickTick Projects",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [-448, 128],
-      "credentials": {
-        "oAuth2Api": {
-          "id": "0nE0TkBrwzqPiuMc",
-          "name": "TickTick"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Combine transcript and projects data for AI processing\n\n// 1) Safely read transcript from webhook payload\nconst webhook = $('Fireflies Webhook').item.json;\nconst transcript =\n  webhook?.body?.data?.transcript ??\n  webhook?.transcript ?? // fallback if you ever pass a flattened payload\n  \"\";\n\n// 2) Collect all project objects from the HTTP node (it returns many items)\nconst projectItems = $('Get TickTick Projects').all().map(i => i.json);\n\n// 3) Format projects list for the AI prompt\nconst projectsList = projectItems.length\n  ? projectItems.map(p => `- ${p.name} (ID: ${p.id})`).join('\\n')\n  : \"- No projects found\";\n\n// 4) Today and default due date (tomorrow 9am)\nconst now = new Date();\nconst due = new Date(now);\ndue.setDate(due.getDate() + 1);\ndue.setHours(9, 0, 0, 0);\n\nreturn [{\n  json: {\n    transcript,\n    projects: projectItems,                // pass the full array to the AI\n    projectsList,\n    todayDate: now.toISOString().split('T')[0],\n    defaultDueDate: due.toISOString()\n  }\n}];\n"
-      },
-      "id": "f7e57c08-2cf6-4130-b1a9-5ba1905beb8c",
-      "name": "Combine Data for AI",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-240, 128]
-    },
-    {
-      "parameters": {
         "promptType": "define",
-        "text": "=You are an expert task-extraction agent for TickTick.\n\nROLE\n- Extract action items assigned to Mohammed Khan (aka: Mo, Mohamed, Redwan).\n- Produce richly detailed tasks with correct due dates/times (America/Toronto).\n\nCONTEXT\n- Today's date (ISO, local to America/Toronto): {{ $json.todayDate }}\n- Default due date (tomorrow at 09:00 local, ISO): {{ $json.defaultDueDate }}\n- Time zone to assume for all dates/times: America/Toronto\n- Projects (human-readable):\n{{ $json.projectsList }}\n\n- PROJECTS_JSON (machine-readable; use to resolve IDs precisely):\n{{ JSON.stringify($json.projects) }}\n\n- TRANSCRIPT:\n{{ $json.transcript }}\n\nDATE/TIME INTERPRETATION RULES  (VERY IMPORTANT)\n- Base calendar: America/Toronto (consider DST).\n- Convert all relative phrases to an exact calendar timestamp in America/Toronto.\n- Output `dueDate` as full ISO-8601 with a numeric UTC offset, e.g. `2025-09-08T05:00:00-04:00`\n  (do NOT include milliseconds).\n- If an explicit date is stated, use it. If a day name is stated, resolve to the *next* occurrence of that weekday (relative to today's date).\n- If only a vague time-of-day is given, map as:\n  - “morning” → 09:00\n  - “noon” → 12:00\n  - “afternoon” → 15:00\n  - “evening” / “tonight” / “later this evening” → 20:00\n  - “EOD” / “COB” / “by [day]” (no time) → 17:00 on the specified day\n  - “ASAP” → tomorrow at 09:00\n- If a time is given without am/pm, infer from context; otherwise:\n  - 1–6 → a.m.\n  - 7–11 → a.m. if “morning” is mentioned, else p.m.\n  - 12 → noon (12:00)\n  - 5 without context (“5”) → 17:00 (5 p.m.)\n- Examples (assume today = {{ $json.todayDate }}, TZ=America/Toronto):\n  - “Monday 5 a.m.” → that coming Monday at 05:00 **local** → e.g., 2025-09-08T05:00:00-04:00\n  - “tomorrow at 8 p.m.” → tomorrow 20:00 local\n  - “end of month” → last day of this month at 17:00 local\n- If both a specific time and a vague phrase appear, prefer the specific time.\n- If no date/time is given, use the default: {{ $json.defaultDueDate }} (tomorrow 09:00 local).\n\nTASK SELECTION\n- Only include tasks clearly assigned to Mohammed Khan (Mo/Mohamed/Redwan) or requests directed at him (“Can you…”, “Please…”).\n- Ignore FYIs or ideas not assigned to him.\n- De-duplicate near-identical tasks; merge details.\n\nPROJECT MAPPING\n- Choose the most relevant project by name/intent.\n- Resolve the **exact** `projectId` from PROJECTS_JSON by name match.\n- If unclear, use the first project in the list as default and set `projectName` accordingly.\n\nPRIORITY\n- High (5): urgent/ASAP, deadlines within 24–48h, critical impact.\n- Medium (3): normal work.\n- Low (1): “when you can” or no urgency.\n(Only return 1, 3, or 5.)\n\nRICH CONTENT REQUIREMENTS\nFor each task, write a detailed `content` that includes:\n- 1–2 sentence summary of the ask (who asked, for what, and why).\n- Any key constraints (date, budget, dependencies).\n- Bullet list of next steps / acceptance criteria.\n- If the transcript mentions URLs, people, or tools, include them inline.\n\nOUTPUT FORMAT (STRICT JSON ONLY)\nReturn ONLY this JSON (no prose before/after):\n\n{\n  \"tasks\": [\n    {\n      \"title\": \"string, ≤100 chars, imperative and specific\",\n      \"content\": \"multi-paragraph or bullet-rich details as described above\",\n      \"projectId\": \"string from PROJECTS_JSON\",\n      \"projectName\": \"string from projects list\",\n      \"dueDate\": \"YYYY-MM-DDTHH:mm:ss±HH:MM (America/Toronto local time converted to offset; no milliseconds)\",\n      \"priority\": 1 | 3 | 5,\n      \"timeZone\": \"America/Toronto\"\n    }\n  ]\n}\n\nVALIDATION\n- Ensure `projectId` and `projectName` are consistent.\n- Ensure `dueDate` matches the intended local time (e.g., “Monday 5 a.m.” → 05:00 local; include correct DST offset like -04:00).\n- If no valid tasks are found, return: { \"tasks\": [] }\n",
+        "text": "==You are an expert task-extraction agent for TickTick.\n\nROLE\n- Extract action items assigned to Mohammed Khan (aka: Mo, Mohammed Khan, Redwan, Atharul).\n- Produce richly detailed tasks with correct due dates/times (America/Toronto).\n- Group related work into a single MAIN task with SUBTASKS (TickTick “items”), not many separate tasks.\n\nASSIGNMENT HEURISTICS (CRITICAL)\n- Treat first-person statements (“I have to…”, “I need to…”, “I’ll…”) as assigned to Mohammed Khan.\n- Treat direct requests to “Mo/Mohammed/Redwan/Atharul” (“Can you…”, “Please…”) as assigned to Mohammed Khan.\n- If there is any actionable statement, you MUST return at least one task.\n\nCONTEXT\n- You receive a raw webhook JSON payload; transcript may be at body.data.transcript or transcript:\n{{ JSON.stringify($json) }}\n- Time zone for all interpretation and output: America/Toronto (DST-aware).\n- “Now” = the exact instant the webhook is received in America/Toronto.\n\nDATE/TIME INTERPRETATION (VERY IMPORTANT)\n- Convert all relative phrases to exact local timestamps in America/Toronto.\n- Your `dueDate` MUST be in full ISO-8601 with a **numeric local offset** (e.g., `2025-09-07T09:00:00-04:00` or `-05:00` in winter).\n- **Never** output `Z` or `+00:00` or `+0000`.\n- Day-name → next occurrence from “now”.\n- Vague times: morning=09:00, noon=12:00, afternoon=15:00, evening/tonight=20:00, EOD/COB/by [day]=17:00 that day, ASAP=“now”.\n- No am/pm given: 1–6→a.m.; 7–11→a.m. if “morning” else p.m.; 12→12:00; bare “5”→17:00.\n- If both specific and vague times appear, prefer the specific.\n- **Default rule:** If no explicit date/time is present, set `dueDate` to **“now”** (the webhook receipt time) in America/Toronto and output with the correct local offset (e.g., `-04:00`).\n\nTASK SELECTION & GROUPING\n- Only include tasks clearly assigned to Mohammed Khan per heuristics above.\n- Merge near-duplicates.\n- **Group related actions (same topic/client/meeting) into ONE MAIN task** with `subtasks` (3–15 concise imperative steps).\n- MAIN `title` summarizes the group; MAIN `dueDate` = earliest firm deadline > next external commitment > otherwise “now”.\n- Subtasks usually don’t have dates.\n\nTAGGING\n- 1–4 short tags, lowercase, kebab-case (no spaces). Examples: client-abc, proposal, follow-up.\n- If nothing obvious, [].\n\nPRIORITY\n- 5=urgent/ASAP/≤48h critical, 3=normal, 1=whenever. (Only 1, 3, or 5.)\n\nCONTENT\n- `content` includes: 1–2 sentence summary (who/what/why), key constraints (dates/budget/dependencies), acceptance criteria / next steps (bullets), inline URLs/people/tools if present.\n\nOUTPUT FORMAT (STRICT JSON ONLY)\nReturn ONLY:\n{\n  \"tasks\": [\n    {\n      \"title\": \"≤100 chars, imperative and specific\",\n      \"content\": \"details per CONTENT\",\n      \"dueDate\": \"YYYY-MM-DDTHH:mm:ss±HH:MM (LOCAL Toronto offset, never Z/+00:00)\",\n      \"priority\": 1 | 3 | 5,\n      \"tags\": [\"kebab-case\", \"short\", \"no-spaces\"],\n      \"subtasks\": [\"imperative step 1\", \"imperative step 2\", \"...\"],\n      \"timeZone\": \"America/Toronto\"\n    }\n  ]\n}\n\nVALIDATION\n- If the transcript contains ANY actionable statement, do NOT return an empty list.\n- Ensure `dueDate` uses the **local** Toronto offset (`-04:00` summer / `-05:00` winter). Never Z/+00:00.\n- If truly nothing actionable, return: { \"tasks\": [] }.\n",
         "hasOutputParser": true,
         "batching": {}
       },
@@ -80,7 +51,7 @@
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tasks\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": { \"type\": \"string\", \"maxLength\": 100 },\n          \"content\": { \"type\": \"string\" },\n          \"projectId\": { \"type\": \"string\" },\n          \"projectName\": { \"type\": \"string\" },\n          \"dueDate\": { \"type\": \"string\", \"format\": \"date-time\" },\n          \"priority\": { \"type\": \"integer\", \"enum\": [1, 3, 5] }\n        },\n        \"required\": [\"title\", \"content\", \"projectId\", \"dueDate\", \"priority\"]\n      }\n    }\n  },\n  \"required\": [\"tasks\"]\n}\n",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tasks\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": { \"type\": \"string\", \"maxLength\": 100 },\n          \"content\": { \"type\": \"string\" },\n          \"dueDate\": { \"type\": \"string\", \"format\": \"date-time\" },\n          \"priority\": { \"type\": \"integer\", \"enum\": [1, 3, 5] },\n          \"tags\": {\n            \"type\": \"array\",\n            \"items\": { \"type\": \"string\" }\n          },\n          \"subtasks\": {\n            \"type\": \"array\",\n            \"items\": { \"type\": \"string\" }\n          },\n          \"timeZone\": { \"type\": \"string\" }\n        },\n        \"required\": [\"title\", \"content\", \"dueDate\", \"priority\"]\n      }\n    }\n  },\n  \"required\": [\"tasks\"]\n}\n",
         "autoFix": true
       },
       "id": "26535deb-7d02-45fc-9918-629b5d39175d",
@@ -91,13 +62,13 @@
     },
     {
       "parameters": {
-        "jsCode": "/**\n * Prepare Tasks for API (n8n Code node - JavaScript)\n * - Expects input shape: { output: { tasks: [...] } } OR { tasks: [...] }\n * - Returns one item per task with TickTick-ready fields\n */\n\nconst DEFAULT_TZ = \"America/Toronto\";\n\n// ---------- Helpers ----------\nconst toStr = (v) => (v == null ? \"\" : String(v));\nconst toInt = (v, fallback = 3) => {\n  const n = Number(v);\n  return [0, 1, 3, 5].includes(n) ? n : fallback; // TickTick allows 0/1/3/5; we mostly use 1/3/5\n};\n\n/**\n * Build a local-time Date parts object for a given Date in a target timeZone.\n * Uses Intl to get wall-clock components.\n */\nfunction getLocalParts(date, timeZone = DEFAULT_TZ) {\n  const fmt = new Intl.DateTimeFormat(\"en-CA\", {\n    timeZone,\n    year: \"numeric\",\n    month: \"2-digit\",\n    day: \"2-digit\",\n    hour: \"2-digit\",\n    minute: \"2-digit\",\n    second: \"2-digit\",\n    hour12: false,\n  });\n  return Object.fromEntries(fmt.formatToParts(date).map(p => [p.type, p.value]));\n}\n\n/**\n * Compute the numeric timezone offset (in minutes) for a local wall time.\n * We reconstruct a Date from local parts, then compare to UTC.\n */\nfunction offsetMinutesForLocal(parts) {\n  const local = new Date(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.000Z`);\n  // The above line treats the string as UTC; we need a stable reference.\n  // Instead, create a Date in the system tz and calculate offset using UTC components.\n  const sys = new Date(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`);\n  const utcMs = Date.UTC(\n    sys.getUTCFullYear(),\n    sys.getUTCMonth(),\n    sys.getUTCDate(),\n    sys.getUTCHours(),\n    sys.getUTCMinutes(),\n    sys.getUTCSeconds(),\n  );\n  const offsetMin = Math.round((sys.getTime() - utcMs) / 60000);\n  return offsetMin;\n}\n\n/**\n * Format to TickTick datetime \"yyyy-MM-dd'T'HH:mm:ssZ\" for a given Instant,\n * rendered in the provided timeZone.\n */\nfunction toTickTickDate(isoString, timeZone = DEFAULT_TZ) {\n  if (!isoString) return undefined;\n  try {\n    const date = new Date(isoString);\n    const parts = getLocalParts(date, timeZone);\n    const offsetMin = offsetMinutesForLocal(parts);\n    const sign = offsetMin >= 0 ? \"+\" : \"-\";\n    const abs = Math.abs(offsetMin);\n    const hh = String(Math.floor(abs / 60)).padStart(2, \"0\");\n    const mm = String(abs % 60).padStart(2, \"0\");\n    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${hh}${mm}`;\n  } catch {\n    // Fallback to simple Z (no ms)\n    const d = new Date(isoString);\n    return d.toISOString().replace(\".000Z\", \"Z\");\n  }\n}\n\n/**\n * Build \"tomorrow 09:00:00\" in target TZ and return TickTick-formatted string\n */\nfunction defaultDueTomorrow9(timeZone = DEFAULT_TZ) {\n  const now = new Date();\n  const partsNow = getLocalParts(now, timeZone);\n  // Make a Date for local midnight\n  const localMidnight = new Date(`${partsNow.year}-${partsNow.month}-${partsNow.day}T00:00:00`);\n  // Add 1 day, set 09:00:00 local\n  const tomorrow = new Date(localMidnight.getTime() + 24 * 60 * 60 * 1000);\n  const yyyy = tomorrow.getFullYear();\n  const mm = String(tomorrow.getMonth() + 1).padStart(2, \"0\");\n  const dd = String(tomorrow.getDate()).padStart(2, \"0\");\n  const localNine = `${yyyy}-${mm}-${dd}T09:00:00.000Z`; // ISO base; we re-render below\n  return toTickTickDate(localNine, timeZone);\n}\n\n/**\n * Simple reminder policy by priority\n * - High (5): 1h before & at time\n * - Medium (3): 30m before\n * - Low/None (1/0): at time\n */\nfunction remindersForPriority(p) {\n  if (p === 5) return [\"TRIGGER:PT1H\", \"TRIGGER:PT0S\"];\n  if (p === 3) return [\"TRIGGER:PT30M\"];\n  return [\"TRIGGER:PT0S\"];\n}\n\n// ---------- Read input ----------\nconst incoming = $input.first()?.json ?? {};\nconst tasks = incoming.output?.tasks ?? incoming.tasks ?? [];\n\nif (!Array.isArray(tasks) || tasks.length === 0) {\n  // Return no items (avoid creating empty placeholder items)\n  return [];\n}\n\n// ---------- Transform ----------\nreturn tasks.map((task) => {\n  const title = toStr(task.title).slice(0, 100);\n  const content = toStr(task.content);\n  const projectId = toStr(task.projectId);\n  const projectName = toStr(task.projectName);\n  const priority = toInt(task.priority, 3);\n  const timeZone = toStr(task.timeZone) || DEFAULT_TZ;\n\n  // Use provided dueDate or default to tomorrow 9am local time\n  const dueTicktick = task.dueDate\n    ? toTickTickDate(toStr(task.dueDate), timeZone)\n    : defaultDueTomorrow9(timeZone);\n\n  return {\n    json: {\n      // Required by your HTTP node / TickTick\n      title,\n      content,\n      projectId,\n      dueDate: dueTicktick,\n      priority,\n      timeZone,\n\n      // Nice-to-have fields\n      reminders: remindersForPriority(priority),\n\n      // Internal metadata (not sent by TickTick back)\n      _metadata: {\n        projectName,\n        source: \"Fireflies Transcript\",\n        extractedAt: new Date().toISOString(),\n      },\n    },\n  };\n});\n"
+        "jsCode": "/**\n * Prepare Tasks for API (n8n Code node - JavaScript)\n * - Input: { output: { tasks: [...] } } OR { tasks: [...] }\n * - Output: one item per MAIN task ready for TickTick /open/v1/task\n * Behavior:\n *   • Inbox (no projectId)\n *   • Default dueDate = NOW (webhook receipt, America/Toronto) if missing\n *   • Force-localize any provided date/time to America/Toronto, with correct -0400/-0500\n *   • Preserve local wall-clock if LLM gives time without offset\n *   • Subtasks -> items[]\n *   • Tags -> hashtags (snake_case) appended to title or content\n */\n\nconst DEFAULT_TZ = \"America/Toronto\";\n\n// ---------------- Helpers ----------------\nconst toStr = (v) => (v == null ? \"\" : String(v));\nconst toInt = (v, fallback = 3) => {\n  const n = Number(v);\n  return [0, 1, 3, 5].includes(n) ? n : fallback; // TickTick supports 0,1,3,5\n};\n\n/** Format parts for a Date in a specific TZ (wall-clock view) */\nfunction getLocalParts(date, timeZone = DEFAULT_TZ) {\n  const fmt = new Intl.DateTimeFormat(\"en-CA\", {\n    timeZone,\n    year: \"numeric\",\n    month: \"2-digit\",\n    day: \"2-digit\",\n    hour: \"2-digit\",\n    minute: \"2-digit\",\n    second: \"2-digit\",\n    hour12: false,\n  });\n  return Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value]));\n}\n\n/** Numeric offset (minutes) for a local wall time */\nfunction offsetMinutesForLocal(parts) {\n  const sys = new Date(\n    `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`\n  );\n  const utcMs = Date.UTC(\n    sys.getUTCFullYear(),\n    sys.getUTCMonth(),\n    sys.getUTCDate(),\n    sys.getUTCHours(),\n    sys.getUTCMinutes(),\n    sys.getUTCSeconds()\n  );\n  return Math.round((sys.getTime() - utcMs) / 60000);\n}\n\n/**\n * Build \"YYYY-MM-DDTHH:mm:ss±HHMM\" from a WALL-CLOCK in target TZ.\n * - If input string has Z / +0000 / +00:00 OR no offset, we treat the HH:mm(:ss)\n *   as local Toronto wall time and simply stamp the correct local offset.\n * - If input has a non-zero offset already (e.g., -04:00 or -0400), we trust it.\n *   (If you want to ALWAYS preserve wall-clock regardless of given offset,\n *    flip the condition below and ignore foreign offsets.)\n */\nfunction toTickTickLocal(isoLike, timeZone = DEFAULT_TZ) {\n  if (!isoLike) return undefined;\n  const s = String(isoLike).trim();\n\n  // If it already contains a non-zero offset, accept as-is (normalize colon out)\n  const nonZeroOffset = s.match(/([+-])(0[1-9]|1[0-2]):?([0-5][0-9])$/);\n  if (nonZeroOffset) {\n    // Normalize to ±HHMM (TickTick accepts both, but we match docs)\n    return s.replace(/([+-]\\d{2}):?(\\d{2})$/, (_, a, b) => `${a}${b}`);\n  }\n\n  // Extract wall clock from date/time\n  const m = s.match(/^(\\d{4}-\\d{2}-\\d{2})[T ]?(\\d{2}:\\d{2}(?::\\d{2})?)?/);\n  if (!m) return undefined;\n  const datePart = m[1];\n  let timePart = m[2] || \"09:00:00\";\n  if (timePart.length === 5) timePart += \":00\"; // add seconds if missing\n  const wall = `${datePart}T${timePart}`;\n\n  // Render wall-clock in target TZ and stamp the correct local offset\n  const tmp = new Date(wall);\n  const parts = getLocalParts(tmp, timeZone);\n  const offsetMin = offsetMinutesForLocal(parts);\n  const sign = offsetMin >= 0 ? \"+\" : \"-\";\n  const abs = Math.abs(offsetMin);\n  const hh = String(Math.floor(abs / 60)).padStart(2, \"0\");\n  const mm = String(abs % 60).padStart(2, \"0\");\n  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${hh}${mm}`;\n}\n\n/** Default due = NOW at webhook time (America/Toronto) */\nfunction defaultDueNow(timeZone = DEFAULT_TZ) {\n  const now = new Date();\n  const parts = getLocalParts(now, timeZone);\n  const offsetMin = offsetMinutesForLocal(parts);\n  const sign = offsetMin >= 0 ? \"+\" : \"-\";\n  const abs = Math.abs(offsetMin);\n  const hh = String(Math.floor(abs / 60)).padStart(2, \"0\");\n  const mm = String(abs % 60).padStart(2, \"0\");\n  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${hh}${mm}`;\n}\n\n/** Reminder policy by priority */\nfunction remindersForPriority(p) {\n  if (p === 5) return [\"TRIGGER:PT1H\", \"TRIGGER:PT0S\"];\n  if (p === 3) return [\"TRIGGER:PT30M\"];\n  return [\"TRIGGER:PT0S\"];\n}\n\n/** Normalize tags to kebab-case internally; we’ll emit hashtags as snake_case */\nfunction normalizeTags(tags) {\n  const seen = new Set();\n  const out = [];\n  (Array.isArray(tags) ? tags : [])\n    .map((t) => toStr(t).trim().toLowerCase())\n    .forEach((t) => {\n      const kebab = t\n        .replace(/[^a-z0-9\\s-]/g, \"\")\n        .replace(/\\s+/g, \"-\")\n        .replace(/-+/g, \"-\")\n        .replace(/^-|-$/g, \"\");\n      if (kebab && !seen.has(kebab)) {\n        seen.add(kebab);\n        out.push(kebab);\n      }\n    });\n  return out.slice(0, 4);\n}\n\n/** Convert kebab-case -> hashtag snake_case for TickTick parsing */\nconst hashtag = (t) => `#${String(t).replace(/-/g, \"_\")}`;\n\n// ---------------- Main ----------------\nconst incoming = $input.first()?.json ?? {};\nconst tasks = incoming.output?.tasks ?? incoming.tasks ?? [];\nif (!Array.isArray(tasks) || tasks.length === 0) return [];\n\n// Transform each MAIN task\nreturn tasks.map((task, idx) => {\n  const priority = toInt(task.priority, 3);\n  const timeZone = toStr(task.timeZone) || DEFAULT_TZ;\n\n  // dueDate: force-localize or default NOW\n  const rawDue = toStr(task.dueDate);\n  const dueTicktick = rawDue ? toTickTickLocal(rawDue, timeZone) : defaultDueNow(timeZone);\n\n  // Base fields\n  let title = toStr(task.title).slice(0, 100);\n  let content = toStr(task.content);\n\n  // Tags -> hashtags (prefer title if <= 100 chars)\n  const tags = normalizeTags(task.tags);\n  if (tags.length) {\n    const tagStr = \" \" + tags.map(hashtag).join(\" \");\n    if ((title + tagStr).length <= 100) {\n      title = (title + tagStr).slice(0, 100);\n    } else {\n      content = content\n        ? `${content}\\n\\nTags: ${tags.map(hashtag).join(\" \")}`\n        : `Tags: ${tags.map(hashtag).join(\" \")}`;\n    }\n  }\n\n  // Subtasks -> TickTick items\n  const items = (Array.isArray(task.subtasks) ? task.subtasks : []).map((t, i) => ({\n    title: toStr(t).slice(0, 200),\n    status: 0,\n    sortOrder: (i + 1) * 100,\n    timeZone,\n  }));\n\n  return {\n    json: {\n      title,\n      content,\n      // No projectId -> Inbox\n      dueDate: dueTicktick,          // \"YYYY-MM-DDTHH:mm:ss-0400\" / \"-0500\"\n      priority,                      // 1,3,5\n      timeZone,                      // \"America/Toronto\"\n      reminders: remindersForPriority(priority),\n      items,\n\n      _metadata: {\n        tags,                        // kebab-case internal\n        source: \"Fireflies Transcript\",\n        extractedAt: new Date().toISOString(),\n        index: idx,\n      },\n    },\n  };\n});\n"
       },
       "id": "f7c1b3e8-d5c7-4769-ac3e-4a97a714cb03",
       "name": "Prepare Tasks for API",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [160, 128],
+      "position": [384, 112],
       "alwaysOutputData": true
     },
     {
@@ -108,14 +79,14 @@
         "genericAuthType": "oAuth2Api",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"title\": {{ JSON.stringify($json.title) }},\n  \"content\": {{ JSON.stringify($json.content) }},\n  \"projectId\": {{ JSON.stringify($json.projectId) }},\n  \"dueDate\": {{ JSON.stringify($json.dueDate) }},\n  \"priority\": {{ $json.priority }},\n  \"timeZone\": {{ JSON.stringify($json.timeZone) }},\n  \"reminders\": {{ JSON.stringify($json.reminders) }}\n}\n",
+        "jsonBody": "={\n  \"title\": {{ JSON.stringify($json.title) }},\n  \"content\": {{ JSON.stringify($json.content) }},\n  \"desc\": {{ JSON.stringify($json.content) }},\n  \"dueDate\": {{ JSON.stringify($json.dueDate) }},\n  \"priority\": {{ $json.priority }},\n  \"timeZone\": {{ JSON.stringify($json.timeZone) }},\n  \"reminders\": {{ JSON.stringify($json.reminders) }},\n  \"items\": {{ JSON.stringify($json.items || []) }}\n}\n",
         "options": {}
       },
       "id": "f6e0d663-972f-4f17-8906-232508689694",
       "name": "Create TickTick Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [368, 128],
+      "position": [704, 112],
       "credentials": {
         "oAuth2Api": {
           "id": "0nE0TkBrwzqPiuMc",
@@ -135,7 +106,7 @@
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [560, 128]
+      "position": [992, 112]
     },
     {
       "parameters": {
@@ -171,28 +142,6 @@
   "pinData": {},
   "connections": {
     "Fireflies Webhook": {
-      "main": [
-        [
-          {
-            "node": "Get TickTick Projects",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get TickTick Projects": {
-      "main": [
-        [
-          {
-            "node": "Combine Data for AI",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Combine Data for AI": {
       "main": [
         [
           {
@@ -270,11 +219,11 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "98d13ca6-f293-47dd-a0ab-29bb53d83c4d",
+  "versionId": "7532b3b4-92a0-42b8-bd32-761c3b0ffafc",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
