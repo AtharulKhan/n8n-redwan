@@ -5,7 +5,6 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "fireflies-webhook",
-        "responseMode": "responseNode",
         "options": {}
       },
       "id": "82b22cc2-4a0a-4673-a8a1-b96509b655be",
@@ -96,20 +95,6 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Successfully processed Fireflies transcript\",\n  \"summary\": {\n    \"tasksCreated\": {{ $('Create TickTick Task').all().length }},\n    \"projects\": {{ JSON.stringify($('Create TickTick Task').all().map(item => item.json._metadata?.projectName || 'Unknown').filter((v, i, a) => a.indexOf(v) === i)) }}\n  },\n  \"tasks\": {{ JSON.stringify($('Create TickTick Task').all().map(item => ({\n    id: item.json.id,\n    title: item.json.title,\n    project: item.json._metadata?.projectName,\n    dueDate: item.json.dueDate,\n    priority: item.json.priority\n  }))) }}\n}",
-        "options": {
-          "responseCode": 200
-        }
-      },
-      "id": "550dbe92-4b45-4b8a-9785-0ce7775a31e0",
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [480, 352]
-    },
-    {
-      "parameters": {
         "content": "## Fireflies to TickTick OAuth2 Workflow\n\n### Setup Instructions:\n\n1. **TickTick OAuth2 Credential**:\n   - Create new OAuth2 API credential\n   - Authorization URL: `https://ticktick.com/oauth/authorize`\n   - Access Token URL: `https://ticktick.com/oauth/token`\n   - Scope: `tasks:read tasks:write`\n   - Client ID: `ytK7UMAD17MVlO8Mj8`\n   - Client Secret: `8IZ8G+fs4E@L&p&0(+bDae&N!1(xg6qg`\n   - Authentication: Send as Basic Auth header\n   - Click \"Connect\" to authorize\n\n2. **OpenRouter Credential**:\n   - Create API Key credential\n   - Add your OpenRouter API key\n\n3. **Register Redirect URI**:\n   In TickTick Developer Center, add:\n   `https://n8n-simplifai.saavatar.xyz/rest/oauth2-credential/callback`\n\n### Features:\n- Automatic OAuth token management\n- Fetches all projects for intelligent task assignment\n- AI extracts tasks for Mohammed Khan (Mo/Redwan)\n- Smart priority and deadline assignment\n- Detailed webhook response with task summary\n\n### Webhook Format:\n```json\n{\n  \"transcript\": \"Meeting transcript text...\"\n}\n```\n\n### Webhook URL:\n`https://n8n-simplifai.saavatar.xyz/webhook/fireflies-webhook`",
         "height": 952,
         "width": 500,
@@ -197,15 +182,7 @@
       ]
     },
     "Create TickTick Task": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[]]
     },
     "OpenRouter Chat Model1": {
       "ai_languageModel": [
@@ -223,7 +200,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "2a1d705c-d633-4501-8330-fc6cce6a814e",
+  "versionId": "1c8b9044-abb9-4445-8b8a-3c82fe181181",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
