@@ -8,39 +8,39 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "855441d9-1b08-444e-9cd5-3107b092e42f",
+      "id": "82b22cc2-4a0a-4673-a8a1-b96509b655be",
       "name": "Fireflies Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-464, 128],
+      "position": [-928, 368],
       "webhookId": "fireflies-transcript-webhook"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "==You are an expert task-extraction agent for TickTick.\n\nROLE\n\n- Extract action items assigned to Mohammed Khan (aka: Mo, Mohammed Khan, Redwan, Atharul).\n- Produce richly detailed tasks with correct due dates/times (America/Toronto).\n- Group related work into a single MAIN task with SUBTASKS (TickTick “items”), not many separate tasks.\n\nASSIGNMENT HEURISTICS (CRITICAL)\n\n- Treat first-person statements (“I have to…”, “I need to…”, “I’ll…”) as assigned to Mohammed Khan.\n- Treat direct requests to “Mo/Mohammed/Redwan/Atharul” (“Can you…”, “Please…”) as assigned to Mohammed Khan.\n- If there is any actionable statement, you MUST return at least one task.\n\nCONTEXT\n\n- You receive a raw webhook JSON payload; transcript may be at body.data.transcript or transcript:\n{{ JSON.stringify($json) }}\n- Time zone for all interpretation and output: America/Toronto (DST-aware).\n- “Now” = the exact instant the webhook is received in America/Toronto.\n\nDATE/TIME INTERPRETATION (VERY IMPORTANT)\n\n- Convert all relative phrases to exact local timestamps in America/Toronto.\n- Your `dueDate` MUST be in full ISO-8601 with a **numeric local offset** (e.g., `2025-09-07T09:00:00-04:00` or `05:00` in winter).\n- **Never** output `Z` or `+00:00` or `+0000`.\n- Day-name → next occurrence from “now”.\n- Vague times: morning=09:00, noon=12:00, afternoon=15:00, evening/tonight=20:00, EOD/COB/by [day]=17:00 that day, ASAP=“now”.\n- No am/pm given: 1–6→a.m.; 7–11→a.m. if “morning” else p.m.; 12→12:00; bare “5”→17:00.\n- If both specific and vague times appear, prefer the specific.\n- **Default rule:** If no explicit date/time is present, set `dueDate` to **“now”** (the webhook receipt time) in America/Toronto and output with the correct local offset (e.g., `04:00`).\n\nTASK SELECTION & GROUPING\n\n- Only include tasks clearly assigned to Mohammed Khan per heuristics above.\n- Merge near-duplicates.\n- **Group related actions (same topic/client/meeting) into ONE MAIN task** with `subtasks` (3–15 concise imperative steps).\n- Make sure subtasks are detailed and explain what needs to be done for each step. Ideally sub-tasks are sequential in process.\n- MAIN `title` summarizes the group; MAIN `dueDate` = earliest firm deadline > next external commitment > otherwise “now”.\n- Subtasks usually don’t have dates.\n\nTAGGING\n\n- 1–4 short tags, lowercase, kebab-case (no spaces). Examples: client-abc, proposal, follow-up.\n- If nothing obvious, [].\n\nPRIORITY\n\n- 5=urgent/ASAP/≤48h critical, 3=normal, 1=whenever. (Only 1, 3, or 5.)\n\nCONTENT\n\n- `content` includes: 1–2 sentence summary (who/what/why), key constraints (dates/budget/dependencies), acceptance criteria / next steps (bullets), inline URLs/people/tools if present.\n- Append at the end: \"Source transcript: [https://voicenotes.com/notes/{ID}](https://voicenotes.com/notes/%7BID%7D)\"  (ID = the webhook `data.id`; e.g. https://voicenotes.com/notes/XtjXwHxm).\n- Also include the Fireflies mirror URL in the same format: \"Also available at: [https://app.fireflies.ai/view/{ID}](https://app.fireflies.ai/view/%7BID%7D)\".\n- For choosing between fireflies and voicenotes.com, if the webhook incoming request has that information, then choose appropriately. If not, then add both voicenotes and fireflies and just say check both to make sure.\n\nTITLE\n\n- Make sure that the title of each task will have the main Topic of the incoming transcript. That way all tasks that are created can be found based on this. So the title should be in the format Topic Title: Task Name.\n    - An example of this is the main topic of the incoming transcript was App Updates for SEO App: Add Meta Optimization Feature #tag #tag #tag etc etc\n\nOUTPUT FORMAT (STRICT JSON ONLY)\nReturn ONLY:\n{\n\"tasks\": [\n{\n\"title\": \"≤100 chars, imperative and specific\",\n\"content\": \"details per CONTENT\",\n\"dueDate\": \"YYYY-MM-DDTHH:mm:ss±HH:MM (LOCAL Toronto offset, never Z/+00:00)\",\n\"priority\": 1 | 3 | 5,\n\"tags\": [\"kebab-case\", \"short\", \"no-spaces\"],\n\"subtasks\": [\"Step 1\", \"Step 2\", \"...\"],\n\"timeZone\": \"America/Toronto\"\n}\n]\n}\n\nNON-EMPTY GUARANTEE (ABSOLUTE)\n\n- You are NOT allowed to return {\"tasks\": []}.\n- If assignment is ambiguous, output a single “triage” task:\n    - title: \"Review & plan: Topic Name\"\n    - content: 1–2 sentence summary + bullet list of obvious next steps\n    - dueDate: NOW (webhook receipt time) in America/Toronto, with correct local offset\n    - priority: 3\n    - tags: [\"triage\"]\n    - subtasks: [\"clarify scope with stakeholders\", \"draft task list\", \"estimate effort\"]\n\nVALIDATION\n\n- Ensure dueDate uses local Toronto offset (-04:00 summer / -05:00 winter). Never Z/+00:00.",
+        "text": "===You are an expert task-extraction agent for TickTick.\n\nROLE\n\n- Extract action items assigned to Mohammed Khan (aka: Mo, Mohammed Khan, Redwan, Atharul).\n- Produce richly detailed tasks with correct due dates/times (America/Toronto).\n- Group related work into a single MAIN task with SUBTASKS (TickTick “items”).\n\nASSIGNMENT HEURISTICS (CRITICAL)\n\n- Treat first-person statements (“I have to…”, “I need to…”, “I’ll…”) as assigned to Mohammed Khan.\n- Treat direct requests to “Mo/Mohammed/Redwan/Atharul” (“Can you…”, “Please…”) as assigned to Mohammed Khan.\n- If there is any actionable statement, you MUST return at least one task.\n\nCONTEXT\n\n- You receive a raw webhook JSON payload; transcript may be at body.data.transcript or transcript:\n{{ JSON.stringify($json) }}\n- Time zone for all interpretation and output: America/Toronto (DST-aware).\n- “Now” = the exact instant the webhook is received in America/Toronto.\n\nDATE/TIME INTERPRETATION (VERY IMPORTANT)\n\n- Convert all relative phrases to exact local timestamps in America/Toronto.\n- Your `dueDate` MUST be in full ISO-8601 with a **numeric local offset** (e.g., `2025-09-07T09:00:00-04:00` or `05:00` in winter).\n- **Never** output `Z` or `+00:00` or `+0000`.\n- Day-name → next occurrence from “now”.\n- Vague times: morning=09:00, noon=12:00, afternoon=15:00, evening/tonight=20:00, EOD/COB/by [day]=17:00 that day, ASAP=“now”.\n- No am/pm given: 1–6→a.m.; 7–11→a.m. if “morning” else p.m.; 12→12:00; bare “5”→17:00.\n- If both specific and vague times appear, prefer the specific.\n- **Default rule:** If no explicit date/time is present, set `dueDate` to **“now”** (the webhook receipt time) in America/Toronto and output with the correct local offset (e.g., `04:00`).\n\nTASK SELECTION & GROUPING\n\n- Only include tasks clearly assigned to Mohammed Khan per heuristics above.\n- Merge near-duplicates.\n- **Group related actions (same topic/client/meeting) into ONE MAIN task** with `subtasks` (1–15 concise imperative steps).\n- MAIN `title` summarizes the group; MAIN `dueDate` = earliest firm deadline > next external commitment > otherwise “now”.\n- Subtasks usually don’t have dates.\n\nSUBTASK SOURCE CONSTRAINT (STRICT — DO NOT INVENT)\n\n- Every subtask MUST correspond to an action that is **explicitly present** in the transcript, either:\n  - **Verbatim** (exact words/command/commitment), or\n  - A **clear, minimal paraphrase** that closely matches a specific phrase or sentence from the transcript.\n- Do **NOT** add best-practice steps, implied checklists, inferred dependencies, or any novel actions not spoken/requested.\n- If a step is **not clearly stated**, **omit it**.\n- It is acceptable (and preferred) to output **fewer** subtasks when only a few explicit actions exist.\n- You may **merge duplicates** or split a single compound explicit action into 2–3 clearly matching subtasks, but you must **not introduce new actions**.\n- Each subtask should read as an imperative that mirrors the transcript phrasing (keep wording tight; no new details).\n\nTAGGING\n\n- 1–4 short tags, lowercase, kebab-case (no spaces). Examples: client-abc, proposal, follow-up.\n- If nothing obvious, [].\n\nPRIORITY\n\n- 5=urgent/ASAP/≤48h critical, 3=normal, 1=whenever. (Only 1, 3, or 5.)\n\nCONTENT\n\n- `content` includes: 1–2 sentence summary (who/what/why), key constraints (dates/budget/dependencies), acceptance criteria / next steps (bullets), inline URLs/people/tools if present.\n- Append at the end: \"Source transcript: [https://voicenotes.com/notes/{ID}](https://voicenotes.com/notes/%7BID%7D)\"  (ID = the webhook `data.id`; e.g. https://voicenotes.com/notes/XtjXwHxm).\n\nTITLE\n\n- Make sure that the title of each task will have the main Topic of the incoming transcript. That way all tasks that are created can be found based on this. So the title should be in the format Topic Title: Task Name.\n    - An example of this is the main topic of the incoming transcript was App Updates for SEO App: Add Meta Optimization Feature #tag #tag #tag etc etc\n\nOUTPUT FORMAT (STRICT JSON ONLY)\nReturn ONLY:\n{\n\"tasks\": [\n{\n\"title\": \"≤100 chars, imperative and specific\",\n\"content\": \"details per CONTENT\",\n\"dueDate\": \"YYYY-MM-DDTHH:mm:ss±HH:MM (LOCAL Toronto offset, never Z/+00:00)\",\n\"priority\": 1 | 3 | 5,\n\"tags\": [\"kebab-case\", \"short\", \"no-spaces\"],\n\"subtasks\": [\"Step 1\", \"Step 2\", \"...\"],\n\"timeZone\": \"America/Toronto\"\n}\n]\n}\n\nNON-EMPTY GUARANTEE (ABSOLUTE)\n\n- You are NOT allowed to return {\"tasks\": []}.\n- If assignment is ambiguous, output a single “triage” task:\n    - title: \"Review & plan: Topic Name\"\n    - content: 1–2 sentence summary + bullet list of obvious next steps\n    - dueDate: NOW (webhook receipt time) in America/Toronto, with correct local offset\n    - priority: 3\n    - tags: [\"triage\"]\n    - subtasks: [\"clarify scope with stakeholders\", \"draft task list\", \"estimate effort\"]\n\nVALIDATION\n\n- Ensure dueDate uses local Toronto offset (-04:00 summer / -05:00 winter). Never Z/+00:00.\n- Ensure every subtask is traceable to explicit transcript wording (verbatim or clear match). If in doubt, leave it out.",
         "hasOutputParser": true,
         "batching": {}
       },
-      "id": "3babf3fd-f50c-4097-bf3b-152cc4bd6523",
+      "id": "acefb57f-4a04-4d9c-9663-c082dfa25d55",
       "name": "Extract Tasks with AI",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [-112, 16],
+      "position": [-576, 256],
       "alwaysOutputData": false
     },
     {
       "parameters": {
-        "model": "google/gemini-2.5-flash",
+        "model": "openai/gpt-5-mini",
         "options": {
           "temperature": 0.2
         }
       },
-      "id": "33650f61-f0ce-4c82-93aa-3c82d5bc1d21",
+      "id": "811880ae-b00d-4764-a010-20b634b944ec",
       "name": "OpenRouter Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
-      "position": [-112, 320],
+      "position": [-576, 560],
       "credentials": {
         "openRouterApi": {
           "id": "Dtio4gg1Ugl5jouc",
@@ -54,21 +54,21 @@
         "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tasks\": {\n      \"type\": \"array\",\n      \"minItems\": 1,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": { \"type\": \"string\", \"maxLength\": 100 },\n          \"content\": { \"type\": \"string\" },\n          \"dueDate\": { \"type\": \"string\", \"format\": \"date-time\" },\n          \"priority\": { \"type\": \"integer\", \"enum\": [1, 3, 5] },\n          \"tags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n          \"subtasks\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n          \"timeZone\": { \"type\": \"string\" }\n        },\n        \"required\": [\"title\", \"content\", \"dueDate\", \"priority\"]\n      }\n    }\n  },\n  \"required\": [\"tasks\"]\n}\n",
         "autoFix": true
       },
-      "id": "26535deb-7d02-45fc-9918-629b5d39175d",
+      "id": "783bee09-8b41-43ce-aca2-550f0685325f",
       "name": "Structured Output Parser",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
-      "position": [32, 464]
+      "position": [-432, 704]
     },
     {
       "parameters": {
         "jsCode": "/**\n * Prepare Tasks for API (n8n Code node - JavaScript)\n * - Input: { output: { tasks: [...] } } OR { tasks: [...] }\n * - Output: one item per MAIN task ready for TickTick /open/v1/task\n * Behavior:\n *   • Inbox (no projectId)\n *   • Default dueDate = NOW (webhook receipt, America/Toronto) if missing\n *   • Force-localize any provided date/time to America/Toronto, with correct -0400/-0500\n *   • Preserve local wall-clock if LLM gives time without offset\n *   • Subtasks -> items[]\n *   • Tags -> hashtags (snake_case) appended to title or content\n */\n\nconst DEFAULT_TZ = \"America/Toronto\";\n\n// ---------------- Helpers ----------------\nconst toStr = (v) => (v == null ? \"\" : String(v));\nconst toInt = (v, fallback = 3) => {\n  const n = Number(v);\n  return [0, 1, 3, 5].includes(n) ? n : fallback; // TickTick supports 0,1,3,5\n};\n\n/** Format parts for a Date in a specific TZ (wall-clock view) */\nfunction getLocalParts(date, timeZone = DEFAULT_TZ) {\n  const fmt = new Intl.DateTimeFormat(\"en-CA\", {\n    timeZone,\n    year: \"numeric\",\n    month: \"2-digit\",\n    day: \"2-digit\",\n    hour: \"2-digit\",\n    minute: \"2-digit\",\n    second: \"2-digit\",\n    hour12: false,\n  });\n  return Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value]));\n}\n\n/** Numeric offset (minutes) for a local wall time */\nfunction offsetMinutesForLocal(parts) {\n  const sys = new Date(\n    `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`\n  );\n  const utcMs = Date.UTC(\n    sys.getUTCFullYear(),\n    sys.getUTCMonth(),\n    sys.getUTCDate(),\n    sys.getUTCHours(),\n    sys.getUTCMinutes(),\n    sys.getUTCSeconds()\n  );\n  return Math.round((sys.getTime() - utcMs) / 60000);\n}\n\n/**\n * Build \"YYYY-MM-DDTHH:mm:ss±HHMM\" from a WALL-CLOCK in target TZ.\n * - If input string has Z / +0000 / +00:00 OR no offset, we treat the HH:mm(:ss)\n *   as local Toronto wall time and simply stamp the correct local offset.\n * - If input has a non-zero offset already (e.g., -04:00 or -0400), we trust it.\n *   (If you want to ALWAYS preserve wall-clock regardless of given offset,\n *    flip the condition below and ignore foreign offsets.)\n */\nfunction toTickTickLocal(isoLike, timeZone = DEFAULT_TZ) {\n  if (!isoLike) return undefined;\n  const s = String(isoLike).trim();\n\n  // If it already contains a non-zero offset, accept as-is (normalize colon out)\n  const nonZeroOffset = s.match(/([+-])(0[1-9]|1[0-2]):?([0-5][0-9])$/);\n  if (nonZeroOffset) {\n    // Normalize to ±HHMM (TickTick accepts both, but we match docs)\n    return s.replace(/([+-]\\d{2}):?(\\d{2})$/, (_, a, b) => `${a}${b}`);\n  }\n\n  // Extract wall clock from date/time\n  const m = s.match(/^(\\d{4}-\\d{2}-\\d{2})[T ]?(\\d{2}:\\d{2}(?::\\d{2})?)?/);\n  if (!m) return undefined;\n  const datePart = m[1];\n  let timePart = m[2] || \"09:00:00\";\n  if (timePart.length === 5) timePart += \":00\"; // add seconds if missing\n  const wall = `${datePart}T${timePart}`;\n\n  // Render wall-clock in target TZ and stamp the correct local offset\n  const tmp = new Date(wall);\n  const parts = getLocalParts(tmp, timeZone);\n  const offsetMin = offsetMinutesForLocal(parts);\n  const sign = offsetMin >= 0 ? \"+\" : \"-\";\n  const abs = Math.abs(offsetMin);\n  const hh = String(Math.floor(abs / 60)).padStart(2, \"0\");\n  const mm = String(abs % 60).padStart(2, \"0\");\n  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${hh}${mm}`;\n}\n\n/** Default due = NOW at webhook time (America/Toronto) */\nfunction defaultDueNow(timeZone = DEFAULT_TZ) {\n  const now = new Date();\n  const parts = getLocalParts(now, timeZone);\n  const offsetMin = offsetMinutesForLocal(parts);\n  const sign = offsetMin >= 0 ? \"+\" : \"-\";\n  const abs = Math.abs(offsetMin);\n  const hh = String(Math.floor(abs / 60)).padStart(2, \"0\");\n  const mm = String(abs % 60).padStart(2, \"0\");\n  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${hh}${mm}`;\n}\n\n/** Reminder policy by priority */\nfunction remindersForPriority(p) {\n  if (p === 5) return [\"TRIGGER:PT1H\", \"TRIGGER:PT0S\"];\n  if (p === 3) return [\"TRIGGER:PT30M\"];\n  return [\"TRIGGER:PT0S\"];\n}\n\n/** Normalize tags to kebab-case internally; we’ll emit hashtags as snake_case */\nfunction normalizeTags(tags) {\n  const seen = new Set();\n  const out = [];\n  (Array.isArray(tags) ? tags : [])\n    .map((t) => toStr(t).trim().toLowerCase())\n    .forEach((t) => {\n      const kebab = t\n        .replace(/[^a-z0-9\\s-]/g, \"\")\n        .replace(/\\s+/g, \"-\")\n        .replace(/-+/g, \"-\")\n        .replace(/^-|-$/g, \"\");\n      if (kebab && !seen.has(kebab)) {\n        seen.add(kebab);\n        out.push(kebab);\n      }\n    });\n  return out.slice(0, 4);\n}\n\n/** Convert kebab-case -> hashtag snake_case for TickTick parsing */\nconst hashtag = (t) => `#${String(t).replace(/-/g, \"_\")}`;\n\n// ---------------- Main ----------------\nconst incoming = $input.first()?.json ?? {};\nconst tasks = incoming.output?.tasks ?? incoming.tasks ?? [];\nif (!Array.isArray(tasks) || tasks.length === 0) return [];\n\n// Transform each MAIN task\nreturn tasks.map((task, idx) => {\n  const priority = toInt(task.priority, 3);\n  const timeZone = toStr(task.timeZone) || DEFAULT_TZ;\n\n  // dueDate: force-localize or default NOW\n  const rawDue = toStr(task.dueDate);\n  const dueTicktick = rawDue ? toTickTickLocal(rawDue, timeZone) : defaultDueNow(timeZone);\n\n  // Base fields\n  let title = toStr(task.title).slice(0, 100);\n  let content = toStr(task.content);\n\n  // Tags -> hashtags (prefer title if <= 100 chars)\n  const tags = normalizeTags(task.tags);\n  if (tags.length) {\n    const tagStr = \" \" + tags.map(hashtag).join(\" \");\n    if ((title + tagStr).length <= 100) {\n      title = (title + tagStr).slice(0, 100);\n    } else {\n      content = content\n        ? `${content}\\n\\nTags: ${tags.map(hashtag).join(\" \")}`\n        : `Tags: ${tags.map(hashtag).join(\" \")}`;\n    }\n  }\n\n  // Subtasks -> TickTick items\n  const items = (Array.isArray(task.subtasks) ? task.subtasks : []).map((t, i) => ({\n    title: toStr(t).slice(0, 200),\n    status: 0,\n    sortOrder: (i + 1) * 100,\n    timeZone,\n  }));\n\n  return {\n    json: {\n      title,\n      content,\n      // No projectId -> Inbox\n      dueDate: dueTicktick,          // \"YYYY-MM-DDTHH:mm:ss-0400\" / \"-0500\"\n      priority,                      // 1,3,5\n      timeZone,                      // \"America/Toronto\"\n      reminders: remindersForPriority(priority),\n      items,\n\n      _metadata: {\n        tags,                        // kebab-case internal\n        source: \"Fireflies Transcript\",\n        extractedAt: new Date().toISOString(),\n        index: idx,\n      },\n    },\n  };\n});\n"
       },
-      "id": "f7c1b3e8-d5c7-4769-ac3e-4a97a714cb03",
+      "id": "fe83769b-044b-4dfc-9c4a-cb44b1e64b38",
       "name": "Prepare Tasks for API",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [384, 112],
+      "position": [-80, 352],
       "alwaysOutputData": true
     },
     {
@@ -82,11 +82,11 @@
         "jsonBody": "={\n  \"title\": {{ JSON.stringify($json.title) }},\n  \"content\": {{ JSON.stringify($json.content) }},\n  \"desc\": {{ JSON.stringify($json.content) }},\n  \"dueDate\": {{ JSON.stringify($json.dueDate) }},\n  \"priority\": {{ $json.priority }},\n  \"timeZone\": {{ JSON.stringify($json.timeZone) }},\n  \"reminders\": {{ JSON.stringify($json.reminders) }},\n  \"items\": {{ JSON.stringify($json.items || []) }}\n}\n",
         "options": {}
       },
-      "id": "f6e0d663-972f-4f17-8906-232508689694",
+      "id": "719842f0-7ed9-4bbb-a353-3d19a5040996",
       "name": "Create TickTick Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [656, 112],
+      "position": [192, 352],
       "credentials": {
         "oAuth2Api": {
           "id": "0nE0TkBrwzqPiuMc",
@@ -102,11 +102,11 @@
           "responseCode": 200
         }
       },
-      "id": "b3ee7afb-f94b-4bd6-91e5-83e70faf16e0",
+      "id": "550dbe92-4b45-4b8a-9785-0ce7775a31e0",
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [944, 112]
+      "position": [480, 352]
     },
     {
       "parameters": {
@@ -115,11 +115,11 @@
         "width": 500,
         "color": 7
       },
-      "id": "9f4e84a2-a1f7-48c0-a323-68997d67e9ce",
+      "id": "85312ac2-5710-46c4-a2cd-ff50ea236adb",
       "name": "Setup Instructions",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-688, 336]
+      "position": [-1152, 576]
     },
     {
       "parameters": {
@@ -128,8 +128,8 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
-      "position": [-48, 672],
-      "id": "0a241c9e-93aa-4759-9c15-d53f7dfa91de",
+      "position": [-512, 912],
+      "id": "5264f663-b37d-4054-a37e-df962667ca51",
       "name": "OpenRouter Chat Model1",
       "credentials": {
         "openRouterApi": {
@@ -139,38 +139,7 @@
       }
     }
   ],
-  "pinData": {
-    "Fireflies Webhook": [
-      {
-        "json": {
-          "headers": {
-            "connection": "upgrade",
-            "host": "n8n-simplifai.saavatar.xyz",
-            "x-forwarded-for": "34.223.114.104",
-            "x-forwarded-proto": "https",
-            "x-real-ip": "34.223.114.104",
-            "content-length": "903",
-            "user-agent": "GuzzleHttp/7",
-            "content-type": "application/json",
-            "authorization": "Bearer"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "event": "recording.created",
-            "timestamp": "2025-09-07T00:42:29+00:00",
-            "data": {
-              "id": "XtjXwHxm",
-              "title": "SEO strategy generation audit process",
-              "transcript": "The following is a task called SEO strategy generation feature. All the tasks are associated with that. What this basically is, is that it's going to do a full audit by each.  So I'm going to select a project. As I select the project, the SEO strategy generation is actually going to run through each step, each of the tabs.  So the keyword research tab, the on-page SEO audit tab, the content brief generation tab, the GBP generation tab, the SERPs analysis tab, the meta generator tab.  And then based on all that figure, it's going to create a new form that's going to combine all the inputs that are necessary.  It's going to run through all that. Then it's going to combine into one mega, it's going to combine into one sort of mega output."
-            }
-          },
-          "webhookUrl": "https://n8n-simplifai.saavatar.xyz/webhook/fireflies-webhook",
-          "executionMode": "production"
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "connections": {
     "Fireflies Webhook": {
       "main": [
@@ -254,7 +223,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "a632ad3c-efb9-4217-bd41-8c35f0a755d1",
+  "versionId": "2a1d705c-d633-4501-8330-fc6cce6a814e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
