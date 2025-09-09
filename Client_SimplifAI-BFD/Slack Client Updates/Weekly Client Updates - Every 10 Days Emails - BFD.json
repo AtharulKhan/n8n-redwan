@@ -1,5 +1,5 @@
 {
-  "name": "Weekly Client Updates | Bi-Weekly Emails | BFD/SimplifAI",
+  "name": "Weekly Client Updates | Every 10 Days Emails | BFD/SimplifAI",
   "nodes": [
     {
       "parameters": {
@@ -328,7 +328,7 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
-      "position": [-1344, 848],
+      "position": [-1136, 848],
       "id": "a5510f73-437a-4566-a83f-c8c424bc9f3a",
       "name": "Get All Client Rows1",
       "credentials": {
@@ -345,7 +345,7 @@
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [-1136, 848],
+      "position": [-928, 848],
       "id": "bcb52f9b-2642-47af-a3ca-0d3f1a6ecc73",
       "name": "Split Client Rows1",
       "onError": "continueRegularOutput"
@@ -360,7 +360,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
-      "position": [864, 1072],
+      "position": [1072, 1072],
       "id": "8533c694-b631-4903-b1ff-5391b0cabcd5",
       "name": "OpenRouter Chat Model",
       "credentials": {
@@ -380,7 +380,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [864, 848],
+      "position": [1072, 848],
       "id": "58e34b24-713e-4845-a717-238e9c482c5b",
       "name": "Generate AI Summary"
     },
@@ -390,7 +390,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [672, 896],
+      "position": [880, 896],
       "id": "8ecfb540-3be9-46d6-b56b-72a6e678335a",
       "name": "Combine Project + Slack Data"
     },
@@ -408,7 +408,7 @@
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [112, 800],
+      "position": [320, 800],
       "id": "76d1a75e-1f81-4660-b22c-e71b5abb88ec",
       "name": "Get Slack Channel History",
       "webhookId": "34d70c44-0574-4c50-88a1-d1ed782e80a8",
@@ -424,7 +424,7 @@
       "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-304, 1040],
+      "position": [-96, 1040],
       "id": "899b2a84-9d1a-4e36-a80d-062e4e710c78",
       "name": "Merge Data"
     },
@@ -434,7 +434,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [112, 1040],
+      "position": [320, 1040],
       "id": "84d1e171-d32a-49de-9b9a-60821b8d1209",
       "name": "Aggregate Client Data"
     },
@@ -452,7 +452,7 @@
       },
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
-      "position": [-304, 768],
+      "position": [-96, 768],
       "id": "e0935005-9903-4ddf-9dcd-b4f785cc938a",
       "name": "Get Child Blocks",
       "executeOnce": false,
@@ -494,7 +494,7 @@
       },
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
-      "position": [-816, 848],
+      "position": [-608, 848],
       "id": "7988a6a0-fc78-4707-a273-1c87f24f16c4",
       "name": "Get Notion Database Pages",
       "alwaysOutputData": true,
@@ -511,9 +511,8 @@
         "rule": {
           "interval": [
             {
-              "field": "months",
-              "triggerAtDayOfMonth": 15,
-              "triggerAtHour": 10
+              "field": "cronExpression",
+              "expression": "0 10 10,20,29 * *"
             }
           ]
         }
@@ -521,14 +520,14 @@
       "id": "54e08586-473f-4c2f-8d5f-dd2da0264b24",
       "name": "Daily Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
-      "position": [-1552, 848],
+      "position": [-1648, 848],
       "typeVersion": 1.2
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [416, 896],
+      "position": [624, 896],
       "id": "ccd48f82-6586-4ea4-956e-90381996e35d",
       "name": "Merge"
     },
@@ -550,7 +549,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1248, 848],
+      "position": [1456, 848],
       "id": "a7e78ad3-0352-4b26-961a-6a4a7cf93753",
       "name": "Sanitize LLM JSON"
     },
@@ -560,7 +559,7 @@
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [1968, 848],
+      "position": [2176, 848],
       "id": "e1445b1a-3cae-477c-aa12-138d0d0d29b0",
       "name": "Wait",
       "webhookId": "6bf2e13c-33bb-4bea-9cc6-13f40d7db89e"
@@ -578,7 +577,7 @@
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [1712, 848],
+      "position": [1920, 848],
       "id": "f448977e-8bd9-4af6-b8a0-3185991df012",
       "name": "Create a draft",
       "webhookId": "1accf3a9-2e77-4ea6-b969-b43e8cc9bb82",
@@ -591,13 +590,35 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format grouped-by-project email with CARD UI (table-based, inline CSS; Outlook-safe)\n// Assumes previous node produced: { clientName, emailSubject?, projects:[{...}], window? }\n\nfunction getFirstRow() {\n  var r = $(\"Split Client Rows1\").first();\n  return (r && r.json) ? r.json : {};\n}\nfunction valOrEmpty(v){ return (typeof v === \"string\") ? v : (v == null ? \"\" : String(v)); }\n\nfunction escHtml(s){\n  return String(s).replace(/&/g,\"&amp;\").replace(/</g,\"&lt;\").replace(/>/g,\"&gt;\");\n}\n\nfunction listToHtml(items){\n  if(!items || !items.length) return \"\";\n  var h = '<ul style=\"margin:8px 0 0 0;padding-left:20px;line-height:1.5;\">';\n  for(var i=0;i<items.length;i++){\n    var txt = items[i] ? escHtml(items[i]) : \"\";\n    h += '<li style=\"margin:4px 0;\">'+txt+'</li>';\n  }\n  h += \"</ul>\";\n  return h;\n}\n\nfunction linksToButtons(links){\n  // Render up to two as buttons, remainder as inline list\n  if(!links || !links.length) return \"\";\n  var btns = \"\";\n  var inline = \"\";\n  for(var i=0;i<links.length;i++){\n    var l = links[i];\n    if(!l || !l.url) continue;\n    var label = escHtml(l.label || l.url);\n    if(i < 2){\n      btns += ''+\n        '<a href=\"'+l.url+'\" target=\"_blank\" '+\n        'style=\"display:inline-block;background:#0ea5e9;color:#ffffff;text-decoration:none;'+\n               'padding:10px 14px;border-radius:6px;font-weight:600;font-size:14px;'+\n               'margin-right:8px;margin-bottom:8px;\">'+label+'</a>';\n    }else{\n      inline += '• <a href=\"'+l.url+'\" target=\"_blank\" style=\"color:#0ea5e9;text-decoration:underline;\">'+label+'</a><br/>';\n    }\n  }\n  var out = \"\";\n  if(btns) out += '<div style=\"margin-top:8px;\">'+btns+'</div>';\n  if(inline) out += '<div style=\"margin-top:6px;color:#111827;font-size:14px;line-height:1.5;\">'+inline+'</div>';\n  return out;\n}\n\nfunction projectCard(p){\n  var title = p.projectName ? escHtml(p.projectName) : \"Untitled Project\";\n\n  var section = function(label, list){\n    if(!list || !list.length) return \"\";\n    return ''+\n      '<tr><td style=\"padding:6px 0 0 0;color:#111827;font-weight:700;font-size:14px;\">'+escHtml(label)+'</td></tr>'+\n      '<tr><td style=\"padding:2px 0 8px 0;color:#111827;font-size:14px;\">'+listToHtml(list)+'</td></tr>';\n  };\n\n  var links = linksToButtons(p.links);\n\n  return ''+\n  '<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" '+\n         'style=\"background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;'+\n                'box-shadow:0 1px 3px rgba(0,0,0,0.06);margin:0 0 16px 0;\">'+\n    '<tr>'+\n      '<td style=\"padding:16px 16px 12px 16px;\">'+\n        '<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">'+\n          '<tr>'+\n            '<td style=\"font-size:16px;line-height:1.2;font-weight:700;color:#111827;padding-bottom:6px;\">'+title+'</td>'+\n          '</tr>'+\n          section(\"Progress & Completed Work:\", p.progressCompleted)+\n          section(\"Ongoing Work:\", p.ongoingWork)+\n          section(\"Blockers / Challenges:\", p.blockers)+\n          section(\"Next Steps:\", p.nextSteps)+\n          (links ? '<tr><td style=\"padding-top:6px;\">'+links+'</td></tr>' : '')+\n        '</table>'+\n      '</td>'+\n    '</tr>'+\n  '</table>';\n}\n\nfunction buildHtml(ai, row){\n  var greetingName = valOrEmpty(row[\"Client First Name\"]) || valOrEmpty(ai.clientName) || valOrEmpty(row[\"Notion Name\"]) || \"there\";\n\n  var headerTitle = \"Bi-Weekly Update\";\n  var headerSub   = valOrEmpty(ai.clientName) ? escHtml(ai.clientName) : \"Project Update\";\n\n  var preheader = \"Your two-week status summary\"; // hidden preview text\n\n  var projects = Array.isArray(ai.projects) ? ai.projects : [];\n\n  var cards = \"\";\n  for(var i=0;i<projects.length;i++){\n    cards += projectCard(projects[i] || {});\n  }\n\n  var signatureHtml =\n    '<p style=\"margin:0;color:#111827;\">Best regards,<br/>'+\n    escHtml(valOrEmpty(row[\"Account Manager Name\"]) || \"Mohammed\")+'<br/>'+\n    escHtml(valOrEmpty(row[\"Company\"]) || \"BFD / SimplifAI\")+'</p>';\n\n  var footer =\n    '<p style=\"margin:16px 0 0 0;color:#6b7280;font-size:12px;line-height:1.4;\">'+\n    'Automated bi-weekly update generated from projects. Reply to this email if you have questions.'+\n    '</p>';\n\n  // Wrapper + header + column layout (single column for reliability)\n  var html = ''+\n'<!doctype html><html><head>'+\n  '<meta http-equiv=\"x-ua-compatible\" content=\"ie=edge\">'+\n  '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">'+\n  '<meta name=\"x-apple-disable-message-reformatting\">'+\n  '<title>'+escHtml(valOrEmpty(ai.emailSubject) || \"Bi-Weekly Update\")+'</title>'+\n  '<style>/* just in case some clients honor minimal CSS */'+\n  'a{color:#0ea5e9} @media only screen and (max-width:600px){ .container{width:100%!important} .p-24{padding:16px!important} }'+\n  '</style>'+\n'</head>'+\n'<body style=\"margin:0;background:#f6f9fc;\">'+\n  '<span style=\"display:none;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;\">'+escHtml(preheader)+'</span>'+\n  '<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"background:#f6f9fc;\">'+\n    '<tr><td align=\"center\" style=\"padding:24px 12px;\">'+\n\n      '<table role=\"presentation\" class=\"container\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"680\" style=\"width:680px;max-width:680px;\">'+\n        // header card\n        '<tr><td>'+\n          '<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" '+\n                 'style=\"background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06);\">'+\n            '<tr><td class=\"p-24\" style=\"padding:24px;\">'+\n              '<div style=\"font-size:20px;line-height:1.2;color:#111827;font-weight:800;margin:0 0 4px 0;\">'+escHtml(headerTitle)+'</div>'+\n              '<div style=\"font-size:14px;color:#6b7280;line-height:1.4;margin:0;\">'+headerSub+'</div>'+\n              '<div style=\"height:12px\"></div>'+\n              '<div style=\"font-size:14px;color:#111827;line-height:1.6;\">'+\n                'Hi '+escHtml(greetingName)+', here’s a quick update on our progress over the past two weeks.'+\n              '</div>'+\n            '</td></tr>'+\n          '</table>'+\n        '</td></tr>'+\n\n        '<tr><td style=\"height:16px;\"></td></tr>'+\n\n        // project cards\n        '<tr><td>'+ cards +'</td></tr>'+\n\n        '<tr><td style=\"height:8px;\"></td></tr>'+\n\n        // closing + signature\n        '<tr><td>'+\n          '<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" '+\n                 'style=\"background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06);\">'+\n            '<tr><td class=\"p-24\" style=\"padding:20px 24px;\">'+\n              '<p style=\"margin:0 0 12px 0;color:#111827;font-size:14px;line-height:1.6;\">'+\n              'We’re excited about the momentum and are on track for the next milestone. Please let us know if you’d like us to expand on any of these points.'+\n              '</p>'+ signatureHtml + footer +\n            '</td></tr>'+\n          '</table>'+\n        '</td></tr>'+\n\n        '<tr><td style=\"height:24px;\"></td></tr>'+\n      '</table>'+\n\n    '</td></tr>'+\n  '</table>'+\n'</body></html>';\n\n  return html;\n}\n\nfunction buildText(ai, row){\n  // Keep your existing plaintext layout with bullets\n  var greetingName = valOrEmpty(row[\"Client First Name\"]) || valOrEmpty(ai.clientName) || valOrEmpty(row[\"Notion Name\"]) || \"there\";\n  var text = \"Hi \" + greetingName + \", here’s a quick update on our progress over the past two weeks.\\n\\n\";\n  var projects = Array.isArray(ai.projects) ? ai.projects : [];\n\n  function listToText(items){\n    if(!items || !items.length) return \"\";\n    var s=\"\"; for(var i=0;i<items.length;i++){ s += \"• \" + String(items[i]) + \"\\n\"; }\n    return s;\n  }\n  function linksToText(links){\n    if(!links || !links.length) return \"\";\n    var s=\"\"; for(var i=0;i<links.length;i++){ var l=links[i]; if(l && l.url){ s += \"• \" + (l.label?l.label:l.url) + \" (\"+l.url+\")\\n\"; } }\n    return s;\n  }\n\n  for(var j=0;j<projects.length;j++){\n    var p = projects[j] || {};\n    var title = p.projectName ? String(p.projectName) : \"Untitled Project\";\n    text += title + \"\\n\";\n    if(p.progressCompleted && p.progressCompleted.length){\n      text += \"Progress & Completed Work:\\n\" + listToText(p.progressCompleted) + \"\\n\";\n    }\n    if(p.ongoingWork && p.ongoingWork.length){\n      text += \"Ongoing Work:\\n\" + listToText(p.ongoingWork) + \"\\n\";\n    }\n    if(p.blockers && p.blockers.length){\n      text += \"Blockers / Challenges:\\n\" + listToText(p.blockers) + \"\\n\";\n    }\n    if(p.nextSteps && p.nextSteps.length){\n      text += \"Next Steps:\\n\" + listToText(p.nextSteps) + \"\\n\";\n    }\n    if(p.links && p.links.length){\n      text += \"Links:\\n\" + linksToText(p.links) + \"\\n\";\n    }\n  }\n\n  text += \"We’re excited about the momentum and are on track for the next milestone. Please let us know if you’d like us to expand on any of these points.\\n\\n\";\n  text += \"Best regards,\\n\" + (valOrEmpty(row[\"Account Manager Name\"]) || \"Account Manager\") + \"\\n\" + (valOrEmpty(row[\"Company\"]) || \"WSI / utopiads\");\n  return text;\n}\n\n// ---- Main ----\nvar ai  = $input.first() && $input.first().json ? $input.first().json : {};\nvar row = getFirstRow();\n\nvar to  = valOrEmpty(row[\"Client Email\"]) || valOrEmpty(row[\"Primary Contact Email\"]) || valOrEmpty(row[\"Contact Email\"]) || \"client@example.com\";\nvar cc  = valOrEmpty(row[\"Account Manager Email\"]);\nvar bcc = valOrEmpty(row[\"Internal CC\"]);\n\nvar subject = valOrEmpty(ai.emailSubject);\nif(!subject){\n  var fallbackClient = valOrEmpty(ai.clientName) || valOrEmpty(row[\"Notion Name\"]) || \"Project\";\n  subject = \"Bi-Weekly Update — \" + fallbackClient;\n}\n\nvar html = buildHtml(ai, row);\nvar text = buildText(ai, row);\n\nreturn [{\n  json: {\n    to: to,\n    cc: cc,\n    bcc: bcc,\n    subject: subject,\n    html: html,\n    text: text,\n    meta: {\n      clientName: valOrEmpty(ai.clientName),\n      generatedAt: valOrEmpty(ai.generatedAt),\n      window: ai.window || null,\n      projectsCount: Array.isArray(ai.projects) ? ai.projects.length : 0\n    }\n  }\n}];\n"
+        "jsCode": "// Format grouped-by-project email with CARD UI (table-based, inline CSS; Outlook-safe)\n// Assumes previous node produced: { clientName, emailSubject?, projects:[{...}], window? }\n\nfunction getFirstRow() {\n  var r = $(\"Split Client Rows1\").first();\n  return (r && r.json) ? r.json : {};\n}\nfunction valOrEmpty(v){ return (typeof v === \"string\") ? v : (v == null ? \"\" : String(v)); }\n\nfunction escHtml(s){\n  return String(s).replace(/&/g,\"&amp;\").replace(/</g,\"&lt;\").replace(/>/g,\"&gt;\");\n}\n\nfunction listToHtml(items){\n  if(!items || !items.length) return \"\";\n  var h = '<ul style=\"margin:8px 0 0 0;padding-left:20px;line-height:1.5;\">';\n  for(var i=0;i<items.length;i++){\n    var txt = items[i] ? escHtml(items[i]) : \"\";\n    h += '<li style=\"margin:4px 0;\">'+txt+'</li>';\n  }\n  h += \"</ul>\";\n  return h;\n}\n\nfunction linksToButtons(links){\n  // Render up to two as buttons, remainder as inline list\n  if(!links || !links.length) return \"\";\n  var btns = \"\";\n  var inline = \"\";\n  for(var i=0;i<links.length;i++){\n    var l = links[i];\n    if(!l || !l.url) continue;\n    var label = escHtml(l.label || l.url);\n    if(i < 2){\n      btns += ''+\n        '<a href=\"'+l.url+'\" target=\"_blank\" '+\n        'style=\"display:inline-block;background:#0ea5e9;color:#ffffff;text-decoration:none;'+\n               'padding:10px 14px;border-radius:6px;font-weight:600;font-size:14px;'+\n               'margin-right:8px;margin-bottom:8px;\">'+label+'</a>';\n    }else{\n      inline += '• <a href=\"'+l.url+'\" target=\"_blank\" style=\"color:#0ea5e9;text-decoration:underline;\">'+label+'</a><br/>';\n    }\n  }\n  var out = \"\";\n  if(btns) out += '<div style=\"margin-top:8px;\">'+btns+'</div>';\n  if(inline) out += '<div style=\"margin-top:6px;color:#111827;font-size:14px;line-height:1.5;\">'+inline+'</div>';\n  return out;\n}\n\nfunction projectCard(p){\n  var title = p.projectName ? escHtml(p.projectName) : \"Untitled Project\";\n\n  var section = function(label, list){\n    if(!list || !list.length) return \"\";\n    return ''+\n      '<tr><td style=\"padding:6px 0 0 0;color:#111827;font-weight:700;font-size:14px;\">'+escHtml(label)+'</td></tr>'+\n      '<tr><td style=\"padding:2px 0 8px 0;color:#111827;font-size:14px;\">'+listToHtml(list)+'</td></tr>';\n  };\n\n  var links = linksToButtons(p.links);\n\n  return ''+\n  '<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" '+\n         'style=\"background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;'+\n                'box-shadow:0 1px 3px rgba(0,0,0,0.06);margin:0 0 16px 0;\">'+\n    '<tr>'+\n      '<td style=\"padding:16px 16px 12px 16px;\">'+\n        '<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">'+\n          '<tr>'+\n            '<td style=\"font-size:16px;line-height:1.2;font-weight:700;color:#111827;padding-bottom:6px;\">'+title+'</td>'+\n          '</tr>'+\n          section(\"Progress & Completed Work:\", p.progressCompleted)+\n          section(\"Ongoing Work:\", p.ongoingWork)+\n          section(\"Blockers / Challenges:\", p.blockers)+\n          section(\"Next Steps:\", p.nextSteps)+\n          (links ? '<tr><td style=\"padding-top:6px;\">'+links+'</td></tr>' : '')+\n        '</table>'+\n      '</td>'+\n    '</tr>'+\n  '</table>';\n}\n\nfunction buildHtml(ai, row){\n  var greetingName = valOrEmpty(row[\"Client First Name\"]) || valOrEmpty(ai.clientName) || valOrEmpty(row[\"Notion Name\"]) || \"there\";\n\n  var headerTitle = \"Bi-Weekly Update\";\n  var headerSub   = valOrEmpty(ai.clientName) ? escHtml(ai.clientName) : \"Project Update\";\n\n  var preheader = \"Your two-week status summary\"; // hidden preview text\n\n  var projects = Array.isArray(ai.projects) ? ai.projects : [];\n\n  var cards = \"\";\n  for(var i=0;i<projects.length;i++){\n    cards += projectCard(projects[i] || {});\n  }\n\n  var signatureHtml =\n    '<p style=\"margin:0;color:#111827;\">Best regards,<br/>'+\n    escHtml(valOrEmpty(row[\"Account Manager Name\"]) || \"Mo, Muhammad and Nurul\")+'<br/>'+\n    escHtml(valOrEmpty(row[\"Company\"]) || \"BFD / SimplifAI\")+'</p>';\n\n  var footer =\n    '<p style=\"margin:16px 0 0 0;color:#6b7280;font-size:12px;line-height:1.4;\">'+\n    'Automated bi-weekly update generated from projects. Reply to this email if you have questions.'+\n    '</p>';\n\n  // Wrapper + header + column layout (single column for reliability)\n  var html = ''+\n'<!doctype html><html><head>'+\n  '<meta http-equiv=\"x-ua-compatible\" content=\"ie=edge\">'+\n  '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">'+\n  '<meta name=\"x-apple-disable-message-reformatting\">'+\n  '<title>'+escHtml(valOrEmpty(ai.emailSubject) || \"Bi-Weekly Update\")+'</title>'+\n  '<style>/* just in case some clients honor minimal CSS */'+\n  'a{color:#0ea5e9} @media only screen and (max-width:600px){ .container{width:100%!important} .p-24{padding:16px!important} }'+\n  '</style>'+\n'</head>'+\n'<body style=\"margin:0;background:#f6f9fc;\">'+\n  '<span style=\"display:none;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;\">'+escHtml(preheader)+'</span>'+\n  '<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\" style=\"background:#f6f9fc;\">'+\n    '<tr><td align=\"center\" style=\"padding:24px 12px;\">'+\n\n      '<table role=\"presentation\" class=\"container\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"680\" style=\"width:680px;max-width:680px;\">'+\n        // header card\n        '<tr><td>'+\n          '<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" '+\n                 'style=\"background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06);\">'+\n            '<tr><td class=\"p-24\" style=\"padding:24px;\">'+\n              '<div style=\"font-size:20px;line-height:1.2;color:#111827;font-weight:800;margin:0 0 4px 0;\">'+escHtml(headerTitle)+'</div>'+\n              '<div style=\"font-size:14px;color:#6b7280;line-height:1.4;margin:0;\">'+headerSub+'</div>'+\n              '<div style=\"height:12px\"></div>'+\n              '<div style=\"font-size:14px;color:#111827;line-height:1.6;\">'+\n                'Hi '+escHtml(greetingName)+', here’s a quick update on our progress over the past two weeks.'+\n              '</div>'+\n            '</td></tr>'+\n          '</table>'+\n        '</td></tr>'+\n\n        '<tr><td style=\"height:16px;\"></td></tr>'+\n\n        // project cards\n        '<tr><td>'+ cards +'</td></tr>'+\n\n        '<tr><td style=\"height:8px;\"></td></tr>'+\n\n        // closing + signature\n        '<tr><td>'+\n          '<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" '+\n                 'style=\"background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06);\">'+\n            '<tr><td class=\"p-24\" style=\"padding:20px 24px;\">'+\n              '<p style=\"margin:0 0 12px 0;color:#111827;font-size:14px;line-height:1.6;\">'+\n              'We’re excited about the momentum and are on track for the next milestone. Please let us know if you’d like us to expand on any of these points.'+\n              '</p>'+ signatureHtml + footer +\n            '</td></tr>'+\n          '</table>'+\n        '</td></tr>'+\n\n        '<tr><td style=\"height:24px;\"></td></tr>'+\n      '</table>'+\n\n    '</td></tr>'+\n  '</table>'+\n'</body></html>';\n\n  return html;\n}\n\nfunction buildText(ai, row){\n  // Keep your existing plaintext layout with bullets\n  var greetingName = valOrEmpty(row[\"Client First Name\"]) || valOrEmpty(ai.clientName) || valOrEmpty(row[\"Notion Name\"]) || \"there\";\n  var text = \"Hi \" + greetingName + \", here’s a quick update on our progress over the past two weeks.\\n\\n\";\n  var projects = Array.isArray(ai.projects) ? ai.projects : [];\n\n  function listToText(items){\n    if(!items || !items.length) return \"\";\n    var s=\"\"; for(var i=0;i<items.length;i++){ s += \"• \" + String(items[i]) + \"\\n\"; }\n    return s;\n  }\n  function linksToText(links){\n    if(!links || !links.length) return \"\";\n    var s=\"\"; for(var i=0;i<links.length;i++){ var l=links[i]; if(l && l.url){ s += \"• \" + (l.label?l.label:l.url) + \" (\"+l.url+\")\\n\"; } }\n    return s;\n  }\n\n  for(var j=0;j<projects.length;j++){\n    var p = projects[j] || {};\n    var title = p.projectName ? String(p.projectName) : \"Untitled Project\";\n    text += title + \"\\n\";\n    if(p.progressCompleted && p.progressCompleted.length){\n      text += \"Progress & Completed Work:\\n\" + listToText(p.progressCompleted) + \"\\n\";\n    }\n    if(p.ongoingWork && p.ongoingWork.length){\n      text += \"Ongoing Work:\\n\" + listToText(p.ongoingWork) + \"\\n\";\n    }\n    if(p.blockers && p.blockers.length){\n      text += \"Blockers / Challenges:\\n\" + listToText(p.blockers) + \"\\n\";\n    }\n    if(p.nextSteps && p.nextSteps.length){\n      text += \"Next Steps:\\n\" + listToText(p.nextSteps) + \"\\n\";\n    }\n    if(p.links && p.links.length){\n      text += \"Links:\\n\" + linksToText(p.links) + \"\\n\";\n    }\n  }\n\n  text += \"We’re excited about the momentum and are on track for the next milestone. Please let us know if you’d like us to expand on any of these points.\\n\\n\";\n  text += \"Best regards,\\n\" + (valOrEmpty(row[\"Account Manager Name\"]) || \"Account Manager\") + \"\\n\" + (valOrEmpty(row[\"Company\"]) || \"WSI / utopiads\");\n  return text;\n}\n\n// ---- Main ----\nvar ai  = $input.first() && $input.first().json ? $input.first().json : {};\nvar row = getFirstRow();\n\nvar to  = valOrEmpty(row[\"Client Email\"]) || valOrEmpty(row[\"Primary Contact Email\"]) || valOrEmpty(row[\"Contact Email\"]) || \"client@example.com\";\nvar cc  = valOrEmpty(row[\"Account Manager Email\"]);\nvar bcc = valOrEmpty(row[\"Internal CC\"]);\n\nvar subject = valOrEmpty(ai.emailSubject);\nif(!subject){\n  var fallbackClient = valOrEmpty(ai.clientName) || valOrEmpty(row[\"Notion Name\"]) || \"Project\";\n  subject = \"Bi-Weekly Update — \" + fallbackClient;\n}\n\nvar html = buildHtml(ai, row);\nvar text = buildText(ai, row);\n\nreturn [{\n  json: {\n    to: to,\n    cc: cc,\n    bcc: bcc,\n    subject: subject,\n    html: html,\n    text: text,\n    meta: {\n      clientName: valOrEmpty(ai.clientName),\n      generatedAt: valOrEmpty(ai.generatedAt),\n      window: ai.window || null,\n      projectsCount: Array.isArray(ai.projects) ? ai.projects.length : 0\n    }\n  }\n}];\n"
       },
       "id": "c1726ae4-3604-4065-83ef-dded980f090d",
       "name": "Format Email Message",
       "type": "n8n-nodes-base.code",
-      "position": [1504, 848],
+      "position": [1712, 848],
       "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "sendTo": "atharul.k@gmail.com",
+        "subject": "📜 CLIENT REPORTS: Please Review in Draft Folder",
+        "message": "Please check drafts folder for client reports to be sent out - https://mail.google.com/mail/u/0/#drafts",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [-1408, 848],
+      "id": "edf157cc-9a4d-4f99-bb2a-c4e0c0c199e3",
+      "name": "Send a message",
+      "webhookId": "5f2ef5d6-0927-41ac-b856-272628ae6cfa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -914,7 +935,7 @@
       "main": [
         [
           {
-            "node": "Get All Client Rows1",
+            "node": "Send a message",
             "type": "main",
             "index": 0
           }
@@ -975,13 +996,24 @@
           }
         ]
       ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Get All Client Rows1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "692073ee-a9c2-4d84-b61e-7fe1190fbc1a",
+  "versionId": "295aafd8-2047-474c-9767-b0a08a3f2466",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
