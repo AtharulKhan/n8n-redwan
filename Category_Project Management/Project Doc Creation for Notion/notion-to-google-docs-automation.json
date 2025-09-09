@@ -1,0 +1,243 @@
+{
+  "name": "Project Doc Creation for Notion",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "id": "198d3d12-fd3c-4031-bb38-a935926b43f0",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-368, 96]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "mode": "url",
+          "value": "https://www.notion.so/2626ab60b479805daf3be7f77576900a?v=2626ab60b4798122bdfc000c5a3ae2d6"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Active?|select",
+              "condition": "equals",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Service Team|select",
+              "condition": "equals",
+              "selectValue": "Dev"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "62463cb8-f58c-4c58-8d3b-11d100c13549",
+      "name": "Get Active Notion Pages",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-144, 96],
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Return only pages that DO NOT have a Google Doc link in \"Project Links\"\n// Works with n8n's flattened field: item.json.property_project_links\n// Falls back to raw Notion properties if needed.\n\nconst out = [];\n\nfunction urlsFromFlattened(item) {\n  const v = item.json.property_project_links;\n  if (!v) return [];\n  if (Array.isArray(v)) return v.map(String);\n  if (typeof v === 'string') return [v];\n  return [];\n}\n\nfunction urlsFromRawProperty(item) {\n  const prop = item.json.properties?.['Project Links'];\n  const urls = [];\n  if (!prop) return urls;\n\n  // URL property\n  if (typeof prop.url === 'string' && prop.url.trim()) urls.push(prop.url.trim());\n\n  // rich_text array\n  if (Array.isArray(prop.rich_text)) {\n    for (const rt of prop.rich_text) {\n      if (rt?.href) urls.push(String(rt.href));\n      if (rt?.plain_text) {\n        const re = /(https?:\\/\\/[^\\s)]+)/g;\n        let m; while ((m = re.exec(rt.plain_text)) !== null) urls.push(m[1]);\n      }\n    }\n  }\n\n  // files property\n  if (Array.isArray(prop.files)) {\n    for (const f of prop.files) {\n      if (f?.external?.url) urls.push(String(f.external.url));\n      if (f?.file?.url) urls.push(String(f.file.url));\n      if (f?.name && /^https?:\\/\\//.test(f.name)) urls.push(String(f.name));\n    }\n  }\n\n  // sometimes exposed as \"urls\"\n  if (Array.isArray(prop.urls)) urls.push(...prop.urls.map(String));\n\n  return urls;\n}\n\nfor (const [idx, item] of $input.all().entries()) {\n  // Prefer flattened field from your logs\n  let urls = urlsFromFlattened(item);\n\n  // Fallback to raw property if flattened empty\n  if (urls.length === 0) {\n    urls = urlsFromRawProperty(item);\n  }\n\n  const hasGDoc = urls.some(u => /https?:\\/\\/docs\\.google\\.com\\/document\\//i.test(u));\n\n  if (!hasGDoc) {\n    const pageTitle =\n      item.json.property_project_name ||\n      item.json.properties?.['Name']?.title?.[0]?.plain_text ||\n      item.json.properties?.['Name']?.title?.[0]?.text?.content ||\n      'Untitled';\n\n    out.push({\n      json: {\n        pageId: item.json.id,\n        pageUrl: item.json.url,\n        pageTitle,\n        projectLinks: urls.length ? urls.join(', ') : 'empty',\n        _itemIndex: idx\n      }\n    });\n  }\n}\n\nreturn out;\n"
+      },
+      "id": "7271147d-79b6-40c7-bade-dafaeaa1ca00",
+      "name": "Filter Pages Without Google Docs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 96]
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "mode": "id",
+          "value": "1NjlnioVVGBGMWdCd6MUwvpXyJ3mwesYCvTu2wXwUoBE"
+        },
+        "name": "={{ $now.format('yyyy-MM-dd') }} | Project Document | {{ $json.pageTitle }} | Client_SimplifAI",
+        "sameFolder": false,
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1sIo8f8hkm9ZGD-jlyUk9mSGh_flUBToL",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "01f9389a-58fe-4330-b090-415ee9a091e0",
+      "name": "Copy Google Doc Template",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [304, 96],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ySzWN5yRZbSL8sUw",
+          "name": "Google Drive - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Project Links|files",
+              "fileUrls": {
+                "fileUrl": [
+                  {
+                    "name": "=Project Doc: {{ $json.pageTitle }}",
+                    "url": "=https://docs.google.com/document/d/{{ $json.id }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "17d794a7-d180-4dba-8362-d5e3c412dc43",
+      "name": "Update Notion Page with Doc Link",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [528, 336],
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [160, 336],
+      "id": "dcc14810-4e98-4c0d-80e2-3ec997ff0d9c",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Active Notion Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Notion Pages": {
+      "main": [
+        [
+          {
+            "node": "Filter Pages Without Google Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Pages Without Google Docs": {
+      "main": [
+        [
+          {
+            "node": "Copy Google Doc Template",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Copy Google Doc Template": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Notion Page with Doc Link": {
+      "main": [[]]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Update Notion Page with Doc Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "45fdd642-dc42-4ef9-9184-9a4e9bc633c7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "gpQtRH554D9nllbK",
+  "tags": [
+    {
+      "createdAt": "2025-08-17T20:00:58.638Z",
+      "updatedAt": "2025-08-17T20:00:58.638Z",
+      "id": "AcBnyW08HnPACs3E",
+      "name": "Notion"
+    },
+    {
+      "name": "Google Docs",
+      "id": "G2UMxYqdJs4Doeaf",
+      "createdAt": "2025-09-09T03:37:04.191Z",
+      "updatedAt": "2025-09-09T03:37:04.191Z"
+    }
+  ]
+}

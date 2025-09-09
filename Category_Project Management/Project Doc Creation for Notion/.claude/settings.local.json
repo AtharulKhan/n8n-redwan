@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__n8n-mcp__search_nodes",
+      "mcp__n8n-mcp__get_node_info",
+      "mcp__n8n-mcp__get_node_essentials"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
