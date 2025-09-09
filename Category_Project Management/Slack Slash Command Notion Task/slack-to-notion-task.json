@@ -1,0 +1,493 @@
+{
+  "name": "Slack /Task Command to Notion",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [384, 384],
+      "id": "9a6327bd-30fb-4a23-b616-85df64bbb094",
+      "name": "Merge Webhook + Schema"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "4571cdc2-f409-4d88-8f13-e69678165626",
+        "options": {
+          "responseData": "Processing your task (can take a few minutes)... In the meantime, you can also submit your request through this form - https://fog-apartment-d46.notion.site/2626ab60b47981e4a6fceac40cb450ac"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-416, 432],
+      "id": "26b2d29f-ec13-4587-8e80-2112bdca5eaa",
+      "name": "Webhook1",
+      "webhookId": "7242db4f-6eba-44be-a195-2f84dea1475d"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "==You are a task extraction assistant. Read the inputs and return only a single JSON object that exactly matches the schema below (no extra keys, no comments, no trailing commas, no markdown).\n\nInputs\n\nToday's date: {{$today}}\nSlack Text: {{ $json.text }}\nChannel Name: {{ $json.channel_name }}\nChannel ID: {{ $json.channel_id }}\nUser Submitting Request: {{ $json.user_name }}\nAvailable Notion Fields: {{ $json.textResponse }}\n\nOutput Schema (must match exactly)\n\n{\n  \"validation_failed\": false,\n  \"missing_fields\": [],\n  \"received_fields\": [\n    \"property_project_name\",\n    \"property_start_date\",\n    \"property_end_date\",\n    \"property_status\",\n    \"property_priority\",\n    \"property_owner\",\n    \"property_client\",\n    \"property_type_of_project\",\n    \"property_service_type\",\n    \"property_service_team\",\n    \"property_project_links\",\n    \"property_information_about_request\",\n    \"property_requested_by\"\n  ],\n  \"property_end_date\": \"\",\n  \"property_owner\": [],\n  \"property_client\": \"\",\n  \"property_type_of_project\": [],\n  \"property_service_team\": \"\",\n  \"property_project_links\": [],\n  \"property_information_about_request\": \"\",\n  \"property_project_name\": \"\",\n  \"property_priority\": \"\",\n  \"property_start_date\": \"\",\n  \"property_service_type\": \"\",\n  \"property_status\": \"\",\n  \"property_requested_by\": \"\"\n}\n\n\nExtraction Rules (no guessing)\n\nPopulate a field only if explicitly present or can be directly inferred from clear keywords. Otherwise leave as \"\" (for strings) or [] (for arrays).\n\n- property_owner: If an owner’s name is explicitly mentioned in Slack Text (e.g., \"assign to Rahat\", \"Rahat\", \"@rahat\"), return it as [\"Name\"] with normalized capitalization (e.g., [\"Rahat\"]). If none, return [].\n- property_project_links: Extract any URLs present; otherwise [].\n\nENRICHMENT (property_information_about_request):\n- If Slack Text is non-empty, set property_information_about_request to a concise, enriched paraphrase of the request (1–2 sentences).\n- The enrichment should clarify likely intent, deliverable, scope/steps, and context words present in the Slack Text (e.g., “UX/UI”, “process”, “handoff”, “SEO”, “app”, “API”).\n- DO NOT invent specifics that weren’t stated (no fake dates, clients, owners, tools, numbers, links, or brand names).\n- You may generalize with safe, generic phrasing (e.g., “document the end-to-end handoff steps, roles, artifacts, and approval gates”) when the keywords imply that concept.\n- Format: write the enriched paraphrase, then append ` | Original: \"<verbatim Slack Text>\"`.\n- If Slack Text is empty/whitespace, leave property_information_about_request as \"\" and set validation_failed = true.\n\nKeyword mapping (non-speculative):\n- If text contains “seo” → add \"On-Page SEO\" to property_type_of_project; set property_service_team to \"Marketing\".\n- If text contains dev keywords (“build”, “app”, “API”, “frontend”, “backend”) → add \"Full Stack App\" to property_type_of_project; set property_service_team to \"Dev\".\n- If text contains “ux” or “ui” → add \"UX/UI\" to property_type_of_project.\n- If text contains the word “process” → add \"Process Implementation\" to property_type_of_project.\n\nDates:\n- property_end_date: Populate only if an explicit date/deadline is present (e.g., “by Sep 20”, “due 09/20/2025”). If present, normalize to MM/DD/YYYY. If absent or ambiguous, leave \"\".\n- property_start_date: Only if mentioned; otherwise \"\".\n\nOptional fields (property_project_name, property_priority, property_service_type, property_status) are set only if present in text; else \"\".\n\nproperty_client: Only if clearly stated; else \"\" (do not infer by default).\n\nMissing fields computation (REQUIRED):\nAfter you fill all fields above, compute \"missing_fields\" from this required set ONLY:\n[\n  \"property_owner\",\n  \"property_service_team\",\n  \"property_end_date\"\n]\nInclude in \"missing_fields\" every required key whose value is empty (\"\") or [].\nDo NOT include any other properties in \"missing_fields\" even if they are empty.\n\nReceived fields computation:\nPopulate \"received_fields\" with the names of all properties (from the schema above, excluding validation_failed, missing_fields, and received_fields itself) that are not empty (\"\") or [].\n\nvalidation_failed:\n- true only if Slack Text is empty or all whitespace; otherwise false.\n\nOutput Formatting Constraints\n- Return only the JSON object.\n- Keys must appear in the exact order shown in the schema.\n- Ensure arrays for property_owner, property_type_of_project, property_project_links, received_fields.\n- Use double quotes for all keys/strings. No comments, no trailing commas.\n\nExamples\n\nGiven\nSlack Text: Create ux UI design handoff process rahat\nChannel: directmessage\n\nExpected Model Output (JSON only)\n{\n  \"validation_failed\": false,\n  \"missing_fields\": [\n    \"property_service_team\",\n    \"property_end_date\"\n  ],\n  \"received_fields\": [\n    \"property_owner\",\n    \"property_type_of_project\",\n    \"property_information_about_request\"\n  ],\n  \"property_end_date\": \"\",\n  \"property_owner\": [\"Rahat\"],\n  \"property_client\": \"\",\n  \"property_type_of_project\": [\"UX/UI\",\"Process Implementation\"],\n  \"property_service_team\": \"\",\n  \"property_project_links\": [],\n  \"property_information_about_request\": \"Create a UX/UI design handoff process: define roles, artifacts (wireframes, comps, specs), handoff checklists, timelines, and approval gates suitable for the team’s workflow. | Original: \\\"Create ux UI design handoff process rahat\\\"\",\n  \"property_project_name\": \"\",\n  \"property_priority\": \"\",\n  \"property_start_date\": \"\",\n  \"property_service_type\": \"\",\n  \"property_status\": \"\"\n}\n\nFor \"property_service_team\" if user says for dev team or for marketing team, or just marketing, or just dev or other variations such as the development team (dev) or the seo team (marketing) or say we need a UI/UX project which is part of dev team or say we need an email campaign, that would be marketing team. So we're loose with what team. \n\nAlso \n\"validation_failed\": false, means there was no missing fields. True means there was at least one missing field.\n\nFor the property_project_name, property_service_type you set it. You decide what the project name should be based on the context and which service type it likely belongs to.\n\nFor validation, \n\"validation_failed\": \nfalse,\n\"missing_fields\": \n[\n\"property_owner\",\n\"property_service_team\",\n\"property_end_date\" <- this is incorrect. Any time there is missing fields, validation_failed should be set to true.\n\nFor property_information_about_request, you need to take the input message received, and create a comprehensive summary in markdown of what is being asked. Don't use verbatim language but explain properly what is being asked.\n\nFor property_end_date, if user says due in 7 days, or due tomorrow, or due in a month or due on the 7th of this month etc, this is all acceptable. Please don't including as missing_fields in these cases.\n\nFor property_information_about_request:\n- Write a clear, enriched paragraph summary (about 150–400 characters, ≤2000 max).\n- Focus on intent, deliverable, scope, and context from the Slack Text.\n- Do NOT include or append the original Slack text.\n- Do NOT include quotes.\n- Example: \"Redesign and rebuild the SimplifAI and BFD (Butterfly Digital) websites using a shared Next.js codebase integrated with Strapi CMS. Both sites should share unified structure, components, and styling while preserving distinct branding through tailored themes and content. SimplifAI will emphasize AI and automation, while BFD will highlight marketing, SEO, and PPC services, ensuring consistency in core sections like case studies and services.\"\n",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [592, 384],
+      "id": "ab4917cc-1c95-4052-a50d-ffa9f4bc7780",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [592, 576],
+      "id": "9121d642-69ad-442b-9d28-8c2db80a1231",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "validation-check",
+              "leftValue": "={{ $json.output.validation_failed }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [896, 384],
+      "id": "7423886e-3e55-4289-8627-3a870dbd40d5",
+      "name": "Validate Required Fields1"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2626ab60-b479-805d-af3b-e7f77576900a",
+          "mode": "list",
+          "cachedResultName": "SimplifAI/BFD Projects",
+          "cachedResultUrl": "https://www.notion.so/2626ab60b479805daf3be7f77576900a"
+        },
+        "title": "={{ $json.output.property_project_name }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "End date|date",
+              "includeTime": false,
+              "date": "={{ $json.output.property_end_date }}"
+            },
+            {
+              "key": "Owner|multi_select",
+              "multiSelectValue": "={{ $json.output.property_owner[0] }}"
+            },
+            {
+              "key": "Type of Project|multi_select",
+              "multiSelectValue": "={{ $json.output.property_type_of_project }}"
+            },
+            {
+              "key": "Service Team|select",
+              "selectValue": "={{ $json.output.property_service_team }}"
+            },
+            {
+              "key": "Information About Request|rich_text",
+              "textContent": "={{ $json.output.property_information_about_request }}"
+            },
+            {
+              "key": "Service Type|select",
+              "selectValue": "={{ $json.output.property_service_type }}"
+            },
+            {
+              "key": "Active?|select",
+              "selectValue": "Active"
+            },
+            {
+              "key": "Requested By…|rich_text",
+              "textContent": "={{ $json.output.property_requested_by }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1984, 192],
+      "id": "2f0e822f-c9c4-4f5d-97e7-3f2f7ccc10cc",
+      "name": "Create a database page1",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node['Webhook1'].json.body.response_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"text\": \"✅ Notion task created successfully. [Open in Notion]({{ $json.url }})\",\n\"response_type\": \"ephemeral\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2240, 192],
+      "id": "f6c94add-bacc-46e6-89f7-522b491b47e8",
+      "name": "Send Success to Slack1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node['Webhook1'].json.body.response_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"response_type\": \"ephemeral\",\n  \"text\": \"{{ $json.text || 'We need a bit more information to create this task — please specify the missing details.' }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2096, 512],
+      "id": "ac75118d-2448-45d3-af38-025f321897ca",
+      "name": "Send Error to Slack1"
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "databaseId": {
+          "__rl": true,
+          "value": "2626ab60-b479-805d-af3b-e7f77576900a",
+          "mode": "list",
+          "cachedResultName": "SimplifAI/BFD Projects",
+          "cachedResultUrl": "https://www.notion.so/2626ab60b479805daf3be7f77576900a"
+        },
+        "simple": false
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [-48, 496],
+      "id": "48439bc9-851c-43ee-bb4a-c3edf3ff66c8",
+      "name": "Get Database Schema",
+      "credentials": {
+        "notionApi": {
+          "id": "ICoPM3JY9lI1oIry",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node (JavaScript)\n\nreturn [\n  {\n    json: {\n      text: $json.body.text,\n      channel_id: $json.body.channel_id,\n      channel_name: $json.body.channel_name,\n      user_id: $json.body.user_id,\n      user_name: $json.body.user_name,\n      token: $json.body.token\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-48, 304],
+      "id": "8dfed318-b76e-4b57-b52c-7c40c274aba3",
+      "name": "Extract Text"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"validation_failed\": false,\n  \"missing_fields\": [],\n  \"received_fields\": [\n    \"property_project_name\",\n    \"property_start_date\",\n    \"property_end_date\",\n    \"property_status\",\n    \"property_priority\",\n    \"property_owner\",\n    \"property_client\",\n    \"property_type_of_project\",\n    \"property_service_type\",\n    \"property_service_team\",\n    \"property_project_links\",\n    \"property_information_about_request\",\n    \"property_requested_by\"\n  ],\n  \"property_end_date\": \"\",\n  \"property_owner\": [],\n  \"property_client\": \"\",\n  \"property_type_of_project\": [],\n  \"property_service_team\": \"\",\n  \"property_project_links\": [],\n  \"property_information_about_request\": \"\",\n  \"property_project_name\": \"\",\n  \"property_priority\": \"\",\n  \"property_start_date\": \"\",\n  \"property_service_type\": \"\",\n  \"property_status\": \"\",\n  \"property_requested_by\": \"\"\n}\n",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [736, 592],
+      "id": "6b76fa3e-caed-450d-8f69-972c4f307b1f",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [848, 752],
+      "id": "82c31cc8-67fc-4322-98c9-f87d2d579d1b",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a task validation assistant.\n\nRead the JSON input and write a short, human-friendly explanation for Slack users. \nAlways assume the task creation failed because some required details were missing.\n\nRules:\n- Start with a friendly acknowledgment, e.g., \"Hey, we need a bit more information to create this task.\"\n- Mention that some fields are missing, without being overly technical.\n- If \"missing_fields\" has values, summarize them in plain language (e.g., \"Owner\", \"Service Team\", \"Due Date\").\n- Keep it concise: 1–2 sentences maximum.\n- Output must be plain text only (no JSON, no lists).\n\nExamples:\nInput: missing_fields = [\"property_end_date\"]\nOutput: \"Hey, we need a bit more information to create this task — it’s missing a due date. Please resubmit your request along with all your original information and the due date. Remember to submit with /task slash command.\"\n\nInput: missing_fields = [\"property_owner\",\"property_service_team\"]\nOutput: \"Hey, we need a bit more information to create this task — please specify an owner and service team. Please resubmit again with all your original information and the owner/service team. Remember to submit with /task slash command.\"\n\nInput: missing_fields = [\"property_end_date\",\"property_service_team\",\"property_owner\"]\nOutput: \"Hey, we need a bit more information to create this task — it’s missing an owner, service team, and due date. Please add your original request alongside the missing information. Remember to submit with /task slash command.\"\n\nMissing Fields: {{ $json.combined.missing_fields }}\n\nWhat was received: {{ $json.combined.received_fields }}\nReceived information: {{ $json.combined.received_fields_text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [1552, 480],
+      "id": "064a9077-7e57-487b-8b33-aedcdc9ecbd5",
+      "name": "Basic LLM Chain2"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1440, 688],
+      "id": "d3fa4031-7ab8-4034-b8cd-b6ac0131ed7f",
+      "name": "OpenRouter Chat Model3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node (JavaScript)\n\n// Grab the nested output object safely\nconst input = $json.output || {};\n\n// Friendly labels for Slack\nconst friendly = {\n  property_owner: 'Owner',\n  property_service_team: 'Service Team',\n  property_end_date: 'Due Date',\n  property_type_of_project: 'Type',\n  property_project_links: 'Links',\n  property_information_about_request: 'Description',\n  property_client: 'Client',\n  property_project_name: 'Project Name',\n  property_priority: 'Priority',\n  property_start_date: 'Start Date',\n  property_service_type: 'Service Type',\n  property_status: 'Status'\n};\n\n// Helper to stringify values nicely\nfunction prettyVal(key, val) {\n  if (Array.isArray(val)) return val.join(', ');\n  if (key === 'property_project_links' && Array.isArray(val)) {\n    return val.length ? val.join('\\n') : '—';\n  }\n  if (typeof val === 'string' && val.trim() === '') return '—';\n  return (val ?? '—').toString();\n}\n\n// Compute non-empty fields from the known schema\nconst schemaKeys = [\n  'property_end_date',\n  'property_owner',\n  'property_client',\n  'property_type_of_project',\n  'property_service_team',\n  'property_project_links',\n  'property_information_about_request',\n  'property_project_name',\n  'property_priority',\n  'property_start_date',\n  'property_service_type',\n  'property_status'\n];\n\nconst computedReceived = [];\nfor (const k of schemaKeys) {\n  const v = input[k];\n  const isEmpty = v === '' || v == null || (Array.isArray(v) && v.length === 0);\n  if (!isEmpty) computedReceived.push(k);\n}\n\n// Prefer LLM-provided received_fields if present; otherwise use computed\nconst received_fields = Array.isArray(input.received_fields) && input.received_fields.length\n  ? input.received_fields\n  : computedReceived;\n\n// Build human-readable text list of received fields with their values\nconst received_fields_text = received_fields.length\n  ? received_fields\n      .map(k => `• ${friendly[k] || k}: ${prettyVal(k, input[k])}`)\n      .join('\\n')\n  : '• None';\n\n// Create a single combined variable (preserve your original shape + new fields)\nconst combined = {\n  validation_failed: input.validation_failed,\n  missing_fields: input.missing_fields || [],\n  received_fields,                         // <-- added\n  property_end_date: input.property_end_date,\n  property_owner: input.property_owner,\n  property_client: input.property_client,\n  property_type_of_project: input.property_type_of_project,\n  property_service_team: input.property_service_team,\n  property_project_links: input.property_project_links,\n  property_information_about_request: input.property_information_about_request,\n  property_project_name: input.property_project_name,\n  property_priority: input.property_priority,\n  property_start_date: input.property_start_date,\n  property_service_type: input.property_service_type,\n  property_status: input.property_status,\n  received_fields_text                     // <-- added (for Slack)\n};\n\n// Return as a single item with `combined`\nreturn [\n  {\n    json: { combined }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1248, 480],
+      "id": "f81a605e-c320-432f-a3d5-da54a85dcfee",
+      "name": "Extract As One Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node (JavaScript)\n\n// Grab the input JSON\nconst input = $json;\n\n// Convert the entire object into a single string\nconst textResponse = JSON.stringify(input, null, 2);\n\n// If you want it even cleaner (no JSON formatting, just key: value lines):\nfunction flattenObject(obj, prefix = '') {\n  let str = '';\n  for (const key in obj) {\n    if (typeof obj[key] === 'object' && obj[key] !== null) {\n      str += flattenObject(obj[key], `${prefix}${key}.`);\n    } else {\n      str += `${prefix}${key}: ${obj[key]}\\n`;\n    }\n  }\n  return str;\n}\n\nconst flattenedText = flattenObject(input);\n\nreturn [\n  {\n    json: {\n      textResponse: flattenedText\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [160, 496],
+      "id": "fc42b6b8-5138-4b02-be2c-d07e3e279aa2",
+      "name": "Combine Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge Webhook + Schema": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Database Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields1": {
+      "main": [
+        [
+          {
+            "node": "Create a database page1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract As One Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page1": {
+      "main": [
+        [
+          {
+            "node": "Send Success to Slack1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Database Schema": {
+      "main": [
+        [
+          {
+            "node": "Combine Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Merge Webhook + Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain2": {
+      "main": [
+        [
+          {
+            "node": "Send Error to Slack1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract As One Text": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge Webhook + Schema",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a5d37b78-91e4-4c90-9c87-a1464289cb53",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "Yhiqd0uT47XSw8Mk",
+  "tags": []
+}
