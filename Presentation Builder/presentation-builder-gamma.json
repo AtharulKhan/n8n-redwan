@@ -1,0 +1,512 @@
+{
+  "name": "Gamma Presentation",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "presentation-builder-gamma",
+        "formTitle": "Presentation Builder",
+        "formDescription": "Transform your transcript into a professional presentation using AI",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Transcript",
+              "fieldType": "textarea",
+              "placeholder": "Paste your transcript or detailed notes here...",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Presentation Instructions",
+              "fieldType": "textarea",
+              "placeholder": "Specific instructions for how to build the presentation (optional)"
+            },
+            {
+              "fieldLabel": "Presentation Type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Analysis Presentation"
+                  },
+                  {
+                    "option": "Proposal Presentation"
+                  },
+                  {
+                    "option": "Summary Presentation"
+                  },
+                  {
+                    "option": "Educational Presentation"
+                  },
+                  {
+                    "option": "Business Report"
+                  },
+                  {
+                    "option": "Project Update"
+                  },
+                  {
+                    "option": "Sales Pitch"
+                  },
+                  {
+                    "option": "Training Material"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Number of Slides",
+              "fieldType": "number",
+              "placeholder": "10"
+            },
+            {
+              "fieldLabel": "Theme",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Pearl"
+                  },
+                  {
+                    "option": "Vortex"
+                  },
+                  {
+                    "option": "Chisel"
+                  },
+                  {
+                    "option": "Stardust"
+                  },
+                  {
+                    "option": "Seafoam"
+                  },
+                  {
+                    "option": "Nebulae"
+                  },
+                  {
+                    "option": "Creme"
+                  },
+                  {
+                    "option": "Lux"
+                  },
+                  {
+                    "option": "Consultant"
+                  },
+                  {
+                    "option": "Marine"
+                  },
+                  {
+                    "option": "Elysia"
+                  },
+                  {
+                    "option": "Prism"
+                  },
+                  {
+                    "option": "Lunaria"
+                  },
+                  {
+                    "option": "Night Sky"
+                  },
+                  {
+                    "option": "Commons"
+                  },
+                  {
+                    "option": "Gamma"
+                  },
+                  {
+                    "option": "Gamma Dark"
+                  },
+                  {
+                    "option": "Dialogue"
+                  },
+                  {
+                    "option": "Founder"
+                  },
+                  {
+                    "option": "Lavender"
+                  },
+                  {
+                    "option": "Indigo"
+                  },
+                  {
+                    "option": "Howlite"
+                  },
+                  {
+                    "option": "Onyx"
+                  },
+                  {
+                    "option": "Atmosphere"
+                  },
+                  {
+                    "option": "Blueberry"
+                  },
+                  {
+                    "option": "Kraft"
+                  },
+                  {
+                    "option": "Mystique"
+                  },
+                  {
+                    "option": "Petrol"
+                  },
+                  {
+                    "option": "Blues"
+                  },
+                  {
+                    "option": "Peach"
+                  },
+                  {
+                    "option": "Incandescent"
+                  },
+                  {
+                    "option": "Oatmeal"
+                  },
+                  {
+                    "option": "Sanguine"
+                  },
+                  {
+                    "option": "Sage"
+                  },
+                  {
+                    "option": "Verdigris"
+                  },
+                  {
+                    "option": "Ash"
+                  },
+                  {
+                    "option": "Coal"
+                  },
+                  {
+                    "option": "Flamingo"
+                  },
+                  {
+                    "option": "Canaveral"
+                  },
+                  {
+                    "option": "Oasis"
+                  },
+                  {
+                    "option": "Fluo"
+                  },
+                  {
+                    "option": "Finesse"
+                  },
+                  {
+                    "option": "Electric"
+                  },
+                  {
+                    "option": "Zephyr"
+                  },
+                  {
+                    "option": "Chimney Smoke"
+                  },
+                  {
+                    "option": "Chimney Dust"
+                  },
+                  {
+                    "option": "Icebreaker"
+                  },
+                  {
+                    "option": "Blue Steel"
+                  },
+                  {
+                    "option": "Daydream"
+                  },
+                  {
+                    "option": "Orbit"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Target Audience",
+              "placeholder": "e.g., executives, team members, clients"
+            },
+            {
+              "fieldLabel": "Tone",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Professional"
+                  },
+                  {
+                    "option": "Casual"
+                  },
+                  {
+                    "option": "Formal"
+                  },
+                  {
+                    "option": "Inspiring"
+                  },
+                  {
+                    "option": "Educational"
+                  },
+                  {
+                    "option": "Persuasive"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Content Detail Level",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Brief"
+                  },
+                  {
+                    "option": "Medium"
+                  },
+                  {
+                    "option": "Detailed"
+                  },
+                  {
+                    "option": "Extensive"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Image Source",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "AI Generated Images"
+                  },
+                  {
+                    "option": "Stock Photos (Unsplash)"
+                  },
+                  {
+                    "option": "Icons (Pictographic)"
+                  },
+                  {
+                    "option": "GIFs (Giphy)"
+                  },
+                  {
+                    "option": "Web Images - All"
+                  },
+                  {
+                    "option": "Web Images - Free to Use"
+                  },
+                  {
+                    "option": "Web Images - Free Commercial Use"
+                  },
+                  {
+                    "option": "No Images"
+                  },
+                  {
+                    "option": "Placeholders Only"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "AI Image Model",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Auto-Select (Let Gamma Choose)"
+                  },
+                  {
+                    "option": "Dall E 3"
+                  },
+                  {
+                    "option": "Flux Fast 1.1"
+                  },
+                  {
+                    "option": "Flux Pro"
+                  },
+                  {
+                    "option": "Flux Ultra"
+                  },
+                  {
+                    "option": "Flux Kontext Fast"
+                  },
+                  {
+                    "option": "Flux Kontext Pro"
+                  },
+                  {
+                    "option": "Flux Kontext Max"
+                  },
+                  {
+                    "option": "GPT Image"
+                  },
+                  {
+                    "option": "Ideogram 3"
+                  },
+                  {
+                    "option": "Ideogram 3 Turbo"
+                  },
+                  {
+                    "option": "Imagen 3"
+                  },
+                  {
+                    "option": "Imagen 3 Fast"
+                  },
+                  {
+                    "option": "Imagen 4"
+                  },
+                  {
+                    "option": "Imagen 4 Ultra"
+                  },
+                  {
+                    "option": "Leonardo Phoenix"
+                  },
+                  {
+                    "option": "Luma Photon"
+                  },
+                  {
+                    "option": "Luma Photon Flash"
+                  },
+                  {
+                    "option": "Recraft"
+                  },
+                  {
+                    "option": "Recraft Vector Illustration"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "AI Image Style",
+              "placeholder": "e.g., photorealistic, minimal, watercolor, line art"
+            },
+            {
+              "fieldLabel": "Export Format",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "None (Gamma Link Only)"
+                  },
+                  {
+                    "option": "PDF"
+                  },
+                  {
+                    "option": "PowerPoint (PPTX)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "62d6afdd-597e-445c-8993-3e0aba7e367e",
+      "name": "n8n Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [176, -32],
+      "webhookId": "presentation-builder-gamma"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get form data\nconst formData = $input.first().json;\n\n// Map presentation type to appropriate settings\nconst presentationTypeMap = {\n  'Analysis Presentation': {\n    tone: 'analytical, objective, data-driven',\n    instructions: 'Focus on data insights, trends, and key findings. Include clear visualizations and metrics.',\n    textMode: 'generate'\n  },\n  'Proposal Presentation': {\n    tone: 'persuasive, professional, solution-oriented',\n    instructions: 'Structure as problem-solution-benefits. Include clear value propositions and call to action.',\n    textMode: 'generate'\n  },\n  'Summary Presentation': {\n    tone: 'concise, clear, informative',\n    instructions: 'Highlight key points and main takeaways. Keep content brief and impactful.',\n    textMode: 'condense'\n  },\n  'Educational Presentation': {\n    tone: 'instructional, clear, engaging',\n    instructions: 'Structure content for learning. Include examples and explanations.',\n    textMode: 'generate'\n  },\n  'Business Report': {\n    tone: 'professional, detailed, factual',\n    instructions: 'Include executive summary, detailed findings, and recommendations.',\n    textMode: 'generate'\n  },\n  'Project Update': {\n    tone: 'informative, progress-focused',\n    instructions: 'Highlight milestones, current status, next steps, and any blockers.',\n    textMode: 'generate'\n  },\n  'Sales Pitch': {\n    tone: 'persuasive, enthusiastic, benefit-focused',\n    instructions: 'Focus on customer benefits, ROI, and competitive advantages.',\n    textMode: 'generate'\n  },\n  'Training Material': {\n    tone: 'educational, step-by-step, practical',\n    instructions: 'Include clear instructions, examples, and practice exercises.',\n    textMode: 'generate'\n  }\n};\n\n// Get presentation type settings\nconst typeSettings = presentationTypeMap[formData['Presentation Type']] || presentationTypeMap['Summary Presentation'];\n\n// Build additional instructions\nlet additionalInstructions = typeSettings.instructions;\nif (formData['Presentation Instructions']) {\n  additionalInstructions = formData['Presentation Instructions'] + '. ' + additionalInstructions;\n}\n\n// Map theme names - all valid Gamma themes\nconst themeMap = {\n  'Pearl': 'Pearl',\n  'Vortex': 'Vortex',\n  'Chisel': 'Chisel',\n  'Stardust': 'Stardust',\n  'Seafoam': 'Seafoam',\n  'Nebulae': 'Nebulae',\n  'Creme': 'Creme',\n  'Lux': 'Lux',\n  'Consultant': 'Consultant',\n  'Marine': 'Marine',\n  'Elysia': 'Elysia',\n  'Prism': 'Prism',\n  'Lunaria': 'Lunaria',\n  'Night Sky': 'Night Sky',\n  'Commons': 'Commons',\n  'Gamma': 'Gamma',\n  'Gamma Dark': 'Gamma Dark',\n  'Dialogue': 'Dialogue',\n  'Founder': 'Founder',\n  'Lavender': 'Lavender',\n  'Indigo': 'Indigo',\n  'Howlite': 'Howlite',\n  'Onyx': 'Onyx',\n  'Atmosphere': 'Atmosphere',\n  'Blueberry': 'Blueberry',\n  'Kraft': 'Kraft',\n  'Mystique': 'Mystique',\n  'Petrol': 'Petrol',\n  'Blues': 'Blues',\n  'Peach': 'Peach',\n  'Incandescent': 'Incandescent',\n  'Oatmeal': 'Oatmeal',\n  'Sanguine': 'Sanguine',\n  'Sage': 'Sage',\n  'Verdigris': 'Verdigris',\n  'Ash': 'Ash',\n  'Coal': 'Coal',\n  'Flamingo': 'Flamingo',\n  'Canaveral': 'Canaveral',\n  'Oasis': 'Oasis',\n  'Fluo': 'Fluo',\n  'Finesse': 'Finesse',\n  'Electric': 'Electric',\n  'Zephyr': 'Zephyr',\n  'Chimney Smoke': 'Chimney Smoke',\n  'Chimney Dust': 'Chimney Dust',\n  'Icebreaker': 'Icebreaker',\n  'Blue Steel': 'Blue Steel',\n  'Daydream': 'Daydream',\n  'Orbit': 'Orbit'\n};\n\n// Map image sources\nconst imageSourceMap = {\n  'AI Generated Images': 'aiGenerated',\n  'Stock Photos (Unsplash)': 'unsplash',\n  'Icons (Pictographic)': 'pictographic',\n  'GIFs (Giphy)': 'giphy',\n  'Web Images - All': 'webAllImages',\n  'Web Images - Free to Use': 'webFreeToUse',\n  'Web Images - Free Commercial Use': 'webFreeToUseCommercially',\n  'No Images': 'noImages',\n  'Placeholders Only': 'placeholder'\n};\n\n// Map AI image models\nconst aiModelMap = {\n  'Auto-Select (Let Gamma Choose)': null,\n  'Dall E 3': 'dall-e-3',\n  'Flux Fast 1.1': 'flux-1-quick',\n  'Flux Pro': 'flux-1-pro',\n  'Flux Ultra': 'flux-1-ultra',\n  'Flux Kontext Fast': 'flux-kontext-fast',\n  'Flux Kontext Pro': 'flux-kontext-pro',\n  'Flux Kontext Max': 'flux-kontext-max',\n  'GPT Image': 'gpt-image-1-medium',\n  'Ideogram 3': 'ideogram-v3',\n  'Ideogram 3 Turbo': 'ideogram-v3-turbo',\n  'Imagen 3': 'imagen-3-pro',\n  'Imagen 3 Fast': 'imagen-3-flash',\n  'Imagen 4': 'imagen-4-pro',\n  'Imagen 4 Ultra': 'imagen-4-ultra',\n  'Leonardo Phoenix': 'leonardo-phoenix',\n  'Luma Photon': 'luma-photon-1',\n  'Luma Photon Flash': 'luma-photon-flash-1',\n  'Recraft': 'recraft-v3',\n  'Recraft Vector Illustration': 'recraft-v3-svg'\n};\n\n// Map content detail levels\nconst detailMap = {\n  'Brief': 'brief',\n  'Medium': 'medium',\n  'Detailed': 'detailed',\n  'Extensive': 'extensive'\n};\n\n// Map export formats\nconst exportMap = {\n  'PDF': 'pdf',\n  'PowerPoint (PPTX)': 'pptx',\n  'None (Gamma Link Only)': null\n};\n\n// Build tone\nlet tone = formData['Tone'] ? formData['Tone'].toLowerCase() : '';\nif (typeSettings.tone) {\n  tone = tone ? `${tone}, ${typeSettings.tone}` : typeSettings.tone;\n}\n\n// Build the Gamma API request\nconst gammaRequest = {\n  inputText: formData['Transcript'],\n  textMode: typeSettings.textMode,\n  format: 'presentation',\n  additionalInstructions: additionalInstructions.substring(0, 500) // Character limit\n};\n\n// Add optional parameters\nif (formData['Number of Slides']) {\n  gammaRequest.numCards = Math.min(Math.max(parseInt(formData['Number of Slides']), 1), 60);\n}\n\nif (formData['Theme']) {\n  gammaRequest.themeName = themeMap[formData['Theme']] || 'Professional';\n}\n\nif (exportMap[formData['Export Format']]) {\n  gammaRequest.exportAs = exportMap[formData['Export Format']];\n}\n\n// Add text options\ngammaRequest.textOptions = {\n  amount: detailMap[formData['Content Detail Level']] || 'medium',\n  language: 'en'\n};\n\nif (tone) {\n  gammaRequest.textOptions.tone = tone;\n}\n\nif (formData['Target Audience']) {\n  gammaRequest.textOptions.audience = formData['Target Audience'];\n}\n\n// Add image options\nconst imageSource = imageSourceMap[formData['Image Source']] || 'aiGenerated';\ngammaRequest.imageOptions = {\n  source: imageSource\n};\n\nif (imageSource === 'aiGenerated') {\n  // Set the AI model if specified\n  const selectedModel = aiModelMap[formData['AI Image Model']];\n  if (selectedModel) {\n    gammaRequest.imageOptions.model = selectedModel;\n  }\n  // If 'Auto-Select' or not specified, let Gamma choose\n  \n  // Set the image style\n  if (formData['AI Image Style']) {\n    gammaRequest.imageOptions.style = formData['AI Image Style'];\n  } else {\n    gammaRequest.imageOptions.style = 'photorealistic, professional';\n  }\n}\n\n// Add card options\ngammaRequest.cardOptions = {\n  dimensions: 'fluid'\n};\n\n// Add sharing options\ngammaRequest.sharingOptions = {\n  workspaceAccess: 'view',\n  externalAccess: 'noAccess'\n};\n\nreturn [\n  {\n    json: {\n      gammaRequest: gammaRequest,\n      originalFormData: formData\n    }\n  }\n];"
+      },
+      "id": "e6ddda56-e43f-4984-813b-abd785bae2a8",
+      "name": "Process Form Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, -32]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public-api.gamma.app/v0.2/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "sk-gamma-segTgr75tZPcIPjIi2pqpcvV8ZVZs7Dnnjj1jX69HUY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.gammaRequest) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "f3d60d7d-4861-4a40-82f6-123f10f33469",
+      "name": "Call Gamma API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [624, -32],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst response = items[0].json;\n\n// Check if the API call was successful (201 = Created, 200 = OK)\nif (response.statusCode && response.statusCode !== 200 && response.statusCode !== 201) {\n  // Handle error\n  const errorMessage = response.body?.error || response.body?.message || 'Failed to generate presentation';\n  \n  return [\n    {\n      json: {\n        success: false,\n        error: errorMessage,\n        statusCode: response.statusCode,\n        originalRequest: items[0].json.originalFormData\n      }\n    }\n  ];\n}\n\n// Extract the presentation details from the response\nconst presentationData = response.body || response;\n\n// Build success response\nconst result = {\n  success: true,\n  presentationId: presentationData.generationId || presentationData.id,\n  presentationUrl: presentationData.url || presentationData.viewUrl || `https://gamma.app/docs/${presentationData.generationId || presentationData.id}`,\n  editUrl: presentationData.editUrl,\n  status: presentationData.status || 'processing',\n  createdAt: presentationData.createdAt || new Date().toISOString(),\n  originalRequest: items[0].json.originalFormData\n};\n\n// Add message about generation status\nif (presentationData.generationId) {\n  result.message = 'Presentation is being generated. The URL will be active once processing is complete.';\n}\n\n// Add export URLs if available\nif (presentationData.exportUrl) {\n  result.exportUrl = presentationData.exportUrl;\n}\n\nif (presentationData.pdfUrl) {\n  result.pdfUrl = presentationData.pdfUrl;\n}\n\nif (presentationData.pptxUrl) {\n  result.pptxUrl = presentationData.pptxUrl;\n}\n\n// Add any additional metadata\nif (presentationData.metadata) {\n  result.metadata = presentationData.metadata;\n}\n\nreturn [\n  {\n    json: result\n  }\n];"
+      },
+      "id": "64f764cf-1493-4b80-b268-530d4ac57e7d",
+      "name": "Process Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [848, -32]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "n8n Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process Form Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Form Data": {
+      "main": [
+        [
+          {
+            "node": "Call Gamma API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Gamma API": {
+      "main": [
+        [
+          {
+            "node": "Process Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "204dc499-4e74-482d-ab0a-90cedde2d935",
+  "meta": {
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "HwcvzUKbqFKRmR5S",
+  "tags": []
+}
