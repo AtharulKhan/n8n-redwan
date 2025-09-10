@@ -1,0 +1,238 @@
+{
+  "name": "Webhook to Gamma Presentation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gamma-presentation-webhook",
+        "options": {}
+      },
+      "id": "webhook-receiver",
+      "name": "Transcript Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -900,
+        400
+      ],
+      "webhookId": "gamma-presentation-webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are an expert presentation architect for Gamma AI. Analyze the provided transcript and create a comprehensive presentation plan.\n\nROLE:\n- Extract key topics, themes, and structure from transcripts\n- Generate optimal Gamma API parameters for professional presentations\n- Determine appropriate presentation type, styling, and content organization\n\nCONTEXT:\nYou receive a webhook with a transcript that needs to be converted into a presentation.\nInput: {{ JSON.stringify($json) }}\n\nANALYSIS REQUIREMENTS:\n\n1. **Content Analysis**:\n   - Identify the main topic and purpose\n   - Extract key points and arguments\n   - Determine logical flow and structure\n   - Identify any data, statistics, or examples\n\n2. **Presentation Type Classification**:\n   Determine which type best fits:\n   - \"analysis\" = Data-driven insights, metrics, findings\n   - \"proposal\" = Solutions, recommendations, call-to-action\n   - \"summary\" = Overview, key takeaways, condensed information\n   - \"educational\" = Teaching, explaining, step-by-step\n   - \"report\" = Detailed findings, comprehensive coverage\n   - \"update\" = Progress, status, next steps\n   - \"pitch\" = Selling, persuading, benefits-focused\n   - \"training\" = Instructions, procedures, skill-building\n\n3. **Style Parameters**:\n   - **Tone**: Based on content (professional, casual, formal, inspiring, educational, persuasive)\n   - **Audience**: Infer from language level and content\n   - **Detail Level**: brief/medium/detailed/extensive based on transcript depth\n   - **Visual Style**: Determine if formal, creative, minimal, or data-heavy\n\n4. **Content Organization**:\n   - Break content into logical sections (5-15 cards)\n   - Create compelling titles for each section\n   - Add speaker notes from relevant transcript details\n   - Structure with clear introduction, body, conclusion\n\n5. **Visual Recommendations**:\n   - Image style based on topic (photorealistic, illustrative, diagrammatic, minimal)\n   - Theme selection based on formality and topic\n   - Suggest specific visuals for key concepts\n\nOUTPUT FORMAT (STRICT JSON):\nReturn ONLY valid JSON with these exact fields:\n{\n  \"presentation\": {\n    \"title\": \"Compelling presentation title (max 100 chars)\",\n    \"inputText\": \"Refined and structured content from transcript with \\n---\\n section breaks\",\n    \"presentationType\": \"analysis|proposal|summary|educational|report|update|pitch|training\",\n    \"additionalInstructions\": \"Specific instructions for Gamma (max 500 chars)\",\n    \"numCards\": 10,\n    \"theme\": \"Pearl|Vortex|Chisel|Stardust|Seafoam|Nebulae|Creme|Lux|Consultant|Marine|Elysia|Prism|Lunaria|Night Sky|Commons|Gamma|Gamma Dark|Dialogue|Founder|Lavender|Indigo|Howlite|Onyx|Atmosphere|Blueberry|Kraft|Mystique|Petrol|Blues|Peach|Incandescent|Oatmeal|Sanguine|Sage|Verdigris|Ash|Coal|Flamingo|Canaveral|Oasis|Fluo|Finesse|Electric|Zephyr|Chimney Smoke|Chimney Dust|Icebreaker|Blue Steel|Daydream|Orbit\",\n    \"textMode\": \"generate|condense|preserve\",\n    \"tone\": \"Tone description (e.g., professional, inspiring)\",\n    \"audience\": \"Target audience description\",\n    \"detailLevel\": \"brief|medium|detailed|extensive\",\n    \"imageStyle\": \"photorealistic|minimal|watercolor|line art|3d render|illustration|diagram|abstract\",\n    \"imageModel\": \"dall-e-3|flux-1-pro|imagen-4-pro|leonardo-phoenix|recraft-v3\",\n    \"exportFormat\": \"pdf|pptx|none\",\n    \"metadata\": {\n      \"extractedTopics\": [\"topic1\", \"topic2\"],\n      \"estimatedDuration\": \"X minutes\",\n      \"complexity\": \"basic|intermediate|advanced\"\n    }\n  }\n}\n\nCRITICAL RULES:\n1. The inputText MUST be well-structured with \\n---\\n breaks between major sections\n2. Choose theme that matches the content's formality and purpose\n3. Select appropriate imageModel based on content type\n4. Ensure numCards is between 5-20 based on content depth\n5. textMode should be \"generate\" for brief transcripts, \"condense\" for lengthy ones\n6. ALWAYS return valid JSON only, no additional text",
+        "hasOutputParser": true
+      },
+      "id": "ai-processor",
+      "name": "Extract Presentation Structure",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "gpt5-model",
+      "name": "GPT-5 Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -550,
+        600
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "YourOpenRouterCredentialId",
+          "name": "OpenRouter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"presentation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"title\": { \"type\": \"string\", \"maxLength\": 100 },\n        \"inputText\": { \"type\": \"string\" },\n        \"presentationType\": { \n          \"type\": \"string\", \n          \"enum\": [\"analysis\", \"proposal\", \"summary\", \"educational\", \"report\", \"update\", \"pitch\", \"training\"] \n        },\n        \"additionalInstructions\": { \"type\": \"string\", \"maxLength\": 500 },\n        \"numCards\": { \"type\": \"integer\", \"minimum\": 5, \"maximum\": 20 },\n        \"theme\": { \"type\": \"string\" },\n        \"textMode\": { \n          \"type\": \"string\", \n          \"enum\": [\"generate\", \"condense\", \"preserve\"] \n        },\n        \"tone\": { \"type\": \"string\" },\n        \"audience\": { \"type\": \"string\" },\n        \"detailLevel\": { \n          \"type\": \"string\", \n          \"enum\": [\"brief\", \"medium\", \"detailed\", \"extensive\"] \n        },\n        \"imageStyle\": { \"type\": \"string\" },\n        \"imageModel\": { \"type\": \"string\" },\n        \"exportFormat\": { \n          \"type\": \"string\", \n          \"enum\": [\"pdf\", \"pptx\", \"none\"] \n        },\n        \"metadata\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"extractedTopics\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n            \"estimatedDuration\": { \"type\": \"string\" },\n            \"complexity\": { \n              \"type\": \"string\", \n              \"enum\": [\"basic\", \"intermediate\", \"advanced\"] \n            }\n          }\n        }\n      },\n      \"required\": [\"title\", \"inputText\", \"presentationType\", \"numCards\", \"theme\", \"textMode\"]\n    }\n  },\n  \"required\": [\"presentation\"]\n}",
+        "autoFix": true
+      },
+      "id": "output-parser",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -400,
+        750
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process AI output and prepare Gamma API request\nconst input = $input.first()?.json || {};\nconst presentation = input.output?.presentation || input.presentation || {};\n\nif (!presentation.inputText) {\n  throw new Error('No presentation data extracted from transcript');\n}\n\n// Map presentation types to Gamma settings\nconst typeSettings = {\n  'analysis': {\n    tone: 'analytical, objective, data-driven',\n    instructions: 'Focus on data insights, trends, and key findings. Include clear visualizations and metrics.'\n  },\n  'proposal': {\n    tone: 'persuasive, professional, solution-oriented',\n    instructions: 'Structure as problem-solution-benefits. Include clear value propositions and call to action.'\n  },\n  'summary': {\n    tone: 'concise, clear, informative',\n    instructions: 'Highlight key points and main takeaways. Keep content brief and impactful.'\n  },\n  'educational': {\n    tone: 'instructional, clear, engaging',\n    instructions: 'Structure content for learning. Include examples and explanations.'\n  },\n  'report': {\n    tone: 'professional, detailed, factual',\n    instructions: 'Include executive summary, detailed findings, and recommendations.'\n  },\n  'update': {\n    tone: 'informative, progress-focused',\n    instructions: 'Highlight milestones, current status, next steps, and any blockers.'\n  },\n  'pitch': {\n    tone: 'persuasive, enthusiastic, benefit-focused',\n    instructions: 'Focus on customer benefits, ROI, and competitive advantages.'\n  },\n  'training': {\n    tone: 'educational, step-by-step, practical',\n    instructions: 'Include clear instructions, examples, and practice exercises.'\n  }\n};\n\n// Map AI image models to Gamma API format\nconst imageModelMap = {\n  'dall-e-3': 'dall-e-3',\n  'flux-1-pro': 'flux-1-pro',\n  'imagen-4-pro': 'imagen-4-pro',\n  'leonardo-phoenix': 'leonardo-phoenix',\n  'recraft-v3': 'recraft-v3'\n};\n\n// Get type-specific settings\nconst typeConfig = typeSettings[presentation.presentationType] || typeSettings['summary'];\n\n// Combine instructions\nlet instructions = presentation.additionalInstructions || '';\nif (typeConfig.instructions) {\n  instructions = instructions ? \n    `${instructions}. ${typeConfig.instructions}` : \n    typeConfig.instructions;\n}\ninstructions = instructions.substring(0, 500);\n\n// Combine tone\nlet tone = presentation.tone || '';\nif (typeConfig.tone) {\n  tone = tone ? `${tone}, ${typeConfig.tone}` : typeConfig.tone;\n}\n\n// Build Gamma API request\nconst gammaRequest = {\n  inputText: presentation.inputText,\n  textMode: presentation.textMode || 'generate',\n  format: 'presentation',\n  themeName: presentation.theme || 'Consultant',\n  numCards: presentation.numCards || 10,\n  additionalInstructions: instructions\n};\n\n// Add text options\ngammaRequest.textOptions = {\n  amount: presentation.detailLevel || 'medium',\n  language: 'en'\n};\n\nif (tone) {\n  gammaRequest.textOptions.tone = tone;\n}\n\nif (presentation.audience) {\n  gammaRequest.textOptions.audience = presentation.audience;\n}\n\n// Add image options\ngammaRequest.imageOptions = {\n  source: 'aiGenerated'\n};\n\nif (presentation.imageModel && imageModelMap[presentation.imageModel]) {\n  gammaRequest.imageOptions.model = imageModelMap[presentation.imageModel];\n}\n\nif (presentation.imageStyle) {\n  gammaRequest.imageOptions.style = presentation.imageStyle;\n}\n\n// Add export format if specified\nif (presentation.exportFormat && presentation.exportFormat !== 'none') {\n  gammaRequest.exportAs = presentation.exportFormat;\n}\n\n// Add card options\ngammaRequest.cardOptions = {\n  dimensions: 'fluid'\n};\n\n// Add sharing options\ngammaRequest.sharingOptions = {\n  workspaceAccess: 'view',\n  externalAccess: 'noAccess'\n};\n\nreturn [{\n  json: {\n    gammaRequest: gammaRequest,\n    metadata: {\n      title: presentation.title,\n      presentationType: presentation.presentationType,\n      extractedTopics: presentation.metadata?.extractedTopics || [],\n      estimatedDuration: presentation.metadata?.estimatedDuration || 'Unknown',\n      complexity: presentation.metadata?.complexity || 'intermediate',\n      processedAt: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "prepare-gamma-request",
+      "name": "Prepare Gamma Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public-api.gamma.app/v0.2/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "sk-gamma-segTgr75tZPcIPjIi2pqpcvV8ZVZs7Dnnjj1jX69HUY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.gammaRequest) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "gamma-api-call",
+      "name": "Create Gamma Presentation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        200,
+        400
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gamma-api-auth",
+          "name": "Gamma API Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Gamma API response\nconst response = $input.first()?.json || {};\nconst metadata = $input.all()[0]?.json?.metadata || {};\n\n// Check response status\nif (response.statusCode !== 200 && response.statusCode !== 201) {\n  return [{\n    json: {\n      success: false,\n      error: response.body?.error || response.body?.message || 'Failed to generate presentation',\n      statusCode: response.statusCode,\n      metadata: metadata\n    }\n  }];\n}\n\n// Extract presentation data\nconst presentationData = response.body || response;\n\n// Build success response\nconst result = {\n  success: true,\n  presentationId: presentationData.generationId || presentationData.id,\n  presentationUrl: presentationData.url || `https://gamma.app/docs/${presentationData.generationId || presentationData.id}`,\n  editUrl: presentationData.editUrl,\n  status: presentationData.status || 'processing',\n  createdAt: presentationData.createdAt || new Date().toISOString(),\n  metadata: metadata\n};\n\n// Add export URLs if available\nif (presentationData.pdfUrl) {\n  result.pdfUrl = presentationData.pdfUrl;\n}\n\nif (presentationData.pptxUrl) {\n  result.pptxUrl = presentationData.pptxUrl;\n}\n\n// Add processing message\nif (presentationData.generationId) {\n  result.message = 'Presentation is being generated. The URL will be active once processing is complete.';\n}\n\nreturn [{\n  json: result\n}];"
+      },
+      "id": "process-response",
+      "name": "Process Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Webhook to Gamma Presentation Workflow\n\n### Overview\nThis workflow automatically converts transcripts into professional Gamma presentations using AI.\n\n### Features\n- **AI-Powered Analysis**: Uses GPT-5 to analyze transcript content\n- **Smart Classification**: Automatically determines presentation type\n- **Structured Output**: Ensures valid JSON for reliable processing\n- **Dynamic Styling**: Selects appropriate themes and visuals\n- **Complete API Integration**: Full Gamma API parameter support\n\n### Webhook Format\nSend POST request to webhook URL with:\n```json\n{\n  \"transcript\": \"Your meeting or content transcript here...\"\n}\n```\n\n### Response Format\n```json\n{\n  \"success\": true,\n  \"presentationId\": \"abc123\",\n  \"presentationUrl\": \"https://gamma.app/docs/abc123\",\n  \"metadata\": {\n    \"title\": \"Presentation Title\",\n    \"presentationType\": \"analysis\",\n    \"extractedTopics\": [\"topic1\", \"topic2\"],\n    \"complexity\": \"intermediate\"\n  }\n}\n```\n\n### Configuration\n1. **OpenRouter API**: Add your API key to GPT-5 Model node\n2. **Gamma API Key**: Already configured in HTTP Request node\n3. **Webhook URL**: Use the production URL from webhook node\n\n### Presentation Types\n- **Analysis**: Data-driven insights\n- **Proposal**: Solution-focused\n- **Summary**: Key takeaways\n- **Educational**: Teaching content\n- **Report**: Comprehensive findings\n- **Update**: Progress reports\n- **Pitch**: Sales/persuasion\n- **Training**: Instructional material",
+        "height": 850,
+        "width": 450,
+        "color": 5
+      },
+      "id": "documentation",
+      "name": "Workflow Documentation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1150,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Transcript Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Presentation Structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Presentation Structure": {
+      "main": [
+        [
+          {
+            "node": "Prepare Gamma Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-5 Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Presentation Structure",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Presentation Structure",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Gamma Request": {
+      "main": [
+        [
+          {
+            "node": "Create Gamma Presentation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gamma Presentation": {
+      "main": [
+        [
+          {
+            "node": "Process Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "webhook-gamma-v1",
+  "meta": {
+    "instanceId": "webhook-to-gamma-presentation"
+  },
+  "id": "webhook-gamma-presentation",
+  "tags": []
+}
