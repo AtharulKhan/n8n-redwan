@@ -1,5 +1,5 @@
 {
-  "name": "Weekly Client Updates | Every 10 Days Emails | BFD/SimplifAI",
+  "name": "Weekly Client Updates | Bi-Weekly Emails | BFD/SimplifAI",
   "nodes": [
     {
       "parameters": {
@@ -511,8 +511,10 @@
         "rule": {
           "interval": [
             {
-              "field": "cronExpression",
-              "expression": "0 10 10,20,29 * *"
+              "field": "weeks",
+              "weeksInterval": 2,
+              "triggerAtDay": [5],
+              "triggerAtHour": 9
             }
           ]
         }
@@ -1013,7 +1015,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "295aafd8-2047-474c-9767-b0a08a3f2466",
+  "versionId": "8adc783a-c5d9-43ab-b5ed-dd2e57c91147",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
