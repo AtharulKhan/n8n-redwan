@@ -1,0 +1,409 @@
+{
+  "name": "Fireflies Meeting Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fireflies-webhook-transcript",
+        "options": {}
+      },
+      "name": "Fireflies Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-944, 48],
+      "id": "1f3c9718-6623-4707-a809-792272c24c7e",
+      "webhookId": "{{$guid}}",
+      "notes": "Receives webhook from Fireflies when transcript is complete"
+    },
+    {
+      "parameters": {
+        "transcriptId": "={{ $json.body.meetingId }}"
+      },
+      "type": "@firefliesai/n8n-nodes-fireflies.fireflies",
+      "typeVersion": 1,
+      "position": [-688, -160],
+      "id": "a6a7143d-80f4-4cac-999b-6829bb65f76e",
+      "name": "Get a transcript",
+      "credentials": {
+        "firefliesApi": {
+          "id": "hQVQc3VT7PifKJKb",
+          "name": "Fireflies account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getTranscriptSummary",
+        "transcriptId": "={{ $json.body.meetingId }}"
+      },
+      "type": "@firefliesai/n8n-nodes-fireflies.fireflies",
+      "typeVersion": 1,
+      "position": [-688, 48],
+      "id": "daf3d901-02ae-4fca-be9c-8ca07babd34e",
+      "name": "Get a summary of a transcript",
+      "credentials": {
+        "firefliesApi": {
+          "id": "hQVQc3VT7PifKJKb",
+          "name": "Fireflies account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-384, 32],
+      "id": "422d8914-55b9-4b88-ad7a-c66ae8bdbb3c",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Tp7WYIIEWo-_gfiysb-4JTAWEt8VGKRKXQFCRpkDipY",
+          "mode": "list",
+          "cachedResultName": "0. This Weeks Calendar Events",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tp7WYIIEWo-_gfiysb-4JTAWEt8VGKRKXQFCRpkDipY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 627700515,
+          "mode": "list",
+          "cachedResultName": "This Week Events",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Tp7WYIIEWo-_gfiysb-4JTAWEt8VGKRKXQFCRpkDipY/edit#gid=627700515"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-688, 288],
+      "id": "2366dc77-c04a-4a6b-955c-a4b9139a2460",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XTfYeEotsbhc5dxV",
+          "name": "Google Sheets account - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.foundMeetingDocId }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"requests\": $json.transcriptRequests } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [80, -112],
+      "id": "e4a2837f-de8c-48db-93d8-1d59e7237807",
+      "name": "Post Transcript",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "IO0v12gY17SD37Iu",
+          "name": "Google Docs account - Redwan"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $json.foundMeetingDocId }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"requests\": $json.notesRequests } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [80, 208],
+      "id": "fff395a5-554e-4f80-913f-98bb538cc0db",
+      "name": "Post Meeting Notes",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "IO0v12gY17SD37Iu",
+          "name": "Google Docs account - Redwan"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ======================================================================\n// Format Transcript Data (PLAIN TEXT Notes + Correct Transcript)\n// Returns: { foundMeetingDocId, notesRequests, transcriptRequests }\n// ======================================================================\n\nconst clone = (obj) => JSON.parse(JSON.stringify(obj || {}));\nfunction insertTextReq(tabId, text, index = 1) {\n  return { insertText: { text, location: { tabId, index } } };\n}\n\n// -------------------------- Parse helpers -----------------------------\nfunction parseActionItems(md) {\n  if (!md || typeof md !== 'string') return {};\n  const lines = md.split('\\n').map((l) => l.trim());\n  const result = {};\n  let current = null;\n  const headerRegex = /^\\*\\*(.+?)\\*\\*$/; // **Name**\n  for (const line of lines) {\n    if (!line) continue;\n    const m = line.match(headerRegex);\n    if (m) {\n      current = m[1].trim();\n      if (!result[current]) result[current] = [];\n      continue;\n    }\n    if (current) result[current].push(line);\n  }\n  return result;\n}\n\nfunction parseShorthandBullets(sb) {\n  if (!sb || typeof sb !== 'string') return [];\n  const lines = sb.split('\\n');\n  const sections = [];\n  let current = null;\n  for (const raw of lines) {\n    const line = raw.trim();\n    if (!line) continue;\n    const headingMatch = line.match(/^[^\\w\\s]*\\s*\\*\\*(.+?)\\*\\*/);\n    if (headingMatch) {\n      current = { title: headingMatch[1].trim(), items: [] };\n      sections.push(current);\n      continue;\n    }\n    if (!current) continue;\n    current.items.push(line);\n  }\n  return sections;\n}\n\nfunction mapSectionsToDesiredHeadings(sections) {\n  const buckets = {\n    dev: { title: 'Development Status & Technical Updates', items: [] },\n    modelCost: { title: 'Model Selection & Cost Analysis', items: [] },\n    testQA: { title: 'Testing Strategy & Quality Assurance', items: [] },\n    deploy: { title: 'Deployment Timeline & Client Handover', items: [] },\n  };\n  const lc = (s) => s.toLowerCase();\n  for (const sec of sections) {\n    for (const line of sec.items) {\n      const l = lc(line);\n      if (l.includes('cost') || l.includes('cad') || l.includes('hosting') ||\n          l.includes('vercel') || l.includes('netlify') ||\n          l.includes('gpt-5') || l.includes('gemini')) {\n        buckets.modelCost.items.push(line);\n      } else if (l.includes('testing') || l.includes('gdpr') ||\n                 l.includes('industry') || l.includes('quality') ||\n                 l.includes('framework') || l.includes('content-driven')) {\n        buckets.testQA.items.push(line);\n      } else if (l.includes('client') || l.includes('delivery') ||\n                 l.includes('midweek') || l.includes('weekend') ||\n                 l.includes('timeline') || l.includes('handover')) {\n        buckets.deploy.items.push(line);\n      } else {\n        buckets.dev.items.push(line);\n      }\n    }\n  }\n  return Object.values(buckets).filter((b) => b.items.length > 0);\n}\n\n// ----------------------------- Builders -------------------------------\nfunction bullets(lines) {\n  return (lines || [])\n    .map((s) => (s || '').trim())\n    .filter(Boolean)\n    .map((s) => `- ${s}`)\n    .join('\\n') + (lines.length ? '\\n' : '');\n}\nfunction heading(text) {\n  return text ? `${text}\\n` : '';\n}\nfunction sep() {\n  return '---\\n';\n}\n\n// ========================= Part 0: Split inputs ========================\nconst allItems = $input.all();\nlet transcriptData = null;\nlet summaryData = null;\nconst calendarEvents = [];\n\nfor (const item of allItems) {\n  const j = item.json || {};\n  if (j.data && j.data.transcript_url) {\n    transcriptData = j.data;\n    continue;\n  }\n  if (j.success === true && j.data && j.data.summary) {\n    summaryData = clone(j.data.summary);\n    continue;\n  }\n  calendarEvents.push(j);\n}\nif (!transcriptData) throw new Error('Transcript data not found.');\nif (!summaryData) summaryData = {};\n\n// ================== Part 1: Find target Doc + tabs =====================\n// Robust selector: match by normalized title + nearest date to transcript\n\nfunction normalizeTitle(s) {\n  return String(s || \"\")\n    .toLowerCase()\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\nfunction parseSheetDate(dstr) {\n  // \"2025-09-12 (Fri)\" -> Date at local midnight\n  if (!dstr) return null;\n  const m = String(dstr).match(/^(\\d{4}-\\d{2}-\\d{2})/);\n  if (!m) return null;\n  const [y, mo, d] = m[1].split(\"-\").map(Number);\n  // Use Date.UTC to avoid TZ drift; compare in days later.\n  return new Date(Date.UTC(y, mo - 1, d, 0, 0, 0));\n}\n\nfunction parseTitleDate(title) {\n  // \"2025-09-12 | Something | Client_\" -> take leading ISO date if present\n  if (!title) return null;\n  const m = String(title).match(/^(\\d{4}-\\d{2}-\\d{2})\\b/);\n  if (!m) return null;\n  const [y, mo, d] = m[1].split(\"-\").map(Number);\n  return new Date(Date.UTC(y, mo - 1, d, 0, 0, 0));\n}\n\nfunction daysBetween(a, b) {\n  if (!a || !b) return Number.POSITIVE_INFINITY;\n  const ms = Math.abs(a.getTime() - b.getTime());\n  return Math.floor(ms / 86400000); // 24*60*60*1000\n}\n\nconst meetingTitle = transcriptData.title || \"Meeting\";\nconst ntMeeting = normalizeTitle(meetingTitle);\n\n// Use transcript date if provided; else treat \"now\"\nconst meetingDateUTC = (() => {\n  if (transcriptData.date) {\n    const d = new Date(transcriptData.date);\n    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));\n  }\n  const now = new Date();\n  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));\n})();\n\nlet foundMeetingDocId = null;\nlet meetingNotesTabId = null;\nlet transcriptTabId = null;\n\n// Score candidates; lower is better\n// Structure: {score, row, docId, notesTab, transcriptTab}\nconst candidates = [];\n\nfor (const event of calendarEvents) {\n  const docUrl = event[\"Meeting Doc URL\"] || \"\";\n  const isGoogleDoc = docUrl.includes(\"/document/d/\");\n  if (!isGoogleDoc) continue;\n\n  const evTitle = normalizeTitle(event[\"Event Title\"]);\n  const hasClientInDocTitle = (event[\"Meeting Doc Title\"] || \"\").includes(\"Client_\");\n  if (!hasClientInDocTitle) continue;\n\n  // Title similarity: require symmetric containment after normalization\n  const titleMatch =\n    evTitle && (evTitle.includes(ntMeeting) || ntMeeting.includes(evTitle));\n  if (!titleMatch) continue;\n\n  // Prefer exact same day, else nearest by days\n  const sheetDate = parseSheetDate(event[\"Date\"]);\n  const titleDate = parseTitleDate(event[\"Meeting Doc Title\"]);\n  // Choose the \"best\" available event date to compare\n  const evDate = sheetDate || titleDate;\n  const dateDist = daysBetween(evDate, meetingDateUTC);\n\n  // Penalize events without a usable date (very large distance)\n  const baseScore = Number.isFinite(dateDist) ? dateDist : 9999;\n\n  // Small tiebreakers:\n  //  - If both titles are equal after normalization, nudge score lower\n  const exactTitleEq = evTitle === ntMeeting ? -0.25 : 0;\n  //  - Slightly prefer rows whose sheet date exists over title-derived date\n  const sheetDateBonus = sheetDate ? -0.1 : 0;\n\n  const score = baseScore + exactTitleEq + sheetDateBonus;\n\n  // Collect tab ids\n  let notesId = null, transId = null;\n  for (let i = 1; i <= 12; i++) {\n    const tTitle = String(event[`Tab ${i} Title`] || \"\").toLowerCase();\n    const tId = event[`Tab ${i} ID`];\n    if (!tTitle || !tId) continue;\n    if (tTitle.includes(\"meeting\")) notesId = tId;\n    if (tTitle.includes(\"transcript\")) transId = tId;\n  }\n\n  // Extract docId from URL or provided id\n  const docId = event[\"Meeting Doc ID\"] ||\n    (docUrl.match(/\\/document\\/d\\/([^/]+)/)?.[1] ?? null);\n\n  if (docId) {\n    candidates.push({\n      score,\n      row: event,\n      docId,\n      notesTab: notesId,\n      transcriptTab: transId,\n    });\n  }\n}\n\n// Pick best candidate (lowest score)\nif (candidates.length) {\n  candidates.sort((a, b) => a.score - b.score);\n  const best = candidates[0];\n  foundMeetingDocId = best.docId;\n  meetingNotesTabId = best.notesTab;\n  transcriptTabId = best.transcriptTab;\n}\n// ======================================================================\n\n// ================== Part 2: Build Meeting Notes ========================\nconst notesRequests = [];\nconst transcriptRequests = [];\n\nif (meetingNotesTabId) {\n  const meetingDate = transcriptData.date ? new Date(transcriptData.date) : new Date();\n  const attendees =\n    (transcriptData.meeting_attendees || []).map((a) => a.email).join(', ') || '—';\n  const subtitle = `Date: ${meetingDate.toLocaleString()} | Duration: ${transcriptData.duration || '—'} mins`;\n\n  let text = '';\n  text += sep();\n  text += heading(meetingTitle);\n  text += `${subtitle}\\n`;\n  text += `Attendees: ${attendees}\\n\\n`;\n\n  if (Array.isArray(summaryData.keywords) && summaryData.keywords.length) {\n    text += heading('Keywords');\n    text += `${summaryData.keywords.join(', ')}\\n\\n`;\n  }\n  if (summaryData.overview) {\n    const overviewLines = summaryData.overview\n      .split('\\n').map((x) => x.replace(/^\\-\\s*/, '').trim()).filter(Boolean);\n    if (overviewLines.length) {\n      text += heading('Overview');\n      text += bullets(overviewLines) + '\\n';\n    }\n  }\n  const shorthandSections = parseShorthandBullets(summaryData.shorthand_bullet || '');\n  const mapped = mapSectionsToDesiredHeadings(shorthandSections);\n  for (const section of mapped) {\n    text += heading(section.title);\n    text += bullets(section.items) + '\\n';\n  }\n  const actions = parseActionItems(summaryData.action_items || '');\n  const preferredOrder = ['Mohammed Khan', 'Richard McKeown', 'Unassigned'];\n  const everyone = Object.keys(actions).sort((a, b) => {\n    const ia = preferredOrder.indexOf(a);\n    const ib = preferredOrder.indexOf(b);\n    if (ia === -1 && ib === -1) return a.localeCompare(b);\n    if (ia === -1) return 1;\n    if (ib === -1) return -1;\n    return ia - ib;\n  });\n  if (everyone.length) {\n    text += heading('Action items');\n    for (const person of everyone) {\n      const items = (actions[person] || []).filter(Boolean);\n      if (!items.length) continue;\n      text += heading(`- ${person}`);\n      text += bullets(items);\n    }\n    text += '\\n';\n  }\n  notesRequests.push(insertTextReq(meetingNotesTabId, text, 1));\n}\n\n// ================== Part 3: Build Transcript tab =======================\nif (transcriptTabId && Array.isArray(transcriptData.sentences)) {\n  let t = '---\\n';\n  const boldRanges = [];\n  const sentences = transcriptData.sentences;\n  let prevSpeaker = null;\n  for (let i = 0; i < sentences.length; i++) {\n    const s = sentences[i] || {};\n    const currSpeaker = s.speaker_name || 'Speaker';\n    if (i === 0 || currSpeaker !== prevSpeaker) {\n      if (i !== 0 && !t.endsWith('\\n\\n')) t += '\\n';\n      const start = t.length;\n      t += `${currSpeaker}\\n`;\n      const end = start + currSpeaker.length;\n      boldRanges.push({ start, end });\n      prevSpeaker = currSpeaker;\n    }\n    const sentenceText = (s.text || '').trim();\n    if (sentenceText) {\n      if (!t.endsWith('\\n') && !t.endsWith(' ')) t += ' ';\n      t += sentenceText + ' ';\n    }\n    const next = sentences[i + 1];\n    const nextSpeaker = next ? (next.speaker_name || 'Speaker') : null;\n    if (!next || nextSpeaker !== currSpeaker) {\n      t = t.trimEnd() + '\\n';\n    }\n  }\n  if (!t.endsWith('\\n')) t += '\\n';\n\n  transcriptRequests.push(insertTextReq(transcriptTabId, t, 1));\n  for (const r of boldRanges) {\n    transcriptRequests.push({\n      updateTextStyle: {\n        range: { tabId: transcriptTabId, startIndex: 1 + r.start, endIndex: 1 + r.end },\n        textStyle: { bold: true },\n        fields: 'bold',\n      },\n    });\n  }\n}\n\n// ================== Part 4: Return ====================================\nreturn { foundMeetingDocId, notesRequests, transcriptRequests };\n"
+      },
+      "name": "Format Transcript Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [-176, 64],
+      "id": "b0b61267-4fc3-45b5-a111-243c21a979bb",
+      "onError": "continueErrorOutput",
+      "notes": "Process and format transcript data for Google Docs"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "===You are an expert task-extraction agent for TickTick.\n\nROLE\n\n- Extract action items assigned to Mohammed Khan (aka: Mo, Mohammed Khan, Redwan, Atharul).\n- Produce richly detailed tasks with correct due dates/times (America/Toronto).\n- Group related work into a single MAIN task with SUBTASKS (TickTick “items”).\n\nASSIGNMENT HEURISTICS (CRITICAL)\n\n- Treat first-person statements (“I have to…”, “I need to…”, “I’ll…”) as assigned to Mohammed Khan.\n- Treat direct requests to “Mo/Mohammed/Redwan/Atharul” (“Can you…”, “Please…”) as assigned to Mohammed Khan.\n- If there is any actionable statement, you MUST return at least one task.\n\nCONTEXT\n\n- You receive a raw webhook JSON payload; transcript may be at body.data.transcript or transcript:\n{{ JSON.stringify($json) }}\n- Time zone for all interpretation and output: America/Toronto (DST-aware).\n- “Now” = the exact instant the webhook is received in America/Toronto.\n\nDATE/TIME INTERPRETATION (VERY IMPORTANT)\n\n- Convert all relative phrases to exact local timestamps in America/Toronto.\n- Your `dueDate` MUST be in full ISO-8601 with a **numeric local offset** (e.g., `2025-09-07T09:00:00-04:00` or `05:00` in winter).\n- **Never** output `Z` or `+00:00` or `+0000`.\n- Day-name → next occurrence from “now”.\n- Vague times: morning=09:00, noon=12:00, afternoon=15:00, evening/tonight=20:00, EOD/COB/by [day]=17:00 that day, ASAP=“now”.\n- No am/pm given: 1–6→a.m.; 7–11→a.m. if “morning” else p.m.; 12→12:00; bare “5”→17:00.\n- If both specific and vague times appear, prefer the specific.\n- **Default rule:** If no explicit date/time is present, set `dueDate` to **“now”** (the webhook receipt time) in America/Toronto and output with the correct local offset (e.g., `04:00`).\n\nTASK SELECTION & GROUPING\n\n- Only include tasks clearly assigned to Mohammed Khan per heuristics above.\n- Merge near-duplicates.\n- **Group related actions (same topic/client/meeting) into ONE MAIN task** with `subtasks` (1–15 concise imperative steps).\n- MAIN `title` summarizes the group; MAIN `dueDate` = earliest firm deadline > next external commitment > otherwise “now”.\n- Subtasks usually don’t have dates.\n\nSUBTASK SOURCE CONSTRAINT (STRICT — DO NOT INVENT)\n\n- Every subtask MUST correspond to an action that is **explicitly present** in the transcript, either:\n  - **Verbatim** (exact words/command/commitment), or\n  - A **clear, minimal paraphrase** that closely matches a specific phrase or sentence from the transcript.\n- Do **NOT** add best-practice steps, implied checklists, inferred dependencies, or any novel actions not spoken/requested.\n- If a step is **not clearly stated**, **omit it**.\n- It is acceptable (and preferred) to output **fewer** subtasks when only a few explicit actions exist.\n- You may **merge duplicates** or split a single compound explicit action into 2–3 clearly matching subtasks, but you must **not introduce new actions**.\n- Each subtask should read as an imperative that mirrors the transcript phrasing (keep wording tight; no new details).\n\nTAGGING\n\n- 1–4 short tags, lowercase, kebab-case (no spaces). Examples: client-abc, proposal, follow-up.\n- If nothing obvious, [].\n\nPRIORITY\n\n- 5=urgent/ASAP/≤48h critical, 3=normal, 1=whenever. (Only 1, 3, or 5.)\n\nCONTENT\n\n- `content` includes: 1–2 sentence summary (who/what/why), key constraints (dates/budget/dependencies), acceptance criteria / next steps (bullets), inline URLs/people/tools if present.\n- Append at the end: \"Source transcript: [https://app.fireflies.ai/view/{ID}](https://app.fireflies.ai/view/%7BID%7D)\"  (ID = the webhook `data.id`; e.g. https://app.fireflies.ai/view/01K4Z3TNJAQ5VPFK1DSTEG1F1B).\n\nTITLE\n\n- Make sure that the title of each task will have the main Topic of the incoming transcript. That way all tasks that are created can be found based on this. So the title should be in the format Topic Title: Task Name.\n    - An example of this is the main topic of the incoming transcript was App Updates for SEO App: Add Meta Optimization Feature #tag #tag #tag etc etc\n\nOUTPUT FORMAT (STRICT JSON ONLY)\nReturn ONLY:\n{\n\"tasks\": [\n{\n\"title\": \"≤100 chars, imperative and specific\",\n\"content\": \"details per CONTENT\",\n\"dueDate\": \"YYYY-MM-DDTHH:mm:ss±HH:MM (LOCAL Toronto offset, never Z/+00:00)\",\n\"priority\": 1 | 3 | 5,\n\"tags\": [\"kebab-case\", \"short\", \"no-spaces\"],\n\"subtasks\": [\"Step 1\", \"Step 2\", \"...\"],\n\"timeZone\": \"America/Toronto\"\n}\n]\n}\n\nNON-EMPTY GUARANTEE (ABSOLUTE)\n\n- You are NOT allowed to return {\"tasks\": []}.\n- If assignment is ambiguous, output a single “triage” task:\n    - title: \"Review & plan: Topic Name\"\n    - content: 1–2 sentence summary + bullet list of obvious next steps\n    - dueDate: NOW (webhook receipt time) in America/Toronto, with correct local offset\n    - priority: 3\n    - tags: [\"triage\"]\n    - subtasks: [\"clarify scope with stakeholders\", \"draft task list\", \"estimate effort\"]\n\nVALIDATION\n\n- Ensure dueDate uses local Toronto offset (-04:00 summer / -05:00 winter). Never Z/+00:00.\n- Ensure every subtask is traceable to explicit transcript wording (verbatim or clear match). If in doubt, leave it out.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "id": "2994313d-975d-46bc-b7b5-258779715808",
+      "name": "Extract Tasks with AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [-336, 528],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "73b1026a-51fe-4245-878d-7a986271cace",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-320, 768],
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tasks\": {\n      \"type\": \"array\",\n      \"minItems\": 1,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": { \"type\": \"string\", \"maxLength\": 100 },\n          \"content\": { \"type\": \"string\" },\n          \"dueDate\": { \"type\": \"string\", \"format\": \"date-time\" },\n          \"priority\": { \"type\": \"integer\", \"enum\": [1, 3, 5] },\n          \"tags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n          \"subtasks\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n          \"timeZone\": { \"type\": \"string\" }\n        },\n        \"required\": [\"title\", \"content\", \"dueDate\", \"priority\"]\n      }\n    }\n  },\n  \"required\": [\"tasks\"]\n}\n",
+        "autoFix": true
+      },
+      "id": "c2708c5d-1f5c-4b8b-9143-39316f5d4575",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [-176, 912]
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Prepare Tasks for API (n8n Code node - JavaScript)\n * - Input: { output: { tasks: [...] } } OR { tasks: [...] }\n * - Output: one item per MAIN task ready for TickTick /open/v1/task\n * Behavior:\n *   • Inbox (no projectId)\n *   • Default dueDate = NOW (webhook receipt, America/Toronto) if missing\n *   • Force-localize any provided date/time to America/Toronto, with correct -0400/-0500\n *   • Preserve local wall-clock if LLM gives time without offset\n *   • Subtasks -> items[]\n *   • Tags -> hashtags (snake_case) appended to title or content\n */\n\nconst DEFAULT_TZ = \"America/Toronto\";\n\n// ---------------- Helpers ----------------\nconst toStr = (v) => (v == null ? \"\" : String(v));\nconst toInt = (v, fallback = 3) => {\n  const n = Number(v);\n  return [0, 1, 3, 5].includes(n) ? n : fallback; // TickTick supports 0,1,3,5\n};\n\n/** Format parts for a Date in a specific TZ (wall-clock view) */\nfunction getLocalParts(date, timeZone = DEFAULT_TZ) {\n  const fmt = new Intl.DateTimeFormat(\"en-CA\", {\n    timeZone,\n    year: \"numeric\",\n    month: \"2-digit\",\n    day: \"2-digit\",\n    hour: \"2-digit\",\n    minute: \"2-digit\",\n    second: \"2-digit\",\n    hour12: false,\n  });\n  return Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value]));\n}\n\n/** Numeric offset (minutes) for a local wall time */\nfunction offsetMinutesForLocal(parts) {\n  const sys = new Date(\n    `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`\n  );\n  const utcMs = Date.UTC(\n    sys.getUTCFullYear(),\n    sys.getUTCMonth(),\n    sys.getUTCDate(),\n    sys.getUTCHours(),\n    sys.getUTCMinutes(),\n    sys.getUTCSeconds()\n  );\n  return Math.round((sys.getTime() - utcMs) / 60000);\n}\n\n/**\n * Build \"YYYY-MM-DDTHH:mm:ss±HHMM\" from a WALL-CLOCK in target TZ.\n * - If input string has Z / +0000 / +00:00 OR no offset, we treat the HH:mm(:ss)\n *   as local Toronto wall time and simply stamp the correct local offset.\n * - If input has a non-zero offset already (e.g., -04:00 or -0400), we trust it.\n *   (If you want to ALWAYS preserve wall-clock regardless of given offset,\n *    flip the condition below and ignore foreign offsets.)\n */\nfunction toTickTickLocal(isoLike, timeZone = DEFAULT_TZ) {\n  if (!isoLike) return undefined;\n  const s = String(isoLike).trim();\n\n  // If it already contains a non-zero offset, accept as-is (normalize colon out)\n  const nonZeroOffset = s.match(/([+-])(0[1-9]|1[0-2]):?([0-5][0-9])$/);\n  if (nonZeroOffset) {\n    // Normalize to ±HHMM (TickTick accepts both, but we match docs)\n    return s.replace(/([+-]\\d{2}):?(\\d{2})$/, (_, a, b) => `${a}${b}`);\n  }\n\n  // Extract wall clock from date/time\n  const m = s.match(/^(\\d{4}-\\d{2}-\\d{2})[T ]?(\\d{2}:\\d{2}(?::\\d{2})?)?/);\n  if (!m) return undefined;\n  const datePart = m[1];\n  let timePart = m[2] || \"09:00:00\";\n  if (timePart.length === 5) timePart += \":00\"; // add seconds if missing\n  const wall = `${datePart}T${timePart}`;\n\n  // Render wall-clock in target TZ and stamp the correct local offset\n  const tmp = new Date(wall);\n  const parts = getLocalParts(tmp, timeZone);\n  const offsetMin = offsetMinutesForLocal(parts);\n  const sign = offsetMin >= 0 ? \"+\" : \"-\";\n  const abs = Math.abs(offsetMin);\n  const hh = String(Math.floor(abs / 60)).padStart(2, \"0\");\n  const mm = String(abs % 60).padStart(2, \"0\");\n  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${hh}${mm}`;\n}\n\n/** Default due = NOW at webhook time (America/Toronto) */\nfunction defaultDueNow(timeZone = DEFAULT_TZ) {\n  const now = new Date();\n  const parts = getLocalParts(now, timeZone);\n  const offsetMin = offsetMinutesForLocal(parts);\n  const sign = offsetMin >= 0 ? \"+\" : \"-\";\n  const abs = Math.abs(offsetMin);\n  const hh = String(Math.floor(abs / 60)).padStart(2, \"0\");\n  const mm = String(abs % 60).padStart(2, \"0\");\n  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${sign}${hh}${mm}`;\n}\n\n/** Reminder policy by priority */\nfunction remindersForPriority(p) {\n  if (p === 5) return [\"TRIGGER:PT1H\", \"TRIGGER:PT0S\"];\n  if (p === 3) return [\"TRIGGER:PT30M\"];\n  return [\"TRIGGER:PT0S\"];\n}\n\n/** Normalize tags to kebab-case internally; we’ll emit hashtags as snake_case */\nfunction normalizeTags(tags) {\n  const seen = new Set();\n  const out = [];\n  (Array.isArray(tags) ? tags : [])\n    .map((t) => toStr(t).trim().toLowerCase())\n    .forEach((t) => {\n      const kebab = t\n        .replace(/[^a-z0-9\\s-]/g, \"\")\n        .replace(/\\s+/g, \"-\")\n        .replace(/-+/g, \"-\")\n        .replace(/^-|-$/g, \"\");\n      if (kebab && !seen.has(kebab)) {\n        seen.add(kebab);\n        out.push(kebab);\n      }\n    });\n  return out.slice(0, 4);\n}\n\n/** Convert kebab-case -> hashtag snake_case for TickTick parsing */\nconst hashtag = (t) => `#${String(t).replace(/-/g, \"_\")}`;\n\n// ---------------- Main ----------------\nconst incoming = $input.first()?.json ?? {};\nconst tasks = incoming.output?.tasks ?? incoming.tasks ?? [];\nif (!Array.isArray(tasks) || tasks.length === 0) return [];\n\n// Transform each MAIN task\nreturn tasks.map((task, idx) => {\n  const priority = toInt(task.priority, 3);\n  const timeZone = toStr(task.timeZone) || DEFAULT_TZ;\n\n  // dueDate: force-localize or default NOW\n  const rawDue = toStr(task.dueDate);\n  const dueTicktick = rawDue ? toTickTickLocal(rawDue, timeZone) : defaultDueNow(timeZone);\n\n  // Base fields\n  let title = toStr(task.title).slice(0, 100);\n  let content = toStr(task.content);\n\n  // Tags -> hashtags (prefer title if <= 100 chars)\n  const tags = normalizeTags(task.tags);\n  if (tags.length) {\n    const tagStr = \" \" + tags.map(hashtag).join(\" \");\n    if ((title + tagStr).length <= 100) {\n      title = (title + tagStr).slice(0, 100);\n    } else {\n      content = content\n        ? `${content}\\n\\nTags: ${tags.map(hashtag).join(\" \")}`\n        : `Tags: ${tags.map(hashtag).join(\" \")}`;\n    }\n  }\n\n  // Subtasks -> TickTick items\n  const items = (Array.isArray(task.subtasks) ? task.subtasks : []).map((t, i) => ({\n    title: toStr(t).slice(0, 200),\n    status: 0,\n    sortOrder: (i + 1) * 100,\n    timeZone,\n  }));\n\n  return {\n    json: {\n      title,\n      content,\n      // No projectId -> Inbox\n      dueDate: dueTicktick,          // \"YYYY-MM-DDTHH:mm:ss-0400\" / \"-0500\"\n      priority,                      // 1,3,5\n      timeZone,                      // \"America/Toronto\"\n      reminders: remindersForPriority(priority),\n      items,\n\n      _metadata: {\n        tags,                        // kebab-case internal\n        source: \"Fireflies Transcript\",\n        extractedAt: new Date().toISOString(),\n        index: idx,\n      },\n    },\n  };\n});\n"
+      },
+      "id": "380ac6ac-7483-4e9b-b968-38b4bbc75916",
+      "name": "Prepare Tasks for API",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 528],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ticktick.com/open/v1/task",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": {{ JSON.stringify($json.title) }},\n  \"content\": {{ JSON.stringify($json.content) }},\n  \"desc\": {{ JSON.stringify($json.content) }},\n  \"dueDate\": {{ JSON.stringify($json.dueDate) }},\n  \"priority\": {{ $json.priority }},\n  \"timeZone\": {{ JSON.stringify($json.timeZone) }},\n  \"reminders\": {{ JSON.stringify($json.reminders) }},\n  \"items\": {{ JSON.stringify($json.items || []) }}\n}\n",
+        "options": {}
+      },
+      "id": "4b28e3c8-152f-40bc-881e-4ead5078f12c",
+      "name": "Create TickTick Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 528],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "0nE0TkBrwzqPiuMc",
+          "name": "TickTick"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-256, 1120],
+      "id": "2b262aae-bb3e-4f85-8071-df1b4cb3d395",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Fireflies Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a transcript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get a summary of a transcript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a transcript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a summary of a transcript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Format Transcript Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Tasks with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Format Transcript Data": {
+      "main": [
+        [
+          {
+            "node": "Post Meeting Notes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Tasks with AI": {
+      "main": [
+        [
+          {
+            "node": "Prepare Tasks for API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Tasks with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Tasks with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Tasks for API": {
+      "main": [
+        [
+          {
+            "node": "Create TickTick Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Transcript": {
+      "main": [[]]
+    },
+    "Post Meeting Notes": {
+      "main": [[]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3137a512-c7c6-4b18-b5f6-3dbc2baff726",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "ublYij5Gn3yQk45F",
+  "tags": []
+}
