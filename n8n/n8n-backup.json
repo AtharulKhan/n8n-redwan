@@ -1,0 +1,334 @@
+{
+  "name": "n8n Backup",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "4b18d212-230f-4589-8df0-3276e071a8c3",
+      "name": "On clicking 'execute'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [-304, 16],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "filters": {},
+        "requestOptions": {}
+      },
+      "id": "9a91dab9-6095-4cf5-a379-da336caa2237",
+      "name": "n8n",
+      "type": "n8n-nodes-base.n8n",
+      "position": [64, 144],
+      "retryOnFail": true,
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "credentials": {
+        "n8nApi": {
+          "id": "p6kKbSdVprJwoIVW",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e2822319-c8dc-4466-b3b8-201534c55b41",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [256, 144],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "=n8n Workflow Backups {{ $now.format('cccc t dd-MM-yyyy') }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1rjPnWZrV7QfB7YhO9uk00uP9Xg1vLp10",
+          "mode": "list",
+          "cachedResultName": "n8n Backups",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1rjPnWZrV7QfB7YhO9uk00uP9Xg1vLp10"
+        },
+        "options": {}
+      },
+      "id": "07d99ca6-8808-4a06-8203-48abb8d60175",
+      "name": "create new folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [-128, 144],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ySzWN5yRZbSL8sUw",
+          "name": "Google Drive - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {
+          "format": true,
+          "fileName": "={{ $json.name + \".json\" }} "
+        }
+      },
+      "id": "81a7ec7c-4e87-45b8-bc3a-9f87d3fafe5b",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [480, 240],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 1
+            }
+          ]
+        }
+      },
+      "id": "a6f5385d-0270-48ac-9dfd-ace85c98ed79",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [-304, 288],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": false,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "538fc29d-2693-4c62-9848-bdcaf8566909",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "={{ $('create new folder').item.json.id }}"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "id": "c3bb754c-1361-4740-9c35-3f01cc1c933d",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "position": [656, 48],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "operation": "deleteFolder",
+        "folderNoRootId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "deletePermanently": true
+        }
+      },
+      "id": "a9291821-2148-431a-9a06-319dbe360ce9",
+      "name": "delete folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [848, 48],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ySzWN5yRZbSL8sUw",
+          "name": "Google Drive - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1rjPnWZrV7QfB7YhO9uk00uP9Xg1vLp10",
+            "mode": "list",
+            "cachedResultName": "n8n Backups",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1rjPnWZrV7QfB7YhO9uk00uP9Xg1vLp10"
+          }
+        },
+        "options": {}
+      },
+      "id": "60e79de7-e537-4e0c-9cd2-bc1197d61b7c",
+      "name": "Get folders",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [480, 48],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ySzWN5yRZbSL8sUw",
+          "name": "Google Drive - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Loop Over Items').item.json.name + \".json\" }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('create new folder').item.json.id }}"
+        },
+        "options": {}
+      },
+      "id": "2522c447-154a-4e35-8597-3adefb90da1d",
+      "name": "Upload file",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [656, 240],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ySzWN5yRZbSL8sUw",
+          "name": "Google Drive - Redwan"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "n8n": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "delete folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get folders": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Get folders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "create new folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create new folder": {
+      "main": [
+        [
+          {
+            "node": "n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On clicking 'execute'": {
+      "main": [
+        [
+          {
+            "node": "create new folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2b458b78-0789-4ade-b1c5-891672edc4f2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "wT8jtK4w3cEYMOF4",
+  "tags": []
+}
