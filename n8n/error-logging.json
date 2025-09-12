@@ -1,0 +1,215 @@
+{
+  "name": "n8n Error Logging",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "ab5aed67-873d-4f21-9365-a1d9f009fa1a",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [-2000, 192]
+    },
+    {
+      "parameters": {
+        "url": "=https://n8n-simplifai.saavatar.xyz/api/v1/executions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "error"
+            },
+            {
+              "name": "limit",
+              "value": "30"
+            },
+            {
+              "name": "workflowId",
+              "value": "={{$json.id}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3M2E2ZDVkMy04MWI4LTRkYWEtOWQ1YS0yNTIxY2ZkZDFlYzQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3NTU0MzY1fQ.4Q7dfYhKjzo39Rtc9PWn_-RfoN7aMS7yE470k-ZkX8w"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1d4ba7aa-6513-45a1-b0e8-a1b2ec66f320",
+      "name": "Get All Workflows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [-1744, 192],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Error Data — robust against missing workflowData in /executions\n// Expects the previous HTTP node (\"Get Failed Executions\") to return either:\n// { data: [ { id, workflowId, startedAt, stoppedAt, mode, data? } ... ] }  OR  [ ... ]\n\n// 1) Normalize input\nconst body = $input.item?.json ?? {};\nconst executions = Array.isArray(body) ? body : (body.data ?? []);\n\n// 2) Best-effort fetch of workflows (from \"Get All Workflows\") to map id -> name\nlet workflows = [];\ntry {\n  const wfItems = $items('Get All Workflows'); // grabs output items by node name\n  if (Array.isArray(wfItems) && wfItems.length) {\n    const wfJson = wfItems[0]?.json ?? {};\n    workflows = Array.isArray(wfJson) ? wfJson : (wfJson.data ?? []);\n  }\n} catch (e) {\n  // If not available, we'll fall back to 'Unknown'\n}\n\nconst nameById = (id) => {\n  const w = workflows.find(x => x?.id === id);\n  return w?.name ?? 'Unknown';\n};\n\n// 3) Settings/helpers\nconst N8N_BASE_URL = \"https://n8n-simplifai.saavatar.xyz\"; // fixed base URL\nconst errors = [];\nconst oneDayAgo = new Date();\noneDayAgo.setDate(oneDayAgo.getDate() - 1);\n\n// 4) Iterate executions\nfor (const execution of executions) {\n  const execId = execution?.id ?? 'unknown';\n  const wfId = execution?.workflowId ?? execution?.workflowData?.id ?? 'unknown';\n  const wfName = execution?.workflowData?.name ?? nameById(wfId) ?? 'Unknown';\n\n  const startedAtStr = execution?.startedAt ?? null;\n  const stoppedAtStr = execution?.stoppedAt ?? null;\n  const startedAt = startedAtStr ? new Date(startedAtStr) : null;\n  const stoppedAt = stoppedAtStr ? new Date(stoppedAtStr) : null;\n\n  // Only include items with a stoppedAt in the last 24h\n  if (!stoppedAt || stoppedAt <= oneDayAgo) continue;\n\n  // Error details (present only if includeData=true or backend includes them)\n  const errorMsg =\n    execution?.data?.resultData?.error?.message\n      ?? execution?.error?.message\n      ?? 'Unknown error';\n\n  const errorNode =\n    execution?.data?.resultData?.error?.node?.name\n      ?? execution?.error?.node?.name\n      ?? 'Unknown';\n\n  const execUrl = (wfId !== 'unknown' && execId !== 'unknown')\n    ? `${N8N_BASE_URL}/workflow/${wfId}/executions/${execId}`\n    : '';\n\n  let executionTime = 'N/A';\n  if (startedAt && stoppedAt) {\n    executionTime = ((stoppedAt - startedAt) / 1000).toFixed(2) + 's';\n  }\n\n  errors.push({\n    json: {\n      timestamp: stoppedAtStr,\n      workflowId: wfId,\n      workflowName: wfName,\n      executionId: execId,\n      errorMessage: errorMsg,\n      errorNode,\n      executionUrl: execUrl,\n      mode: execution?.mode ?? 'unknown',\n      startedAt: startedAtStr,\n      stoppedAt: stoppedAtStr,\n      executionTime,\n    },\n    pairedItem: { item: 0 }, // keeps n8n data lineage intact\n  });\n}\n\nreturn errors;\n"
+      },
+      "id": "67d2238d-9b10-4210-b09a-df02e389dd71",
+      "name": "Process Error Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1536, 192]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Email Formatter Code Node\n// Takes Process Error Data output and creates a formatted HTML email\n\nconst errors = $input.all();\nconst currentDate = new Date().toLocaleDateString('en-US', { \n  weekday: 'long', \n  year: 'numeric', \n  month: 'long', \n  day: 'numeric' \n});\n\n// If no errors, send a success email\nif (!errors || errors.length === 0) {\n  return [{\n    json: {\n      subject: `✅ n8n Daily Report - No Errors (${currentDate})`,\n      html: `\n        <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; background-color: #f8f9fa;\">\n          <div style=\"background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;\">\n            <h1 style=\"margin: 0; font-size: 28px; font-weight: 300;\">n8n Daily Error Report</h1>\n            <p style=\"margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;\">${currentDate}</p>\n          </div>\n          \n          <div style=\"padding: 40px 30px; background: white; margin: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);\">\n            <div style=\"text-align: center; padding: 40px 20px;\">\n              <div style=\"font-size: 64px; margin-bottom: 20px;\">✅</div>\n              <h2 style=\"color: #28a745; margin: 0 0 15px 0; font-size: 24px;\">All Systems Running Smoothly!</h2>\n              <p style=\"color: #666; font-size: 16px; line-height: 1.6; margin: 0;\">\n                No workflow errors detected in the last 24 hours. Your n8n instance is operating perfectly.\n              </p>\n            </div>\n          </div>\n          \n          <div style=\"text-align: center; padding: 20px; color: #666; font-size: 12px;\">\n            <p>Generated by n8n Error Monitoring • ${new Date().toLocaleString()}</p>\n          </div>\n        </div>\n      `,\n      text: `n8n Daily Report - No Errors (${currentDate})\\n\\nAll systems running smoothly! No workflow errors detected in the last 24 hours.`,\n      totalErrors: 0,\n      reportDate: currentDate\n    }\n  }];\n}\n\n// Count errors by workflow\nconst errorsByWorkflow = {};\nconst uniqueWorkflows = new Set();\n\nerrors.forEach(error => {\n  const wfName = error.json.workflowName;\n  uniqueWorkflows.add(wfName);\n  errorsByWorkflow[wfName] = (errorsByWorkflow[wfName] || 0) + 1;\n});\n\n// Generate error rows HTML\nconst errorRowsHtml = errors.map(error => {\n  const data = error.json;\n  const errorTime = new Date(data.timestamp).toLocaleString();\n  const statusColor = '#dc3545'; // Red for errors\n  \n  return `\n    <tr style=\"border-bottom: 1px solid #e9ecef;\">\n      <td style=\"padding: 15px 10px; vertical-align: top;\">\n        <div style=\"font-weight: 600; color: #495057; margin-bottom: 5px;\">${data.workflowName}</div>\n        <div style=\"font-size: 12px; color: #6c757d;\">ID: ${data.workflowId}</div>\n      </td>\n      <td style=\"padding: 15px 10px; vertical-align: top;\">\n        <div style=\"font-family: monospace; font-size: 13px; color: #dc3545; margin-bottom: 5px;\">${data.errorMessage}</div>\n        <div style=\"font-size: 12px; color: #6c757d;\">Node: ${data.errorNode}</div>\n      </td>\n      <td style=\"padding: 15px 10px; text-align: center; vertical-align: top;\">\n        <div style=\"font-size: 13px; color: #495057; margin-bottom: 3px;\">${errorTime}</div>\n        <div style=\"font-size: 11px; color: #6c757d;\">Runtime: ${data.executionTime}</div>\n      </td>\n      <td style=\"padding: 15px 10px; text-align: center; vertical-align: top;\">\n        ${data.executionUrl ? `<a href=\"${data.executionUrl}\" style=\"background: #007bff; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 500;\">View Details</a>` : '<span style=\"color: #6c757d; font-size: 12px;\">N/A</span>'}\n      </td>\n    </tr>\n  `;\n}).join('');\n\n// Generate workflow summary HTML\nconst workflowSummaryHtml = Object.entries(errorsByWorkflow)\n  .sort(([,a], [,b]) => b - a) // Sort by error count descending\n  .map(([workflow, count]) => {\n    const percentage = ((count / errors.length) * 100).toFixed(1);\n    return `\n      <div style=\"display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f3f4;\">\n        <span style=\"font-weight: 500; color: #495057;\">${workflow}</span>\n        <div style=\"text-align: right;\">\n          <span style=\"background: #dc3545; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-right: 10px;\">${count}</span>\n          <span style=\"font-size: 12px; color: #6c757d;\">${percentage}%</span>\n        </div>\n      </div>\n    `;\n  }).join('');\n\n// Create the main email HTML\nconst emailHtml = `\n  <div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1000px; margin: 0 auto; background-color: #f8f9fa;\">\n    <!-- Header -->\n    <div style=\"background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 30px; text-align: center; color: white;\">\n      <h1 style=\"margin: 0; font-size: 28px; font-weight: 300;\">⚠️ n8n Daily Error Report</h1>\n      <p style=\"margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;\">${currentDate}</p>\n    </div>\n\n    <!-- Summary Cards -->\n    <div style=\"display: flex; gap: 15px; padding: 20px; flex-wrap: wrap;\">\n      <div style=\"flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center;\">\n        <div style=\"font-size: 36px; font-weight: 700; color: #dc3545; margin-bottom: 5px;\">${errors.length}</div>\n        <div style=\"font-size: 14px; color: #6c757d; text-transform: uppercase; letter-spacing: 1px;\">Total Errors</div>\n      </div>\n      <div style=\"flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center;\">\n        <div style=\"font-size: 36px; font-weight: 700; color: #fd7e14; margin-bottom: 5px;\">${uniqueWorkflows.size}</div>\n        <div style=\"font-size: 14px; color: #6c757d; text-transform: uppercase; letter-spacing: 1px;\">Affected Workflows</div>\n      </div>\n      <div style=\"flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center;\">\n        <div style=\"font-size: 36px; font-weight: 700; color: #6610f2; margin-bottom: 5px;\">24h</div>\n        <div style=\"font-size: 14px; color: #6c757d; text-transform: uppercase; letter-spacing: 1px;\">Time Period</div>\n      </div>\n    </div>\n\n    <!-- Workflow Summary -->\n    <div style=\"margin: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;\">\n      <div style=\"background: #f8f9fa; padding: 20px; border-bottom: 1px solid #dee2e6;\">\n        <h3 style=\"margin: 0; color: #495057; font-size: 18px;\">📊 Errors by Workflow</h3>\n      </div>\n      <div style=\"padding: 20px;\">\n        ${workflowSummaryHtml}\n      </div>\n    </div>\n\n    <!-- Error Details Table -->\n    <div style=\"margin: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;\">\n      <div style=\"background: #f8f9fa; padding: 20px; border-bottom: 1px solid #dee2e6;\">\n        <h3 style=\"margin: 0; color: #495057; font-size: 18px;\">🔍 Error Details</h3>\n      </div>\n      <div style=\"overflow-x: auto;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n          <thead>\n            <tr style=\"background: #f8f9fa;\">\n              <th style=\"padding: 15px 10px; text-align: left; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6;\">Workflow</th>\n              <th style=\"padding: 15px 10px; text-align: left; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6;\">Error Details</th>\n              <th style=\"padding: 15px 10px; text-align: center; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6;\">Timestamp</th>\n              <th style=\"padding: 15px 10px; text-align: center; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6;\">Action</th>\n            </tr>\n          </thead>\n          <tbody>\n            ${errorRowsHtml}\n          </tbody>\n        </table>\n      </div>\n    </div>\n\n    <!-- Call to Action -->\n    <div style=\"margin: 20px; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 30px; border-radius: 10px; text-align: center;\">\n      <h3 style=\"margin: 0 0 15px 0; font-size: 20px;\">🛠️ Next Steps</h3>\n      <p style=\"margin: 0 0 20px 0; font-size: 16px; opacity: 0.9;\">Review the errors above and take necessary action to ensure smooth workflow operations.</p>\n      <a href=\"https://n8n-simplifai.saavatar.xyz\" style=\"background: white; color: #007bff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;\">Open n8n Dashboard</a>\n    </div>\n\n    <!-- Footer -->\n    <div style=\"text-align: center; padding: 20px; color: #6c757d; font-size: 12px;\">\n      <p style=\"margin: 0;\">Generated by n8n Error Monitoring • ${new Date().toLocaleString()}</p>\n      <p style=\"margin: 5px 0 0 0;\">This report covers errors from the last 24 hours</p>\n    </div>\n  </div>\n`;\n\n// Create plain text version\nconst textVersion = `\nn8n Daily Error Report - ${currentDate}\n\nSUMMARY:\n- Total Errors: ${errors.length}\n- Affected Workflows: ${uniqueWorkflows.size}\n- Time Period: Last 24 hours\n\nERRORS BY WORKFLOW:\n${Object.entries(errorsByWorkflow)\n  .sort(([,a], [,b]) => b - a)\n  .map(([workflow, count]) => `- ${workflow}: ${count} errors`)\n  .join('\\n')}\n\nERROR DETAILS:\n${errors.map(error => {\n  const data = error.json;\n  return `\nWorkflow: ${data.workflowName} (${data.workflowId})\nError: ${data.errorMessage}\nNode: ${data.errorNode}\nTime: ${new Date(data.timestamp).toLocaleString()}\nRuntime: ${data.executionTime}\nURL: ${data.executionUrl || 'N/A'}\n---`;\n}).join('\\n')}\n\nGenerated: ${new Date().toLocaleString()}\nDashboard: https://n8n-simplifai.saavatar.xyz\n`;\n\nreturn [{\n  json: {\n    subject: `🚨 n8n Error Report - ${errors.length} Errors Detected (${currentDate})`,\n    html: emailHtml,\n    text: textVersion,\n    totalErrors: errors.length,\n    affectedWorkflows: uniqueWorkflows.size,\n    reportDate: currentDate,\n    errorsByWorkflow: errorsByWorkflow\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1136, 192],
+      "id": "1cdbf0ee-6655-4d04-be3e-98de102f6778",
+      "name": "Email"
+    },
+    {
+      "parameters": {
+        "sendTo": "atharul.k@gmail.com",
+        "subject": "Error Found",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [-944, 192],
+      "id": "847cae9f-7d03-4add-8db1-16ef01858c0b",
+      "name": "Send a message",
+      "webhookId": "a8fda779-40ac-4e30-9418-422fc9c5e8a7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5039f214-aaae-4403-9c9b-69283354bf34",
+              "leftValue": "={{ $json.timestamp }}",
+              "rightValue": "20",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [-1344, 192],
+      "id": "bfc96f61-7477-4fc5-9089-6be32c98505c",
+      "name": "Filter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get All Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Workflows": {
+      "main": [
+        [
+          {
+            "node": "Process Error Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Error Data": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9687f59e-8e56-4364-b5a8-0483af8fbb74",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "CoUwiVm4vzvytTre",
+  "tags": [
+    {
+      "createdAt": "2025-09-11T01:37:09.493Z",
+      "updatedAt": "2025-09-11T01:37:09.493Z",
+      "id": "JtuaFthzuKSDeeZl",
+      "name": "n8n"
+    }
+  ]
+}
