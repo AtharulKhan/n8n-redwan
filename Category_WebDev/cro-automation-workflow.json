@@ -260,7 +260,7 @@
     },
     {
       "parameters": {
-        "name": "=Client_{{ $now.format('yyyy-MM-dd_HH-mm') }}.html",
+        "name": "=Client_{{ $item(0).$node[\"Check Positive Status1\"].json[\"Client Name\"] || \"No content scraped\" }}_{{ $now.format('yyyy-MM-dd_HH-mm') }}.html",
         "driveId": {
           "__rl": true,
           "mode": "list",
@@ -292,7 +292,7 @@
           "__rl": true,
           "value": "1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY",
           "mode": "list",
-          "cachedResultName": "Yaseer Web Dev Lead Gen",
+          "cachedResultName": "Web Dev Lead Gen",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY/edit?usp=drivesdk"
         },
         "sheetName": {
@@ -308,10 +308,21 @@
             "Drive File": "={{ $json.driveFileUrl }}",
             "Drive File Download": "={{ $json.downloadLink }}",
             "Scrape": "Done",
-            "Website URL": "={{ $item(0).$node[\"Check Positive Status1\"].json[\"Website URL\"] || \"No content scraped\" }}"
+            "Website URL": "=",
+            "ID": "={{ $item(0).$node[\"Check Positive Status1\"].json[\"ID\"] || \"No content scraped\" }}"
           },
-          "matchingColumns": ["Website URL"],
+          "matchingColumns": ["ID"],
           "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
             {
               "id": "Client Name",
               "displayName": "Client Name",
@@ -848,7 +859,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c1bd88f1-92b0-4422-8595-8c350f4c9d9e",
+  "versionId": "edce887e-30f6-4cf0-9e14-92081f22582c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
