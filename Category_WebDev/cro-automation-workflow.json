@@ -34,12 +34,12 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "==You are an expert front-end developer and CRO specialist. Create a COMPLETE, PRODUCTION-READY landing page (single HTML file with inline CSS in <style>) that implements the CRO audit recommendations and visual analysis.\n\n# Inputs (from upstream nodes)\n## CRO Audit (primary guide for messaging, quick wins, friction reduction)\n{{ $json.text }}\n\n## Client Website Content (for value prop, service details, and copy source)\n{{ $item(0).$node[\"Get Scraped Content1\"].json[\"html\"] || \"No content scraped\" }}\n\n## Visual References\n- **Client Screenshot (BRAND PRIORITY — THEME/COLOUR/STYLE)**\nUse this to extract brand palette, theme, typography cues, and visual identity. Apply these consistently across the page.\nClient Screenshot URL: {{ $item(0).$node[\"Get Screenshot1\"].json[\"screenshotUrl\"] || \"\" }}\n\n- **Competitor Screenshot (STRUCTURE PRIORITY — LAYOUT/FLOW)**\nUse this as the **primary structural model**: mimic section order, grouping, spacing rhythm, and CRO patterns that improve conversion. Adapt to the client’s messaging and offering; do not copy text or brand.\nCompetitor Screenshot URL: {{ $item(0).$node[\"Get Screenshot Competitor1\"].json[\"screenshotUrl\"] || \"\" }}\n\n# Mission\nOutput a SINGLE, self-contained HTML document that:\n1) Implements **all high-priority / Phase 0 Quick Wins** from the CRO audit.\n2) **Prioritizes the competitor landing page layout and flow** as the core structure to mimic (section order, grouping, component patterns).\n3) Applies the **client’s brand colours, theme, and stylistic cues** from the client screenshot.\n4) Reflects the client’s unique product/service and value proposition (from scraped content + audit insights).\n5) Is **unique and non-generic**: competitor-inspired structure + client branding + CRO audit messaging.\n\n# Suggested Structure (guideline, not rigid)\n> Treat this as a suggested scaffold. When in doubt, **follow the competitor’s structure first**, then style with the client brand.\n- **Head:** Semantic HTML5; <title>/<meta name=\"description\"> optimized per audit; Open Graph & Twitter; JSON-LD schema (Organization + WebSite + BreadcrumbList, or LocalBusiness/Product/Service).\n- **Hero (Above-the-Fold):** Audit-driven value prop + benefit subhead; primary CTA (clear, benefit-led, aria-label); trust bullets/badges; lightweight visual container. Follow competitor hero composition (e.g., left copy/right visual) if present.\n- **Social Proof:** Client/partner logos, ratings, 1–2 short testimonials (placeholder copy ok); risk-reversal/guarantee if audit recommends.\n- **Offer / Service Blocks:** Skimmable cards; iconography; features → benefits; persuasive microcopy; momentum cues (steps/progress) if audit calls for it.\n- **Lead Form or CTA Cluster:** 3–5 fields max; inline validation (HTML5 + aria-live); clear privacy note; button states (loading/disabled); success confirmation.\n- **Urgency / Scarcity:** Only if audit recommends; subtle banner/ticker with aria-live=\"polite\".\n- **FAQ / Objection Handling:** 4–6 accordions with schema.org FAQ markup.\n- **Footer:** Contact, social, basic nav, secondary CTA.\n\n# Accessibility & Performance\n- WCAG AA+ contrast; :focus-visible; skip-to-content link.\n- Respect prefers-reduced-motion; subtle transitions only.\n- Images lazy-load; width/height set to avoid CLS.\n- Minimal vanilla JS only (form validation, accordion toggles). No external libraries.\n\n# CSS Requirements\n- **Palette from Client Screenshot** (NOT competitor): define at :root  \n  --brand-800, --brand-700, --brand-600, --brand-500, --brand-100, --accent, --bg, --text, --muted, --success, --warning, --error.\n- Mobile-first responsive grid/flex; clear type scale; generous spacing.\n- Card components with soft shadows, rounded corners.\n- Button, input, alert, badge systems; tactile hover/focus micro-interactions.\n\n# Technical SEO\n- Single <h1>; descriptive <h2>/<h3> hierarchy.\n- Internal anchor links to key sections.\n- JSON-LD per most relevant entity type (Organization/WebSite/BreadcrumbList or LocalBusiness/Product/Service).\n\n# Output Constraints\n- **Return ONLY one complete HTML document**:\n  - <!DOCTYPE html>\n  - <html lang=\"en\">\n  - <head> with inline <style> (no external CSS)\n  - <body> with all sections\n- No markdown, no commentary.\n- Use semantic placeholders where assets are unknown (e.g., data- attributes). Layout must remain presentable.\n- Keep DOM lean; avoid unnecessary wrappers.\n- The structure of the landing page is primarily based on the competitor screenshot. Mimic the competitor. \n- The design of the output should be based on the clients landing page. The primary and secondary colours, extract from the clients landing page.\n\n# Copy Guidance\n- Rewrite headlines, subheads, and CTAs per audit (clear, specific, benefit-driven).\n- Replace jargon with outcomes and proof; front-load benefits.\n- Conversational, reassuring microcopy in/around forms.\n- CTA text communicates outcome (“Get My Plan”, “Book Strategy Call”).\n\n# Deliverable\nProduce a **single, production-ready HTML file** (inline CSS in <style>) that:\n- **Mimics the competitor’s site structure** (layout & flow) as the primary guide,\n- **Uses the client screenshot for theme, colour, and style**,\n- **Implements the CRO audit quick wins**,\n- Is unique, conversion-optimized, responsive, accessible, and fast.\n",
+        "text": "==You are an expert front-end developer and CRO specialist. Create a COMPLETE, PRODUCTION-READY landing page (single HTML file with inline CSS in <style>) that implements the CRO audit recommendations and visual analysis.\n\n# Inputs (from upstream nodes)\n## CRO Audit (primary guide for messaging, quick wins, friction reduction)\n{{ $json.text }}\n\n## Client Website Content (for value prop, service details, and copy source)\n{{ $item(0).$node[\"Get Scraped Content1\"].json[\"html\"] || \"No content scraped\" }}\n\n## Visual References\n- **Client Screenshot (BRAND PRIORITY — THEME/COLOUR/STYLE)**\nUse this to extract brand palette, theme, typography cues, and visual identity. Apply these consistently across the page.\nClient Screenshot URL: {{ $item(0).$node[\"Get Screenshot1\"].json[\"screenshotUrl\"] || \"\" }}\n\n- **Competitor Screenshot (STRUCTURE PRIORITY — LAYOUT/FLOW)**\nUse this as the **primary structural model**: mimic section order, grouping, spacing rhythm, and CRO patterns that improve conversion. Adapt to the client’s messaging and offering; do not copy text or brand.\nCompetitor Screenshot URL: {{ $item(0).$node[\"Get Screenshot Competitor1\"].json[\"screenshotUrl\"] || \"\" }}\n\n- **Website Structure We Want You to Follow (STRUCTURE LAYOUT)**\nUse this as the **primary layout**: mimic section order, grouping, spacing rhythm, and CRO patterns that improve conversion. Adapt to the client’s messaging and offering; Use clients colour theme\nStructure Layout: {{ $item(0).$node[\"Website Structure\"].json[\"text\"] || \"No content scraped\" }}\n\n# Mission\nOutput a SINGLE, self-contained HTML document that:\n1) Implements **all high-priority / Phase 0 Quick Wins** from the CRO audit.\n2) **Prioritizes the competitor landing page layout and flow** as the core structure to mimic (section order, grouping, component patterns).\n3) Applies the **client’s brand colours, theme, and stylistic cues** from the client screenshot.\n4) Reflects the client’s unique product/service and value proposition (from scraped content + audit insights).\n5) Is **unique and non-generic**: competitor-inspired structure + client branding + CRO audit messaging.\n\n# Suggested Structure (guideline, not rigid)\n> Treat this as a suggested scaffold. When in doubt, **follow the competitor’s structure first**, then style with the client brand.\n- **Head:** Semantic HTML5; <title>/<meta name=\"description\"> optimized per audit; Open Graph & Twitter; JSON-LD schema (Organization + WebSite + BreadcrumbList, or LocalBusiness/Product/Service).\n- **Hero (Above-the-Fold):** Audit-driven value prop + benefit subhead; primary CTA (clear, benefit-led, aria-label); trust bullets/badges; lightweight visual container. Follow competitor hero composition (e.g., left copy/right visual) if present.\n- **Social Proof:** Client/partner logos, ratings, 1–2 short testimonials (placeholder copy ok); risk-reversal/guarantee if audit recommends.\n- **Offer / Service Blocks:** Skimmable cards; iconography; features → benefits; persuasive microcopy; momentum cues (steps/progress) if audit calls for it.\n- **Lead Form or CTA Cluster:** 3–5 fields max; inline validation (HTML5 + aria-live); clear privacy note; button states (loading/disabled); success confirmation.\n- **Urgency / Scarcity:** Only if audit recommends; subtle banner/ticker with aria-live=\"polite\".\n- **FAQ / Objection Handling:** 4–6 accordions with schema.org FAQ markup.\n- **Footer:** Contact, social, basic nav, secondary CTA.\n\n# Accessibility & Performance\n- WCAG AA+ contrast; :focus-visible; skip-to-content link.\n- Respect prefers-reduced-motion; subtle transitions only.\n- Images lazy-load; width/height set to avoid CLS.\n- Minimal vanilla JS only (form validation, accordion toggles). No external libraries.\n\n# CSS Requirements\n- **Palette from Client Screenshot** (NOT competitor): define at :root  \n  --brand-800, --brand-700, --brand-600, --brand-500, --brand-100, --accent, --bg, --text, --muted, --success, --warning, --error.\n- Mobile-first responsive grid/flex; clear type scale; generous spacing.\n- Card components with soft shadows, rounded corners.\n- Button, input, alert, badge systems; tactile hover/focus micro-interactions.\n\n# Technical SEO\n- Single <h1>; descriptive <h2>/<h3> hierarchy.\n- Internal anchor links to key sections.\n- JSON-LD per most relevant entity type (Organization/WebSite/BreadcrumbList or LocalBusiness/Product/Service).\n\n# Output Constraints\n- **Return ONLY one complete HTML document**:\n  - <!DOCTYPE html>\n  - <html lang=\"en\">\n  - <head> with inline <style> (no external CSS)\n  - <body> with all sections\n- No markdown, no commentary.\n- Use semantic placeholders where assets are unknown (e.g., data- attributes). Layout must remain presentable.\n- Keep DOM lean; avoid unnecessary wrappers.\n- The structure of the landing page is primarily based on the competitor screenshot. Mimic the competitor. \n- The design of the output should be based on the clients landing page. The primary and secondary colours, extract from the clients landing page.\n\n# Copy Guidance\n- Rewrite headlines, subheads, and CTAs per audit (clear, specific, benefit-driven).\n- Replace jargon with outcomes and proof; front-load benefits.\n- Conversational, reassuring microcopy in/around forms.\n- CTA text communicates outcome (“Get My Plan”, “Book Strategy Call”).\n\n# Deliverable\nProduce a **single, production-ready HTML file** (inline CSS in <style>) that:\n- **Mimics the competitor’s site structure** (layout & flow) as the primary guide,\n- **Uses the client screenshot for theme, colour, and style**,\n- **Implements the CRO audit quick wins**,\n- Is unique, conversion-optimized, responsive, accessible, and fast.\n- User \"Structure Layout:\" for the layout and structure of the website.\n",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [752, 2864],
+      "position": [1152, 2864],
       "id": "8c5a7689-06da-4ae5-8814-30bad523e55d",
       "name": "Landing Page Generator",
       "onError": "continueRegularOutput"
@@ -51,7 +51,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
-      "position": [752, 3104],
+      "position": [1152, 3104],
       "id": "02d82412-a7e0-450a-a60a-c8ae1ffe4217",
       "name": "OpenRouter Landing Page",
       "credentials": {
@@ -67,7 +67,7 @@
           "item": [
             {
               "mode": "everyX",
-              "value": 5,
+              "value": 30,
               "unit": "minutes"
             }
           ]
@@ -277,7 +277,7 @@
       "name": "Save to Google Drive1",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [1296, 2864],
+      "position": [1696, 2864],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "ySzWN5yRZbSL8sUw",
@@ -388,7 +388,7 @@
       "name": "Update Google Sheet1",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
-      "position": [1760, 2864],
+      "position": [2160, 2864],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "XTfYeEotsbhc5dxV",
@@ -433,7 +433,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1536, 2864],
+      "position": [1936, 2864],
       "id": "74faa987-6e09-4737-8b93-6d8e845dca51",
       "name": "Create Share Link1"
     },
@@ -521,7 +521,7 @@
       "name": "Binary Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1072, 2864]
+      "position": [1472, 2864]
     },
     {
       "parameters": {
@@ -542,6 +542,36 @@
       "position": [112, 2864],
       "id": "a1ec0e07-cb2b-43f2-92c6-7a7780495f69",
       "name": "Consolidate Inputs"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# **🧩 Website Structure Blueprint Prompt (Client + Competitor)**\n\n# SYSTEM / ROLE\n\nYou are a senior **Conversion Rate Optimisation (CRO) & UX consultant** with deep expertise in:\n- Persuasive UX, behavioural psychology, web usability\n- High-converting ecommerce & lead-gen layouts\n- Major platforms: Shopify, BigCommerce, WordPress, HubSpot, Headless stacks\n- Best-practices from Baymard Institute, CXL, NN/g, Making Websites Win\n\nYour role: Deliver a **website structure blueprint** that combines the **client’s brand identity** with the **competitor’s proven layout structure**.\n\n---\n\n# INPUTS\n\n- **Client Screenshot URL**: {{ $item(0).$node[\"Get Screenshot1\"].json[\"screenshotUrl\"] || \"\" }}  \n- **Competitor Screenshot URL**: {{ $item(0).$node[\"Get Screenshot Competitor1\"].json[\"screenshotUrl\"] || \"\" }}\n\n---\n\n# OBJECTIVES\n\n1. Use **Client Screenshot** to extract:\n   - Brand colors, fonts, styling, tone\n   - Core text snippets / headings / identity\n\n2. Use **Competitor Screenshot** to extract:\n   - Page structure (hero, sections, CTAs, footer)\n   - Interaction patterns (hover states, menus, sticky elements, animations)\n\n3. Deliver a **section-by-section website plan**:\n   - Hero (headline, CTA, layout)\n   - Each subsequent section (value props, features, testimonials, offers, CTA placements)\n   - Footer (trust signals, navigation, socials, policies)\n\n4. Ensure output is **adapted for the client**:\n   - Layout inspired by competitor\n   - Styling, content, and copy adapted from client brand\n\n---\n\n# OUTPUT FORMAT\n\nDeliver the audit in **Markdown**:\n\n```markdown\n# Website Structure Blueprint\n\n## Brand & Theme\n– Extracted color palette from Client Screenshot  \n– Fonts & styling notes  \n– Tone of voice   \n\n## Hero Section (Above the Fold)\n– Layout, imagery, headline, CTA  \n– Client copy suggestions  \n\n## Section 2: [Competitor-Inspired Layout]\n– Structural description  \n– Client-adapted copy/design  \n\n## Section 3: [Competitor-Inspired Layout]\n– Structural description  \n– Client-adapted copy/design  \n\n... (repeat for each competitor-inspired section)\n\n## Footer\n– Structure (navigation, legal, social, trust signals)  \n– Client-specific adaptation\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [752, 2864],
+      "id": "9cb5ccec-76e8-412f-9e3c-8e77e4e47d3f",
+      "name": "Website Structure",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [752, 3104],
+      "id": "8202f85d-8869-47d1-bc20-553d9843253e",
+      "name": "OpenRouter Website Structure",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -550,7 +580,7 @@
       "main": [
         [
           {
-            "node": "Landing Page Generator",
+            "node": "Website Structure",
             "type": "main",
             "index": 0
           }
@@ -790,13 +820,35 @@
           }
         ]
       ]
+    },
+    "Website Structure": {
+      "main": [
+        [
+          {
+            "node": "Landing Page Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Website Structure": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Website Structure",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "4ecfcbdd-3495-4f34-9da6-0d6d71c8a3b8",
+  "versionId": "c1bd88f1-92b0-4422-8595-8c350f4c9d9e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
