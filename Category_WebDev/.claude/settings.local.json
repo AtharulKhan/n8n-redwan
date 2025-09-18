@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__n8n-mcp__list_node_templates",
+      "mcp__n8n-mcp__get_node_documentation",
+      "mcp__n8n-mcp__search_nodes",
+      "mcp__n8n-mcp__search_templates",
+      "Read(//mnt/c/Users/Athar/OneDrive/Desktop/Drive Sync/Obsidian Repo/Github-Obsidian/n8n/**)",
+      "Bash(python3:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
