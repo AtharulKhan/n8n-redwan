@@ -1,0 +1,1111 @@
+{
+  "name": "Landing Page Generation Lead Gen",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# **🧩 Master CRO Audit Prompt (Universal & Modular)**\n\n# SYSTEM / ROLE\n\nYou are a senior **Conversion Rate Optimisation (CRO) consultant** with deep expertise in:\n- UX / usability, behavioural psychology, persuasion design\n- Technical SEO, performance optimisation\n- E-commerce & lead-generation funnels (B2B + B2C hybrid)\n- Major platforms: Shopify, BigCommerce, WordPress, HubSpot, Headless stacks\n\nYou have internalised best practices from **Making Websites Win, Conversion Optimization (K. Ash), Baymard Institute, CXL, Nielsen Norman Group**.\n\nYour role: Deliver a **CRO + SEO audit & optimisation roadmap** for the given site/page, maximising conversions based on the provided content.\n\n# MISSION\n\nPerform a **full CRO + UX + Technical SEO audit** comparing our website with the competitor.\n\nCustom Instructions From Client: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Custom Prompt\"] }}\n\n## Our Website Content: {{$item(0).$node[\"Get Scraped Content1\"].json[\"html\"]}}\n\nOur Screenshot: {{$item(0).$node[\"Get Screenshot1\"].json[\"screenshotUrl\"]}}\n\nCompetitor Screenshot: {{$item(0).$node[\"Get Screenshot Competitor1\"].json[\"screenshotUrl\"]}}\n\n# OBJECTIVES\n\n1. Audit the **visitor journey**: traffic_source → Home/Landing → Category/PDP/Offer → Cart/Form → Checkout/Thank-you → Post-purchase\n2. Benchmark against **competitor** + **best-in-class CRO patterns**\n3. Identify **gaps in persuasion, UX, trust, tech, performance**\n4. Deliver a **prioritised roadmap** with effort tags and starter copy/code\n\n# RUBRIC (Score Each 1–10)\n\n1. Clarity of Value Proposition\n2. Relevance to Audience Intent\n3. Motivation & Emotional Resonance\n4. Friction (forms, checkout, PDP steps)\n5. Distraction (nav clutter, competing CTAs)\n6. Trust & Credibility (design, proof, policies)\n7. Momentum (progress cues, funnel flow)\n8. Social Proof & Persuasion triggers\n9. Urgency / Scarcity Cues\n10. Accessibility, Performance, & Mobile UX\n\n# TASKS\n\n## 1 · Heuristic & Analytics Audit [ALL]\n- Apply 10-point rubric to both sites\n- Flag dead-ends, loops, tech snags\n- Highlight mobile/responsive issues\n\n## 2 · Technical SEO & Performance [ALL]\n- Sitemap & robots check\n- Schema coverage\n- Speed metrics & fixes\n\n## 3 · Competitor & Best-Practice Comparison [ALL]\n- Extract 3 persuasive tactics from competitor\n- List 3 transferrable CRO/UX wins from industry benchmarks\n\n## 4 · Gap Analysis [ALL]\n\n| Element | Issue | KPI Impact | Evidence | Fix | ICE Score | Code? | LG/EC/HY |\n\n## 5 · CRO Blueprint\n\n- **Phase 0 – Quick Wins (1–2 weeks)**\n- **Phase 1 – UX & Trust Builders (4–6 weeks)**\n- **Phase 2 – Experiments (8–12 weeks)**\n- **Phase 3 – Scale & Automation (3–6 months)**\n\nEach action must:\n- Tag effort [NC]=No-Code / [LC]=Low-Code / [HC]=High-Code\n- Tag funnel type [LG]/[EC]/[HY]\n- Include **starter copy / code snippet**\n\n## 6 · Measurement Plan\n\n- **E-com metrics:** CVR, AOV, Revenue/Session, Checkout success\n- **Lead-gen metrics:** Form CVR, SQO%, Pipeline value\n- **Shared metrics:** Bounce, Speed, Repeat conversion\n\n# OUTPUT FORMAT\n\nDeliver the audit in **Markdown**:\n\n```markdown\n# Executive Summary\n\n## 1. CRO & UX Audit\n– Rubric scores + commentary for both sites\n\n## 2. Competitor Insights\n– Wins & transferrable patterns\n\n## 3. Gap Analysis\n– Table format comparing us vs competitor\n\n## 4. Prioritised Blueprint\n– Phase 0 to Phase 3, tagged by [NC]/[LC]/[HC] + [LG]/[EC]/[HY]\n\n## 5. Measurement & Next Steps\n– KPIs, reporting cadence\n```",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [368, 2864],
+      "id": "ff91beaa-c64b-4900-90da-ad4a83776c3f",
+      "name": "CRO Audit Analysis",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [368, 3104],
+      "id": "aa8f7473-251e-4d21-b480-cd5c907ac0f6",
+      "name": "OpenRouter CRO Audit",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "==You are an expert front-end developer and CRO specialist. Create a COMPLETE, PRODUCTION-READY landing page (single HTML file with inline CSS in <style>) that implements the CRO audit recommendations and visual analysis.\n\n# Inputs (from upstream nodes)\n\nCustom Instructions From Client: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Custom Prompt\"] }}\n## CRO Audit (primary guide for messaging, quick wins, friction reduction)\n{{ $json.text }}\n\n## Client Website Content (for value prop, service details, and copy source)\n{{ $item(0).$node[\"Get Scraped Content1\"].json[\"html\"] || \"No content scraped\" }}\n\n## Visual References\n- **Client Screenshot (BRAND PRIORITY — THEME/COLOUR/STYLE)**\nUse this to extract brand palette, theme, typography cues, and visual identity. Apply these consistently across the page.\nClient Screenshot URL: {{ $item(0).$node[\"Get Screenshot1\"].json[\"screenshotUrl\"] || \"\" }}\n\n- **Competitor Screenshot (STRUCTURE PRIORITY — LAYOUT/FLOW)**\nUse this as the **primary structural model**: mimic section order, grouping, spacing rhythm, and CRO patterns that improve conversion. Adapt to the client’s messaging and offering; do not copy text or brand.\nCompetitor Screenshot URL: {{ $item(0).$node[\"Get Screenshot Competitor1\"].json[\"screenshotUrl\"] || \"\" }}\n\n- **Website Structure We Want You to Follow (STRUCTURE LAYOUT)**\nUse this as the **primary layout**: mimic section order, grouping, spacing rhythm, and CRO patterns that improve conversion. Adapt to the client’s messaging and offering; Use clients colour theme\nStructure Layout: {{ $item(0).$node[\"Website Structure\"].json[\"text\"] || \"No content scraped\" }}\n\n# Mission\nOutput a SINGLE, self-contained HTML document that:\n1) Implements **all high-priority / Phase 0 Quick Wins** from the CRO audit.\n2) **Prioritizes the competitor landing page layout and flow** as the core structure to mimic (section order, grouping, component patterns).\n3) Applies the **client’s brand colours, theme, and stylistic cues** from the client screenshot.\n4) Reflects the client’s unique product/service and value proposition (from scraped content + audit insights).\n5) Is **unique and non-generic**: competitor-inspired structure + client branding + CRO audit messaging.\n\n# Suggested Structure (guideline, not rigid)\n> Treat this as a suggested scaffold. When in doubt, **follow the competitor’s structure first**, then style with the client brand.\n- **Head:** Semantic HTML5; <title>/<meta name=\"description\"> optimized per audit; Open Graph & Twitter; JSON-LD schema (Organization + WebSite + BreadcrumbList, or LocalBusiness/Product/Service).\n- **Hero (Above-the-Fold):** Audit-driven value prop + benefit subhead; primary CTA (clear, benefit-led, aria-label); trust bullets/badges; lightweight visual container. Follow competitor hero composition (e.g., left copy/right visual) if present.\n- **Social Proof:** Client/partner logos, ratings, 1–2 short testimonials (placeholder copy ok); risk-reversal/guarantee if audit recommends.\n- **Offer / Service Blocks:** Skimmable cards; iconography; features → benefits; persuasive microcopy; momentum cues (steps/progress) if audit calls for it.\n- **Lead Form or CTA Cluster:** 3–5 fields max; inline validation (HTML5 + aria-live); clear privacy note; button states (loading/disabled); success confirmation.\n- **Urgency / Scarcity:** Only if audit recommends; subtle banner/ticker with aria-live=\"polite\".\n- **FAQ / Objection Handling:** 4–6 accordions with schema.org FAQ markup.\n- **Footer:** Contact, social, basic nav, secondary CTA.\n\n# Accessibility & Performance\n- WCAG AA+ contrast; :focus-visible; skip-to-content link.\n- Respect prefers-reduced-motion; subtle transitions only.\n- Images lazy-load; width/height set to avoid CLS.\n- Minimal vanilla JS only (form validation, accordion toggles). No external libraries.\n\n# CSS Requirements\n- **Palette from Client Screenshot** (NOT competitor): define at :root  \n  --brand-800, --brand-700, --brand-600, --brand-500, --brand-100, --accent, --bg, --text, --muted, --success, --warning, --error.\n- Mobile-first responsive grid/flex; clear type scale; generous spacing.\n- Card components with soft shadows, rounded corners.\n- Button, input, alert, badge systems; tactile hover/focus micro-interactions.\n\n# Technical SEO\n- Single <h1>; descriptive <h2>/<h3> hierarchy.\n- Internal anchor links to key sections.\n- JSON-LD per most relevant entity type (Organization/WebSite/BreadcrumbList or LocalBusiness/Product/Service).\n\n# Output Constraints\n- **Return ONLY one complete HTML document**:\n  - <!DOCTYPE html>\n  - <html lang=\"en\">\n  - <head> with inline <style> (no external CSS)\n  - <body> with all sections\n- No markdown, no commentary.\n- Use semantic placeholders where assets are unknown (e.g., data- attributes). Layout must remain presentable.\n- Keep DOM lean; avoid unnecessary wrappers.\n- The structure of the landing page is primarily based on the competitor screenshot. Mimic the competitor. \n- The design of the output should be based on the clients landing page. The primary and secondary colours, extract from the clients landing page.\n\n# Copy Guidance\n- Rewrite headlines, subheads, and CTAs per audit (clear, specific, benefit-driven).\n- Replace jargon with outcomes and proof; front-load benefits.\n- Conversational, reassuring microcopy in/around forms.\n- CTA text communicates outcome (“Get My Plan”, “Book Strategy Call”).\n\n# Deliverable\nProduce a **single, production-ready HTML file** (inline CSS in <style>) that:\n- **Mimics the competitor’s site structure** (layout & flow) as the primary guide,\n- **Uses the client screenshot for theme, colour, and style**,\n- **Implements the CRO audit quick wins**,\n- Is unique, conversion-optimized, responsive, accessible, and fast.\n- User \"Structure Layout:\" for the layout and structure of the website.\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [1152, 2864],
+      "id": "8c5a7689-06da-4ae5-8814-30bad523e55d",
+      "name": "Landing Page Generator",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [1152, 3104],
+      "id": "02d82412-a7e0-450a-a60a-c8ae1ffe4217",
+      "name": "OpenRouter Landing Page",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 30,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY",
+          "mode": "list",
+          "cachedResultName": "Yaseer Web Dev Lead Gen",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "f8662df3-5dc0-49c7-bd4e-616ac42d939c",
+      "name": "Google Sheets Trigger1",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [-1616, 2864],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "WH4ACZX7gzUnAQBj",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.Scrape }}",
+              "operation": "contains",
+              "value2": "Yes"
+            }
+          ]
+        }
+      },
+      "id": "9053ae82-a65f-4a79-a919-ed232bb87f4d",
+      "name": "Check Positive Status1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-1408, 2864]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~website-content-crawler/runs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "apifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"startUrls\": [\n    {\n      \"url\": \"{{ $json[\"Website URL\"] }}\"\n    }\n  ],\n  \"crawlerType\": \"playwright:chrome\",\n  \"includeHtml\": true,\n  \"saveHtml\": true,\n  \"saveMarkdown\": true,\n  \"maxCrawlDepth\": 0,\n  \"maxCrawlPages\": 1,\n  \"proxyConfiguration\": {\n    \"useApifyProxy\": true,\n    \"apifyProxyGroups\": [\"RESIDENTIAL\"]\n  }\n}",
+        "options": {}
+      },
+      "id": "355d3f08-e003-4911-bad6-71793369f162",
+      "name": "Apify Content Scraper1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1104, 2736],
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        },
+        "apifyApi": {
+          "id": "nl77x5MzcpCop3FV",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~screenshot-url/runs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "apifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"delay\": 0,\n    \"proxy\": {\n        \"useApifyProxy\": true,\n        \"apifyProxyGroups\": [\n            \"RESIDENTIAL\"\n        ]\n    },\n    \"scrollToBottom\": true,\n    \"urls\": [\n        {\n            \"url\": \"{{ $json[\"Website URL\"] }}\",\n            \"method\": \"GET\"\n        }\n    ],\n    \"waitUntil\": \"domcontentloaded\",\n    \"waitUntilNetworkIdleAfterScroll\": false\n}",
+        "options": {}
+      },
+      "id": "e462d656-6e33-4134-9669-6b981067f36c",
+      "name": "Apify Screenshot1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1104, 2960],
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        },
+        "apifyApi": {
+          "id": "nl77x5MzcpCop3FV",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "id": "e708abed-b25f-4737-abb1-9f766c5fe5bb",
+      "name": "Wait for Processing1",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [-608, 2864],
+      "webhookId": "3de86376-a620-45ce-9a77-d6d1e6065c22"
+    },
+    {
+      "parameters": {
+        "url": "={{ \"https://api.apify.com/v2/actor-runs/\" \n    + $item(0).$node[\"Apify Content Scraper1\"].json.data.id \n    + \"/dataset/items?format=json&clean=true\" }}\n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "20c71c0b-7014-4a1e-8c0d-0cd0118f0aca",
+      "name": "Get Scraped Content1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-416, 2736],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $item(0).$node[\"Apify Screenshot1\"].json.data.defaultDatasetId \n    ? \"https://api.apify.com/v2/datasets/\" \n      + $node[\"Apify Screenshot1\"].json.data.defaultDatasetId \n      + \"/items?format=json&clean=true\"\n    : \"\" }}\n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "75ec1f08-0f65-41ca-8ebc-bd7406e3fcbb",
+      "name": "Get Screenshot1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-416, 2864],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "name": "=Client_{{ $item(0).$node[\"Check Positive Status1\"].json[\"Client Name\"] || \"No content scraped\" }}_{{ $now.format('yyyy-MM-dd_HH-mm') }}.html",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $node[\"Create Client Folder1\"].json[\"id\"] }}\n",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "f9e3dab3-8930-4e66-ae40-4650fe3e54ba",
+      "name": "Save to Google Drive1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1712, 2864],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ySzWN5yRZbSL8sUw",
+          "name": "Google Drive - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY",
+          "mode": "list",
+          "cachedResultName": "Web Dev Lead Gen",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Drive File": "={{ $item(0).$node[\"Create Share Link1\"].json[\"webViewLink\"] }}",
+            "Drive File Download": "={{ $item(0).$node[\"Create Share Link1\"].json[\"webContentLink\"] }}",
+            "Scrape": "Done",
+            "ID": "={{ $item(0).$node[\"Check Positive Status1\"].json[\"ID\"] }}",
+            "SEO Strategy": "={{ $item(0).$node[\"SEO/Meta Analysis\"].json[\"text\"] }}",
+            "Email to Send": "={{ $item(0).$node[\"Email\"].json[\"text\"] }}"
+          },
+          "matchingColumns": ["ID"],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Website URL",
+              "displayName": "Website URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Competitor URL",
+              "displayName": "Competitor URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Drive File",
+              "displayName": "Drive File",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Drive File Download",
+              "displayName": "Drive File Download",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SEO Strategy",
+              "displayName": "SEO Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email to Send",
+              "displayName": "Email to Send",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Custom Prompt",
+              "displayName": "Custom Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Scrape",
+              "displayName": "Scrape",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f654fc95-7632-4a86-865c-2bbe62fa8a8d",
+      "name": "Update Google Sheet1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2832, 2864],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XTfYeEotsbhc5dxV",
+          "name": "Google Sheets account - Redwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{ \"Website Crawl_\" + $json[\"Client Name\"] + \"_\" + $now.format('yyyy-MM-dd') }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1tcw3FuriQYaqjQCL16x1uDjn_25qkoJG",
+          "mode": "list",
+          "cachedResultName": "Yaseer Web Dev Lead Gen",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1tcw3FuriQYaqjQCL16x1uDjn_25qkoJG"
+        },
+        "options": {}
+      },
+      "id": "622409af-e190-416e-98f6-1f7689520d1e",
+      "name": "Create Client Folder1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-1104, 2544],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ySzWN5yRZbSL8sUw",
+          "name": "Google Drive - Redwan"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Google Drive links from json.id\n// Input: items with item.json.id (from Google Drive node output)\n// Output: adds driveFileUrl, webViewLink, downloadLink to item.json\n\nconst items = $input.all().map((item) => {\n  item.json = item.json || {};\n\n  // Try a few common id fields just in case\n  const id =\n    item.json.id ||\n    item.json.fileId ||\n    item.json.file_id ||\n    $json.id;\n\n  if (!id) {\n    // Surface a helpful error that includes the item index\n    throw new Error(`Missing file id on item: ${JSON.stringify(item.json)}`);\n  }\n\n  const base = 'https://drive.google.com/file/d/';\n  const safeId = encodeURIComponent(id);\n\n  // Pretty file URL (opens Drive file page)\n  item.json.driveFileUrl = `${base}${safeId}`;\n\n  // Typical \"Open in Drive\" view link\n  item.json.webViewLink = `${base}${safeId}/view?usp=sharing`;\n\n  // Direct-ish download link pattern used by Google\n  item.json.downloadLink = `https://drive.google.com/uc?id=${safeId}&export=download`;\n\n  return item;\n});\n\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1952, 2864],
+      "id": "74faa987-6e09-4737-8b93-6d8e845dca51",
+      "name": "Create Share Link1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~screenshot-url/runs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "apifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"delay\": 0,\n    \"proxy\": {\n        \"useApifyProxy\": true,\n        \"apifyProxyGroups\": [\n            \"RESIDENTIAL\"\n        ]\n    },\n    \"scrollToBottom\": true,\n    \"urls\": [\n        {\n            \"url\": \"{{ $json[\"Competitor URL\"] }}\",\n            \"method\": \"GET\"\n        }\n    ],\n    \"waitUntil\": \"domcontentloaded\",\n    \"waitUntilNetworkIdleAfterScroll\": false\n}",
+        "options": {}
+      },
+      "id": "f2c2e55a-9d24-43ac-81c3-ddce033897e7",
+      "name": "Apify Screenshot Competitor1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1104, 3152],
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        },
+        "apifyApi": {
+          "id": "nl77x5MzcpCop3FV",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $item(0).$node[\"Apify Screenshot1\"].json.data.defaultDatasetId \n    ? \"https://api.apify.com/v2/datasets/\" \n      + $node[\"Apify Screenshot Competitor1\"].json.data.defaultDatasetId \n      + \"/items?format=json&clean=true\"\n    : \"\" }}\n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "f174414a-f461-4539-8102-c8889bb49b91",
+      "name": "Get Screenshot Competitor1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-416, 3008],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pyzMvLcpWk9lob5o",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-144, 2848],
+      "id": "6897560b-dd1e-41b3-8f69-793cabc77836",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine HTML from \"Landing Page Generator\" and emit as binary `data`\n\n// 1) Read the HTML produced by the Landing Page Generator\nlet html = $node[\"Landing Page Generator\"].json?.text || $json?.text || \"\";\n\nif (!html || typeof html !== \"string\" || html.trim().length < 100) {\n  throw new Error(\"Landing Page HTML is missing or too short. Check the 'Landing Page Generator' node output.\");\n}\n\n// 2) Strip any accidental Markdown/code fences (handles ``` and ```html anywhere)\nconst stripCodeFences = (s) => {\n  // Remove leading/trailing fences\n  // Matches ``` or ```html (case-insensitive), possibly with whitespace\n  const fenceStart = /^\\s*```(?:html)?\\s*/i;\n  const fenceEnd = /\\s*```\\s*$/i;\n  s = s.replace(fenceStart, \"\");\n  s = s.replace(fenceEnd, \"\");\n\n  // If the whole blob contains multiple fenced blocks, try to extract the first fenced block contents\n  const multiFence = /```(?:html)?\\s*([\\s\\S]*?)\\s*```/i;\n  const m = s.match(multiFence);\n  if (m && m[1]) return m[1];\n\n  return s;\n};\n\nhtml = stripCodeFences(html).trim();\n\n// 3) Normalizers\nconst hasDoctype = /<!DOCTYPE\\s+html>/i.test(html);\nconst hasHtmlTag = /<html[\\s>]/i.test(html);\nconst endsWithHtmlClose = /<\\/html>\\s*$/i.test(html);\n\n// 4) If there's no <html> tag, treat it as a fragment and wrap it fully\nconst wrapFragment = (fragment) => `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <title>Landing Page</title>\n</head>\n<body>\n${fragment}\n</body>\n</html>`;\n\n// 5) Ensure full document\nif (!hasHtmlTag) {\n  html = wrapFragment(html);\n} else {\n  // Ensure DOCTYPE\n  if (!hasDoctype) {\n    html = `<!DOCTYPE html>\\n${html}`;\n  }\n  // If somehow missing closing </html>, append it\n  if (!endsWithHtmlClose) {\n    // Try to close body if present but not closed (best-effort)\n    const hasBodyOpen = /<body[\\s>]/i.test(html);\n    const hasBodyClose = /<\\/body>/i.test(html);\n    if (hasBodyOpen && !hasBodyClose) {\n      html = `${html}\\n</body>`;\n    }\n    html = `${html}\\n</html>`;\n  }\n}\n\n// 6) Final sanity (no throwing: we coerce instead)\nif (!/^<!DOCTYPE html>/i.test(html)) {\n  html = `<!DOCTYPE html>\\n${html.replace(/^\\uFEFF/, \"\")}`; // strip BOM if present, then add doctype\n}\nif (!/<html[\\s>]/i.test(html)) {\n  // As an absolute fallback, wrap again\n  html = wrapFragment(html);\n}\nif (!/<\\/html>\\s*$/i.test(html)) {\n  html = `${html}\\n</html>`;\n}\n\n// 7) Build filename like Client_YYYY-MM-DD_HH-mm.html\nconst pad = (n) => String(n).padStart(2, \"0\");\nconst now = new Date();\nconst fileName = `Client_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}.html`;\n\n// 8) Prepare output structure (json metadata + binary `data`)\nconst buffer = Buffer.from(html, \"utf8\");\nconst binaryData = await this.helpers.prepareBinaryData(buffer, fileName, \"text/html\");\n\nreturn [\n  {\n    json: {\n      fileName,\n      size: buffer.length,\n      validated: true,\n      timestamp: now.toISOString(),\n    },\n    binary: {\n      data: binaryData, // <-- The next Google Drive node should use \"Binary Property: data\"\n    },\n  },\n];\n"
+      },
+      "id": "2fea7c8f-1ead-4f3b-9916-d9c8346a95c0",
+      "name": "Binary Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1472, 2864]
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-784, 2832],
+      "id": "3f872b4a-1690-4b7a-b2db-c54d2906b3fe",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidate mixed items (scrape results, screenshots, errors) into ONE item\n// and expose clean fields for the LLM prompt:\n//\n//  Output JSON shape:\n//  {\n//    client: {\n//      url, html, markdown, text, metadata, screenshotUrl\n//    },\n//    competitor: {\n//      url, screenshotUrl\n//    },\n//    raw: { allItems, errors }   // optional debug\n//  }\n\nconst items = $input.all();\n\n// Helper: shallow clone (avoid mutating upstream)\nconst clone = (obj) => JSON.parse(JSON.stringify(obj || {}));\n\n// Buckets\nlet client = { url: null, html: null, markdown: null, text: null, metadata: null, screenshotUrl: null };\nlet competitor = { url: null, screenshotUrl: null };\nconst errors = [];\n\n// Utilities\nconst getHost = (u) => {\n  try { return new URL(u).host; } catch { return null; }\n};\nconst looksLikeScrape = (j) =>\n  j && (j.html || j.markdown || j.text || j.metadata);\nconst looksLikeScreenshot = (j) =>\n  j && (j.screenshotUrl && (j.url || j.startUrl));\n\n// First, gather all candidates\nconst scrapeCandidates = [];\nconst screenshotCandidates = [];\n\nfor (const it of items) {\n  const j = it.json || {};\n\n  if (j.error) {\n    errors.push(clone(j));\n    continue;\n  }\n\n  if (looksLikeScrape(j)) {\n    scrapeCandidates.push(clone(j));\n  } else if (looksLikeScreenshot(j)) {\n    screenshotCandidates.push(clone(j));\n  }\n}\n\n// Heuristics to pick client vs competitor\n// If two distinct hosts exist in screenshots, treat the first host we see as \"client\" and the second as \"competitor\".\n// (Works with your example: butterflydigital.ca = client, newdgtl.com = competitor)\nconst uniqBy = (arr, keyFn) => {\n  const seen = new Set();\n  return arr.filter(x => {\n    const k = keyFn(x);\n    if (k && !seen.has(k)) { seen.add(k); return true; }\n    return false;\n  });\n};\n\nconst ssWithHost = screenshotCandidates\n  .map(s => ({...s, host: getHost(s.url || s.startUrl)}))\n  .filter(s => !!s.host);\n\nconst dedupScreens = uniqBy(ssWithHost, s => s.screenshotUrl || (s.url || s.startUrl));\n\nlet clientHost = null;\nlet competitorHost = null;\n\nif (dedupScreens.length) {\n  clientHost = dedupScreens[0]?.host || null;\n  // find a different host to mark as competitor\n  const other = dedupScreens.find(s => s.host !== clientHost);\n  competitorHost = other?.host || null;\n}\n\n// Assign screenshot URLs\nfor (const s of dedupScreens) {\n  const url = s.url || s.startUrl || null;\n\n  if (clientHost && s.host === clientHost && !client.screenshotUrl) {\n    client.screenshotUrl = s.screenshotUrl;\n    client.url = url;\n  } else if (competitorHost && s.host === competitorHost && !competitor.screenshotUrl) {\n    competitor.screenshotUrl = s.screenshotUrl;\n    competitor.url = url;\n  }\n}\n\n// Pick best client scrape content matching client host if possible, else first scrape\nconst scrapeForHost = (host) =>\n  scrapeCandidates.find(c => getHost(c.url || c.crawl?.loadedUrl || c.metadata?.canonicalUrl) === host);\n\nlet clientScrape =\n  (clientHost && scrapeForHost(clientHost)) ||\n  scrapeCandidates[0] ||\n  null;\n\nif (clientScrape) {\n  client.html = clientScrape.html || null;\n  client.markdown = clientScrape.markdown || null;\n  client.text = clientScrape.text || null;\n  client.metadata = clientScrape.metadata || null;\n  client.url = client.url || clientScrape.url || clientScrape.crawl?.loadedUrl || clientScrape.metadata?.canonicalUrl || null;\n}\n\n// If we still don't have competitor screenshot but we have another screenshot host, use it\nif (!competitor.screenshotUrl && dedupScreens.length > 1) {\n  const candidate = dedupScreens.find(s => s.host !== clientHost);\n  if (candidate) {\n    competitor.screenshotUrl = candidate.screenshotUrl;\n    competitor.url = candidate.url || candidate.startUrl || null;\n  }\n}\n\n// Final single consolidated item\nreturn [{\n  json: {\n    client,\n    competitor,\n    raw: {\n      allItems: items.map(i => i.json || {}),\n      errors\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [112, 2864],
+      "id": "a1ec0e07-cb2b-43f2-92c6-7a7780495f69",
+      "name": "Consolidate Inputs"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# **🧩 Website Structure Blueprint Prompt (Client + Competitor)**\n\n# SYSTEM / ROLE\n\nYou are a senior **Conversion Rate Optimisation (CRO) & UX consultant** with deep expertise in:\n- Persuasive UX, behavioural psychology, web usability\n- High-converting ecommerce & lead-gen layouts\n- Major platforms: Shopify, BigCommerce, WordPress, HubSpot, Headless stacks\n- Best-practices from Baymard Institute, CXL, NN/g, Making Websites Win\n\nYour role: Deliver a **website structure blueprint** that combines the **client’s brand identity** with the **competitor’s proven layout structure**.\n\n---\n\n# INPUTS\nCustom Instructions From Client: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Custom Prompt\"] }}\n- **Client Screenshot URL**: {{ $item(0).$node[\"Get Screenshot1\"].json[\"screenshotUrl\"] || \"\" }}  \n- **Competitor Screenshot URL**: {{ $item(0).$node[\"Get Screenshot Competitor1\"].json[\"screenshotUrl\"] || \"\" }}\n\n---\n\n# OBJECTIVES\n\n1. Use **Client Screenshot** to extract:\n   - Brand colors, fonts, styling, tone\n   - Core text snippets / headings / identity\n\n2. Use **Competitor Screenshot** to extract:\n   - Page structure (hero, sections, CTAs, footer)\n   - Interaction patterns (hover states, menus, sticky elements, animations)\n\n3. Deliver a **section-by-section website plan**:\n   - Hero (headline, CTA, layout)\n   - Each subsequent section (value props, features, testimonials, offers, CTA placements)\n   - Footer (trust signals, navigation, socials, policies)\n\n4. Ensure output is **adapted for the client**:\n   - Layout inspired by competitor\n   - Styling, content, and copy adapted from client brand\n\n---\n\n# OUTPUT FORMAT\n\nDeliver the audit in **Markdown**:\n\n```markdown\n# Website Structure Blueprint\n\n## Brand & Theme\n– Extracted color palette from Client Screenshot  \n– Fonts & styling notes  \n– Tone of voice   \n\n## Hero Section (Above the Fold)\n– Layout, imagery, headline, CTA  \n– Client copy suggestions  \n\n## Section 2: [Competitor-Inspired Layout]\n– Structural description  \n– Client-adapted copy/design  \n\n## Section 3: [Competitor-Inspired Layout]\n– Structural description  \n– Client-adapted copy/design  \n\n... (repeat for each competitor-inspired section)\n\n## Footer\n– Structure (navigation, legal, social, trust signals)  \n– Client-specific adaptation\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [752, 2864],
+      "id": "9cb5ccec-76e8-412f-9e3c-8e77e4e47d3f",
+      "name": "Website Structure",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [752, 3104],
+      "id": "8202f85d-8869-47d1-bc20-553d9843253e",
+      "name": "OpenRouter Website Structure",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Links\n[Google Sheet](https://docs.google.com/spreadsheets/d/1UcFd0YCSd0Nyraqp4esI3tdz89c6SGn2mZTwTi7liCY/edit?gid=0#gid=0)\n[Drive Folder](https://drive.google.com/drive/folders/1tcw3FuriQYaqjQCL16x1uDjn_25qkoJG)"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-848, 2464],
+      "typeVersion": 1,
+      "id": "0283583f-5a82-4a61-8360-ee3da864930d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [2160, 3088],
+      "id": "95d7ad45-d8f0-4163-ad9e-8669a0ec505e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert CRO strategist. Perform a META-ANALYSIS of the inputs below to synthesize messaging, SEO, and unique selling propositions (USPs). Output your findings in **Markdown format only**.\n\n# Inputs\n\nCustom Instructions From Client: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Custom Prompt\"] }}\n\n## CRO Audit (primary guide for messaging, quick wins, friction reduction)\n{{ $json.text }}\n\n## Client Website Content (value prop, service details, copy source)\n{{ $item(0).$node[\"Get Scraped Content1\"].json[\"html\"] || \"No content scraped\" }}\n\n# Meta-Analysis (Outputs Required in Markdown)\nAnalyze the inputs and produce the following sections:\n\n## Audience & Jobs-To-Be-Done\nWho is the target audience? What outcomes or solutions are they seeking?\n\n## Unique Value Proposition (UVP)\n1–2 sentences that clearly state the client’s most compelling differentiator and benefit.\n\n## Unique Selling Propositions (USPs)\n3–5 clear, benefit-driven USPs derived from the CRO Audit and Client Content.\n\n## Proof & Trust\nIdentify logos, stats, testimonials, guarantees, or credibility signals. Use placeholders where missing.\n\n## Objections & Friction Points\nList 4–6 likely objections or hesitations, along with recommended counter-messaging.\n\n## SEO Analysis\n- **Search Intent:** Informational, commercial, or transactional.  \n- **Head Terms:** 3–5 core keywords.  \n- **Supporting Phrases:** 6–10 secondary phrases/entities.  \n- **SERP Features:** Recommended features to target (FAQ, Local Pack, How-To, sitelinks, etc).  \n- **Internal Anchors:** Suggest 3–4 anchor link targets.\n\n## Meta Title & Description Analysis\n- **Constraints:** Title ≤ 60–65 chars; Description ≤ 150–160 chars.  \n- **Draft Options:** Provide 2–3 candidate meta titles and descriptions.  \n- **Final Recommendation:** Select the best pair and explain why it aligns with CRO and SEO goals.\n\n# Output Constraints\n- Return ONLY in **Markdown format**.  \n- No HTML, no code output.  \n- Deliverable = structured meta-analysis document.  \n- All insights must be based on the Client Website Content (enriched with CRO audit guidance).",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [2160, 2864],
+      "id": "6b000d3c-d6cd-4911-86dd-0fedff47a670",
+      "name": "SEO/Meta Analysis",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-chat",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [2464, 3088],
+      "id": "ee59cacc-98f9-4821-9122-4bf8d1b063d3",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Dtio4gg1Ugl5jouc",
+          "name": "OpenRouter Final"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\nYou are an expert CRO strategist and cold-email copywriter. Using the inputs below, write a concise, human, helpful cold email that references a real landing page we built and a brief SEO analysis. Keep it tight and specific to the prospect.\n\n# Inputs (available via n8n expressions)\n\nCustom Instructions From Client: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Custom Prompt\"] }}\n\n- Prospect:\n  - First name: {{ $item(0).$node[\"Check Positive Status1\"].json[\"First Name\"] || \"No first anem\" }}\n  - Last name: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Last Name\"] || \"No last anem\" }}\n  - Client: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Client Name\"] || \"No client anem\" }}\n  - Company URL: {{ $item(0).$node[\"Check Positive Status1\"].json[\"Website URL\"] || \"No website url\" }}\n\n- Scraped website content (Apify):\n  - Scraped Content: {{ $item(0).$node[\"Get Scraped Content1\"].json[\"html\"] || \"No content scraped\" }}\n  - Client Screenshot URL: {{ $item(0).$node[\"Get Screenshot1\"].json[\"screenshotUrl\"] || \"\" }}\n  - Competitor Screenshot URL: {{ $item(0).$node[\"Get Screenshot Competitor1\"].json[\"screenshotUrl\"] || \"\" }}\n\n- CRO Audit summary (LLM output):\n  {{ $node[\"CRO Audit Analysis\"].json.text || $json.text || \"\" }}\n\n- Website Structure blueprint (LLM output):\n  {{ $node[\"Website Structure\"].json.text || \"\" }}\n\n- Landing page we generated (Drive link from Binary Payload → Save to Google Drive → Create Share Link):\n  - View: {{ $node[\"Create Share Link1\"].json.webViewLink || \"\" }}\n  - Direct download: {{ $node[\"Create Share Link1\"].json.downloadLink || \"\" }}\n\n- SEO meta-analysis (LLM output; optional public link if you store it elsewhere):\n  - Link (preferred if available, else fall back to Drive view link): {{ $json.seo_analysis_link || $node[\"Create Share Link1\"].json.webViewLink || \"\" }}\n\n- Optional findings blob (JSON summaries + problems/opportunities):\n  {{ $json.output || \"\" }}\n\n# Task\nWrite a complete cold email to \"\"{{ $item(0).$node[\"Check Positive Status1\"].json[\"Email\"] || \"No email found\" }}\"\". If no email found, still address to the first name and if not found, address to client.\n\nThe email must:\n- Cite 1–2 concrete gaps from CRO audit / site scrape (e.g., unclear UVP, form friction, missing testimonials, no FAQ schema, slow load speed).\n- Offer 2–3 practical, bite-sized suggestions (e.g., sharpen hero, add proof near CTA, reduce fields, apply FAQ schema).\n- Mention that you built a **live, production-ready landing page** they can preview/download.\n- Reference the SEO analysis and show room for growth, including:\n- Angles: highlight KPI-first, end-to-end AI delivery, or risk reduction.\n- USPs: measurable ROI, AI-native dev, case studies/testimonials, security compliance.\n- Keyword gaps: “AI development services,” “development as a service,” “MVP AI development,” “model deployment.”\n- SERP opportunities: FAQ schema, case study snippets, testimonials, sitelinks.\n- Internal linking: point authority toward service, case study, and process pages.\n- Include light positioning of our team with site link https://butterflydigital.ca and case studies https://wins.mkgrowth.ca.\n- End with a single casual CTA to book a quick chat at https://calendly.com/your-link or reply with a number.\n\n# Rules\n- 120–180 words total.\n- Short sentences. No em dashes.\n- Be specific, not salesy. Reference at least one concrete finding from the scraped content or CRO audit.\n- Use the landing page link and SEO analysis link variables above.\n- If any link variables are empty, don’t mention them.\n- Output plain email text only (no markdown, use bullets sparingly).\n\n# Example tone (do not copy verbatim)\n\n**Subject:** A few quick wins to help SimplifAI convert more visitors\n\nHi Mike,\n\nI was doing some research in the AI solutions space and came across your site. I liked how you lead with “custom AI solutions,” but the hero section felt a bit light on proof — which made me think about a few simple trust builders that could help more visitors book a call.\n\nFrom our review, two things stood out: the CTA doesn’t have testimonials or logos nearby, and the FAQ content isn’t marked up with schema so it’s not helping search. Quick wins could be tightening the headline with a clear outcome (“Save hours weekly with AI automation”), adding a logo strip near the form, and applying FAQ schema.\n\nOn the SEO side, your meta title/description don’t fully capture core commercial terms like “AI development services” or “KPI-driven development.” There’s an opportunity to:\n\n- Lead with USP angles like KPI-first development and end-to-end AI delivery.\n- Target supporting phrases (e.g., “MVP AI development,” “model deployment,” “team augmentation”).\n- Capture rich snippets with FAQs, case studies, and testimonials.\n- Link stronger into case study and process pages to boost internal authority.\n\nTo show how this plays out, we mocked up a live landing page with these elements baked in: https://drive.google.com/uc?id=1tvtlzDXHaqvXe1a5UnX5eQ_ClJ755K2S&export=download (linked).\n\nWe’re a small but full-stack team (AI, dev, SEO/PPC, design, media). You can see us at [https://butterflydigital.ca](https://butterflydigital.ca/) and case studies at [https://wins.mkgrowth.ca](https://wins.mkgrowth.ca/).\n\nIf this feels useful, grab a slot here: https://calendly.com/your-link, or just reply with your number and I’ll give you a call.\n\nBest,\n\nMo\n\nButterfly Digital\n\n---\n\nAnother example of a real email I sent\n\n---\n\nHey Jenny,\n\nI was searching for accountants in Toronto and came across your site. I noticed a couple of opportunities right away. Right now, the home page buries the main call‑to‑action and doesn’t have any testimonials or badges near the form. On mobile it feels text‑heavy, which makes it harder for someone to book a consult quickly.\n\nA few simple fixes could help:\n\n- Add a stronger headline and a glowing consultation form right at the top.\n- Place your credentials and 2–3 client quotes beside the form for trust.\n- Mark up an FAQ section with schema so you show up in “People Also Ask” and capture more local searches.\n\nOn SEO, your current title and description miss chances to rank higher for terms like “small business accountant Toronto” and “bookkeeping Toronto.” Adding service‑specific pages and internal links into those could also earn sitelinks and better visibility.\n\nTo show you what this looks like, we built a production‑ready landing page here:\n\nhttps://drive.google.com/uc?id=1D9wnO-53JlL8WrJQPaMGp4m2tV8FYF_o&export=download\n\nWe’re a small but very competent full‑stack team (CRO, SEO, Design, Dev, Automation). You can see us at https://butterflydigital.ca.\n\nIf this feels useful, I'd love to help make this possible. Let me know if you would be cool with a call?\n\nThank you,\n\nMo\n\nButterfly Digital\n\n---\n\n### Cold Email Guidelines (Updated)\n\n1. **Subject line**\n    - One line.\n    - Specific benefit, not gimmicky.\n    - Example: “Helping more buyers stick around on your site” or “Quick wins to lift conversions on [Company].”\n    - Example: \"Quick conversion and SEO wins for your site (I took the liberty of mocking up a custom landing page for you)\"\n    - Example: \"Quick wins to help your site bring in more consultations\"\n2. **Greeting**\n    - Address prospect by first name.\n    - If missing, fallback to client name.\n3. **Opening line**\n    - Start with a natural discovery context.\n    - Examples:\n        - “I was doing some research in your industry and came across your site…”\n        - “I was looking up [keyword] in [location] and your site popped up…”\n    - Make it casual and approachable, like talking to a peer.\n4. **Body**\n    - Cite 1–2 concrete gaps from CRO audit / site scrape (e.g., unclear UVP, form friction, missing testimonials, no FAQ schema, slow load speed).\n    - Offer 2–3 practical, bite-sized suggestions (e.g., sharpen hero, add proof near CTA, reduce fields, apply FAQ schema).\n    - Mention that you built a **live, production-ready landing page** they can preview/download.\n    - Reference the SEO analysis and show room for growth, including:\n        - Angles: highlight KPI-first, end-to-end AI delivery, or risk reduction.\n        - USPs: measurable ROI, AI-native dev, case studies/testimonials, security compliance.\n        - Keyword gaps: “AI development services,” “development as a service,” “MVP AI development,” “model deployment.”\n        - SERP opportunities: FAQ schema, case study snippets, testimonials, sitelinks.\n        - Internal linking: point authority toward service, case study, and process pages.\n5. **Positioning / Credibility**\n    - Light intro of your team:\n        \n        “We’re a full-stack team — AI engineers, developers, SEO/PPC specialists, designers, media folks.”\n        \n    - Include links:\n        - Website: [https://butterflydigital.ca](https://butterflydigital.ca/)\n        - Case studies: [https://wins.mkgrowth.ca](https://wins.mkgrowth.ca/)\n6. **Call to action**\n    - Single, casual next step. Make it friendly.\n    - Example:\n        \n        “If this feels useful, I would love to help! Grab a quick slot here: https://calendly.com/your-link, or just reply with your number and I’ll call you.”\n\n\"If this feels useful, I'd love to help make this possible. Let me know if you would be cool with a call?\"\n        \n7. **Signature**\n    - Mo + Butterfly Digital.\n8. **Tone & Length**\n    - Keep it between **120–180 words**.\n    - Clear, simple sentences.\n    - No em dashes.\n    - Friendly, helpful tone — not pushy.\n\n----\n\nMake sure to make the email approachable and not too direct. Make it friendly, as if you're having a conversation!!!\n\nAlso make sure you use the SEO analysis properly and add an SEO analysis in the email too to get the client more enticed to look into our services.\n\nThe SEO analysis is: {{ $node[\"SEO/Meta Analysis\"].json.text || \"\" }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [2464, 2864],
+      "id": "4e7962d2-79b7-4d30-80be-ecd74a0b3dc5",
+      "name": "Email",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $item(0).$node[\"Check Positive Status1\"].json[\"Client Name\"] }} | Update Subject | ID: {{ $item(0).$node[\"Check Positive Status1\"].json[\"ID\"] }}",
+        "message": "={{ $json['Email to Send'] }}",
+        "options": {
+          "sendTo": "={{ $item(0).$node[\"Check Positive Status1\"].json[\"Email\"] }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [3040, 2864],
+      "id": "22ccdb4e-9781-4397-8497-a1ebaa552f42",
+      "name": "Create a draft",
+      "webhookId": "a2aac7c4-0388-41d5-a93b-0220f9650e16",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1ip1BupTqy5pIJtT",
+          "name": "Gmail - Redwan"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "CRO Audit Analysis": {
+      "main": [
+        [
+          {
+            "node": "Website Structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter CRO Audit": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CRO Audit Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Landing Page Generator": {
+      "main": [
+        [
+          {
+            "node": "Binary Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Landing Page": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Landing Page Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Check Positive Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Positive Status1": {
+      "main": [
+        [
+          {
+            "node": "Apify Content Scraper1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify Screenshot1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Client Folder1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apify Screenshot Competitor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify Content Scraper1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Apify Screenshot1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Wait for Processing1": {
+      "main": [
+        [
+          {
+            "node": "Get Scraped Content1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Screenshot1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Screenshot Competitor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scraped Content1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Screenshot1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Save to Google Drive1": {
+      "main": [
+        [
+          {
+            "node": "Create Share Link1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Client Folder1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Share Link1": {
+      "main": [
+        [
+          {
+            "node": "SEO/Meta Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify Screenshot Competitor1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Get Screenshot Competitor1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Consolidate Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Binary Payload": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Wait for Processing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidate Inputs": {
+      "main": [
+        [
+          {
+            "node": "CRO Audit Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Website Structure": {
+      "main": [
+        [
+          {
+            "node": "Landing Page Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Website Structure": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Website Structure",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SEO/Meta Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SEO/Meta Analysis": {
+      "main": [
+        [
+          {
+            "node": "Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email": {
+      "main": [
+        [
+          {
+            "node": "Update Google Sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Google Sheet1": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "185c22a7-a7a4-49ce-b54c-a42889c3043b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09dac3b1fd535c8a2e81b8c333863b71134f03a2d7b0c5fb38cc1b81fda4ce0b"
+  },
+  "id": "WCZQmWApfKlHhcxX",
+  "tags": [
+    {
+      "createdAt": "2025-09-16T13:20:40.905Z",
+      "updatedAt": "2025-09-16T13:20:40.905Z",
+      "id": "40OMM0eE3zxwah4G",
+      "name": "Email Automations"
+    },
+    {
+      "createdAt": "2025-08-25T19:52:38.679Z",
+      "updatedAt": "2025-08-25T19:52:38.679Z",
+      "id": "88MTLhIcTKv5meoR",
+      "name": "Cold Email"
+    },
+    {
+      "createdAt": "2025-09-18T05:26:14.259Z",
+      "updatedAt": "2025-09-18T21:53:03.125Z",
+      "id": "NOm6TtxWrHrS9w6F",
+      "name": "Apify"
+    },
+    {
+      "createdAt": "2025-09-18T05:26:22.254Z",
+      "updatedAt": "2025-09-18T21:53:25.682Z",
+      "id": "R3GdjqCS0Hao0SAY",
+      "name": "Web Dev"
+    },
+    {
+      "createdAt": "2025-09-18T21:42:07.522Z",
+      "updatedAt": "2025-09-18T21:53:16.051Z",
+      "id": "bsK5Ly0vAFyjHauF",
+      "name": "Lead Magnet"
+    },
+    {
+      "createdAt": "2025-09-18T05:26:10.571Z",
+      "updatedAt": "2025-09-18T21:53:11.119Z",
+      "id": "jnpx2dopFoUHwyNf",
+      "name": "Lead Generation"
+    }
+  ]
+}
